@@ -15,6 +15,10 @@ interface StrategyStat {
   total: number;
   buy: number;
   sell: number;
+  hold: number;
+  avg_return_5m: number;
+  win_rate_5m: number;
+  outcomes_count: number;
 }
 
 const QuantInsights: React.FC = () => {
@@ -49,7 +53,7 @@ const QuantInsights: React.FC = () => {
                 <Badge colorScheme="blue">{name.toUpperCase()}</Badge>
                 <Text fontSize="xs" color="gray.400">{stat.total} Total Decisions</Text>
               </HStack>
-              <HStack spacing={6}>
+              <HStack spacing={6} mb={3}>
                 <Stat size="sm">
                   <StatLabel fontSize="xs">Buy Signals</StatLabel>
                   <StatNumber fontSize="md" color="green.400">{stat.buy}</StatNumber>
@@ -59,9 +63,32 @@ const QuantInsights: React.FC = () => {
                   <StatNumber fontSize="md" color="red.400">{stat.sell}</StatNumber>
                 </Stat>
                 <Stat size="sm">
-                  <StatLabel fontSize="xs">Stability</StatLabel>
+                  <StatLabel fontSize="xs">Hold Ratio</StatLabel>
                   <StatNumber fontSize="md">
-                    {((1 - (stat.buy + stat.sell) / stat.total) * 100).toFixed(0)}%
+                    {stat.total > 0 ? ((stat.hold / stat.total) * 100).toFixed(0) : '0'}%
+                  </StatNumber>
+                </Stat>
+              </HStack>
+              
+              <Divider mb={2} borderColor="gray.700" />
+              
+              <HStack spacing={6}>
+                <Stat size="sm">
+                  <StatLabel fontSize="xs">Avg Return (5m)</StatLabel>
+                  <StatNumber fontSize="sm" color={stat.avg_return_5m >= 0 ? "green.300" : "red.300"}>
+                    {stat.avg_return_5m > 0 ? '+' : ''}{stat.avg_return_5m}%
+                  </StatNumber>
+                </Stat>
+                <Stat size="sm">
+                  <StatLabel fontSize="xs">Win Rate (5m)</StatLabel>
+                  <StatNumber fontSize="sm" color="blue.300">
+                    {stat.win_rate_5m}%
+                  </StatNumber>
+                </Stat>
+                <Stat size="sm">
+                  <StatLabel fontSize="xs">Sample Size</StatLabel>
+                  <StatNumber fontSize="sm" color="gray.500">
+                    {stat.outcomes_count}
                   </StatNumber>
                 </Stat>
               </HStack>

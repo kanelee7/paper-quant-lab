@@ -148,8 +148,13 @@ async def get_decision_journal(limit: int = 100):
             return []
             
         with open(journal_path, "r", encoding="utf-8") as f:
-            journal_data = json.load(f)
-            return journal_data[-limit:] # 최신 순으로 반환
+            try:
+                journal_data = json.load(f)
+                if not isinstance(journal_data, list):
+                    journal_data = []
+                return journal_data[-limit:]
+            except json.JSONDecodeError:
+                return []
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -177,14 +182,22 @@ async def annotate_signal(update_data: Dict):
             raise HTTPException(status_code=404, detail="Journal not found")
             
         with open(journal_path, "r", encoding="utf-8") as f:
-            journal_data = json.load(f)
+            try:
+                journal_data = json.load(f)
+                if not isinstance(journal_data, list):
+                    raise HTTPException(status_code=500, detail="Journal is not a list")
+            except json.JSONDecodeError:
+                raise HTTPException(status_code=500, detail="Journal is corrupted")
             
+        found = False
         for signal in journal_data:
-            if signal["timestamp"] == timestamp:
+            if isinstance(signal, dict) and signal.get("timestamp") == timestamp:
                 signal["notes"] = notes
                 signal["tags"] = tags
+                found = True
                 break
-        else:
+        
+        if not found:
             raise HTTPException(status_code=404, detail="Signal not found")
             
         with open(journal_path, "w", encoding="utf-8") as f:
@@ -194,29 +207,139 @@ async def annotate_signal(update_data: Dict):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+async def track_outcomes():
+    """시그널 생성 후 일정 시간(5m, 15m, 1h, 1d)이 지났을 때의 성과를 추적하는 백그라운드 태스크"""
+    journal_path = "decision_journal.json"
+    intervals = {
+        "5m": 5 * 60,
+        "15m": 15 * 60,
+        "1h": 60 * 60,
+        "1d": 24 * 60 * 60
+    }
+    
+    while True:
+        try:
+            if os.path.exists(journal_path):
+                with open(journal_path, "r", encoding="utf-8") as f:
+                    try:
+                        journal_data = json.load(f)
+                        if not isinstance(journal_data, list):
+                            journal_data = []
+                    except json.JSONDecodeError:
+                        journal_data = []
+                
+                updated = False
+                now = datetime.now()
+                
+                for signal in journal_data:
+                    if not isinstance(signal, dict) or "action" not in signal or "timestamp" not in signal:
+                        continue
+                        
+                    # 'hold' 액션은 일단 제외하거나 별도 처리 가능
+                    if signal["action"] == "hold":
+                        continue
+                        
+                    sig_time = datetime.fromisoformat(signal["timestamp"])
+                    elapsed = (now - sig_time).total_seconds()
+                    
+                    for label, seconds in intervals.items():
+                        if elapsed >= seconds and label not in signal.get("outcomes", {}):
+                            # 해당 시점의 가격 가져오기 (시뮬레이션이므로 현재가로 근사치 기록)
+                            if market_provider:
+                                try:
+                                    ticker = await market_provider.fetch_ticker(signal["symbol"])
+                                    current_price = ticker["last"]
+                                    entry_price = signal["price"]
+                                    
+                                    pct = ((current_price - entry_price) / entry_price) * 100
+                                    if signal["action"] == "sell":
+                                        pct = -pct
+                                        
+                                    if "outcomes" not in signal:
+                                        signal["outcomes"] = {}
+                                    
+                                    signal["outcomes"][label] = {
+                                        "pct": round(pct, 4),
+                                        "price_delta": round(current_price - entry_price, 2),
+                                        "observed_at": now.isoformat()
+                                    }
+                                    updated = True
+                                    print(f"Outcome tracked for {signal['id']} at {label}: {pct}%")
+                                except Exception as e:
+                                    print(f"Error fetching ticker for outcome: {e}")
+                
+                if updated:
+                    with open(journal_path, "w", encoding="utf-8") as f:
+                        json.dump(journal_data, f, ensure_ascii=False, indent=2)
+                        
+        except Exception as e:
+            print(f"Outcome tracking task error: {e}")
+            
+        await asyncio.sleep(60) # 1분마다 확인
+
+@app.on_event("startup")
+async def startup_event():
+    asyncio.create_task(track_outcomes())
+
 @app.get("/api/strategy/stats")
 async def get_strategy_stats():
-    """전략별 상세 성과 통계 조회"""
+    """전략별 상세 성과 및 Outcome 기반 통계 조회"""
     journal_path = "decision_journal.json"
     try:
         if not os.path.exists(journal_path):
             return {}
             
         with open(journal_path, "r", encoding="utf-8") as f:
-            journal_data = json.load(f)
+            try:
+                journal_data = json.load(f)
+                if not isinstance(journal_data, list):
+                    return {}
+            except json.JSONDecodeError:
+                return {}
             
         stats = {}
         for signal in journal_data:
+            if not isinstance(signal, dict) or "strategy_name" not in signal:
+                continue
             strat = signal["strategy_name"]
             if strat not in stats:
-                stats[strat] = {"total": 0, "buy": 0, "sell": 0, "avg_price": 0}
+                stats[strat] = {
+                    "total": 0, 
+                    "buy": 0, 
+                    "sell": 0, 
+                    "hold": 0,
+                    "outcomes_count": 0,
+                    "total_return_5m": 0,
+                    "wins_5m": 0,
+                    "losses_5m": 0
+                }
             
-            stats[strat]["total"] += 1
+            s = stats[strat]
+            s["total"] += 1
             if signal["action"] == "buy":
-                stats[strat]["buy"] += 1
+                s["buy"] += 1
             elif signal["action"] == "sell":
-                stats[strat]["sell"] += 1
+                s["sell"] += 1
+            elif signal["action"] == "hold":
+                s["hold"] += 1
+                
+            # Outcome 기반 통계 (5분 기준 샘플)
+            if "outcomes" in signal and "5m" in signal["outcomes"]:
+                ret = signal["outcomes"]["5m"]["pct"]
+                s["total_return_5m"] += ret
+                s["outcomes_count"] += 1
+                if ret > 0: s["wins_5m"] += 1
+                elif ret < 0: s["losses_5m"] += 1
         
+        # 가공
+        for strat, data in stats.items():
+            if data["outcomes_count"] > 0:
+                data["avg_return_5m"] = round(data["total_return_5m"] / data["outcomes_count"], 4)
+                data["win_rate_5m"] = round(data["wins_5m"] / data["outcomes_count"] * 100, 2)
+            else:
+                data["avg_return_5m"] = 0
+                data["win_rate_5m"] = 0
+                
         return stats
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

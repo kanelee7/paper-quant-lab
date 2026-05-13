@@ -104,9 +104,37 @@ class AutoTrader:
             self.price_history.pop(0)
         self.base_price = sum(self.price_history) / len(self.price_history)
 
+    async def detect_market_regime(self) -> str:
+        """심플한 휴리스틱을 이용한 시장 상황(Regime) 판별"""
+        try:
+            current_ticker = await self.market.fetch_ticker(self.symbol)
+            current_price = current_ticker['last']
+            
+            ma = await self.calculate_moving_average(self.ma_timeframe, self.ma_period)
+            if ma == 0: return "sideways"
+            
+            atr_list = await self.calculate_atr(self.ma_timeframe, 14)
+            atr = atr_list[-1] if atr_list else 0
+            
+            # 1. 변동성 확인 (ATR이 가격의 1.5% 이상이면 volatile)
+            if current_price > 0 and (atr / current_price) > 0.015:
+                return "volatile"
+            
+            # 2. 추세 확인 (가격이 이평선과 1% 이상 차이나면 trending)
+            price_dev = abs(current_price - ma) / ma
+            if price_dev > 0.01:
+                return "trending"
+            
+            return "sideways"
+        except Exception as e:
+            print(f"Market regime detection error: {e}")
+            return "sideways"
+
     async def _create_signal(self, action: str, reason: str, price: float, indicators: Dict) -> Dict:
         """기록 및 전송을 위한 정형화된 시그널 객체 생성"""
+        regime = await self.detect_market_regime()
         return {
+            "id": str(time.time()), # 고유 ID 추가
             "timestamp": datetime.now().isoformat(),
             "symbol": self.symbol,
             "asset_type": self.asset_type,
@@ -115,7 +143,10 @@ class AutoTrader:
             "strategy_name": self.strategy,
             "reason": reason,
             "indicators_snapshot": indicators,
-            "confidence": 1.0 # 기본값
+            "market_regime": regime,
+            "confidence": 1.0,
+            "outcomes": {}, # { "5m": {"pct": 0, "price_delta": 0, "observed_at": "..."}, ... }
+            "resolved_at": None
         }
 
     async def _log_to_journal(self, signal: Dict):
