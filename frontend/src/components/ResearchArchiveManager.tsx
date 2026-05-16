@@ -1,0 +1,232 @@
+import React, { useState, useEffect } from 'react';
+import {
+  Box,
+  VStack,
+  HStack,
+  Text,
+  Button,
+  Heading,
+  Badge,
+  Divider,
+  List,
+  ListItem,
+  IconButton,
+  useDisclosure,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalCloseButton,
+  ModalBody,
+  ModalFooter,
+  Input,
+  Textarea,
+  useToast,
+  Icon,
+  Tooltip,
+  Select,
+} from '@chakra-ui/react';
+import { DownloadIcon, AttachmentIcon, InfoOutlineIcon } from '@chakra-ui/icons';
+
+interface Archive {
+  archive_id: string;
+  title: string;
+  description: string;
+  created_at: string;
+  schema_version: string;
+  replay_version: string;
+  included_components: string[];
+}
+
+const ResearchArchiveManager: React.FC = () => {
+  const [archives, setArchives] = useState<Archive[]>([]);
+  const [selectedArchive, setSelectedArchive] = useState<Archive | null>(null);
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const { isOpen: isDetailOpen, onOpen: onDetailOpen, onClose: onDetailClose } = useDisclosure();
+  const [newArchive, setNewArchive] = useState({ title: '', description: '' });
+  const [importMode, setMode] = useState('merge');
+  const toast = useToast();
+
+  const fetchArchives = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/api/archives');
+      const data = await response.json();
+      setArchives(data);
+    } catch (error) {
+      console.error('Failed to fetch archives:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchArchives();
+  }, []);
+
+  const handleCreateArchive = async () => {
+    if (!newArchive.title) {
+      toast({ title: 'Title required', status: 'warning' });
+      return;
+    }
+    try {
+      const response = await fetch('http://localhost:8000/api/archives/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newArchive)
+      });
+      if (response.ok) {
+        toast({ title: 'Archive Frozen', status: 'success' });
+        fetchArchives();
+        onClose();
+        setNewArchive({ title: '', description: '' });
+      }
+    } catch (error) {
+      toast({ title: 'Freeze failed', status: 'error' });
+    }
+  };
+
+  return (
+    <Box bg="background.surface" borderRadius="lg" p={4} borderWidth="1px" borderColor="ui.border" shadow="sm">
+      <HStack justifyContent="space-between" mb={4}>
+        <Text fontSize="xs" fontWeight="bold" letterSpacing="tight" color="gray.400">RESEARCH ARCHIVES</Text>
+        <Button size="xs" variant="ghost" colorScheme="brand" leftIcon={<DownloadIcon />} onClick={onOpen}>
+          Freeze State
+        </Button>
+      </HStack>
+
+      <List spacing={3}>
+        {archives.length === 0 ? (
+          <Text fontSize="10px" color="ui.muted" fontStyle="italic">No archived states found.</Text>
+        ) : (
+          archives.map(archive => (
+            <ListItem 
+                key={archive.archive_id} 
+                p={3} 
+                bg="blackAlpha.300" 
+                borderRadius="md" 
+                borderWidth="1px"
+                borderColor="ui.border"
+                borderLeft="3px solid" 
+                borderLeftColor="blue.500"
+            >
+              <HStack justifyContent="space-between">
+                <VStack align="start" spacing={0}>
+                  <Text fontWeight="bold" fontSize="xs" color="gray.200">{archive.title}</Text>
+                  <Text fontSize="9px" color="ui.muted">{new Date(archive.created_at).toLocaleString()}</Text>
+                </VStack>
+                <HStack>
+                    <IconButton 
+                        size="xs" 
+                        variant="ghost"
+                        icon={<Icon as={InfoOutlineIcon} w={3} h={3} />} 
+                        aria-label="View Archive" 
+                        onClick={() => { setSelectedArchive(archive); onDetailOpen(); }}
+                    />
+                </HStack>
+              </HStack>
+            </ListItem>
+          ))
+        )}
+      </List>
+
+      {/* Snapshot Modal */}
+      <Modal isOpen={isOpen} onClose={onClose}>
+        <ModalOverlay backdropFilter="blur(4px)" />
+        <ModalContent>
+          <ModalHeader fontSize="md" fontWeight="bold">Freeze Research State</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody pb={6}>
+            <VStack spacing={4}>
+              <Input 
+                placeholder="Archive Title..." 
+                fontSize="sm"
+                bg="blackAlpha.300"
+                borderColor="ui.border"
+                value={newArchive.title}
+                onChange={(e) => setNewArchive({ ...newArchive, title: e.target.value })}
+              />
+              <Textarea 
+                placeholder="Contextual notes for this snapshot..." 
+                fontSize="sm"
+                bg="blackAlpha.300"
+                borderColor="ui.border"
+                value={newArchive.description}
+                onChange={(e) => setNewArchive({ ...newArchive, description: e.target.value })}
+              />
+              <Text fontSize="10px" color="ui.muted">
+                This creates a portable, immutable bundle of all current sessions, signals, and insights.
+              </Text>
+            </VStack>
+          </ModalBody>
+          <ModalFooter borderTopWidth="1px" borderColor="ui.border">
+            <Button size="sm" colorScheme="brand" onClick={handleCreateArchive}>Archive State</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* Detail Modal */}
+      <Modal isOpen={isDetailOpen} onClose={onDetailClose} size="lg">
+        <ModalOverlay backdropFilter="blur(4px)" />
+        <ModalContent>
+          <ModalHeader fontSize="md" fontWeight="bold">Archive Explorer</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody pb={6}>
+            {selectedArchive && (
+              <VStack align="stretch" spacing={5}>
+                <Box>
+                  <Text fontSize="9px" color="ui.muted" fontWeight="bold" mb={1}>ARCHIVE IDENTIFIER</Text>
+                  <Text fontSize="xs" color="brand.200" fontFamily="mono">{selectedArchive.archive_id}</Text>
+                </Box>
+                <Box>
+                  <Text fontSize="9px" color="ui.muted" fontWeight="bold" mb={2}>BUNDLED COMPONENTS</Text>
+                  <HStack spacing={2}>
+                    {selectedArchive.included_components.map(c => (
+                      <Badge key={c} colorScheme="green" variant="subtle" fontSize="9px">{c}</Badge>
+                    ))}
+                  </HStack>
+                </Box>
+                <Box bg="blackAlpha.400" p={3} borderRadius="md" borderWidth="1px" borderColor="ui.border">
+                  <Text fontSize="9px" color="ui.muted" fontWeight="bold" mb={2}>REPRODUCIBILITY METADATA</Text>
+                  <HStack spacing={8}>
+                    <VStack align="start" spacing={0}>
+                      <Text fontSize="9px" color="gray.600">SCHEMA</Text>
+                      <Text fontSize="xs" fontWeight="bold">{selectedArchive.schema_version}</Text>
+                    </VStack>
+                    <VStack align="start" spacing={0}>
+                      <Text fontSize="9px" color="gray.600">REPLAY LOGIC</Text>
+                      <Text fontSize="xs" fontWeight="bold">{selectedArchive.replay_version}</Text>
+                    </VStack>
+                  </HStack>
+                </Box>
+                
+                <Box pt={2}>
+                    <Text fontSize="9px" color="ui.muted" fontWeight="bold" mb={2}>RESTORE WORKFLOW</Text>
+                    <HStack mb={3}>
+                        <Select size="xs" bg="blackAlpha.300" borderColor="ui.border" value={importMode} onChange={(e) => setMode(e.target.value)}>
+                            <option value="merge">Non-Destructive Merge</option>
+                            <option value="overwrite">Full State Overwrite</option>
+                        </Select>
+                    </HStack>
+                    <Button 
+                        w="100%" 
+                        size="xs" 
+                        colorScheme="brand" 
+                        leftIcon={<AttachmentIcon />}
+                        isDisabled
+                        fontWeight="800"
+                        letterSpacing="widest"
+                    >
+                        APPLY TO LIVE RESEARCH (LOCKED)
+                    </Button>
+                </Box>
+              </VStack>
+            )}
+          </ModalBody>
+          <ModalFooter borderTopWidth="1px" borderColor="ui.border">
+            <Button size="sm" variant="ghost" onClick={onDetailClose}>Close</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+    </Box>
+  );
+};
+
+export default ResearchArchiveManager;

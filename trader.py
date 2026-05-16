@@ -7,8 +7,10 @@ import time
 import random
 import json
 
+from persona_evaluator import PersonaEvaluator
+
 class AutoTrader:
-    def __init__(self, market_provider, symbol="BTC/USDT", interval=10, strategy="price_change", test_mode=True):
+    def __init__(self, market_provider, symbol="BTC/USDT", interval=10, strategy="price_change", test_mode=True, session_id: Optional[str] = None):
         self.market = market_provider
         self.symbol = symbol
         self.asset_type = getattr(market_provider, 'asset_type', 'CRYPTO')
@@ -17,6 +19,8 @@ class AutoTrader:
         self.position = None  # 'long', 'short', None
         self.entry_price = 0
         self.test_mode = test_mode
+        self.session_id = session_id
+        self.evaluator = PersonaEvaluator()
         
         # 전략 설정
         self.strategy = strategy  # 'price_change', 'rsi_ma', 'combined'
@@ -130,10 +134,10 @@ class AutoTrader:
             print(f"Market regime detection error: {e}")
             return "sideways"
 
-    async def _create_signal(self, action: str, reason: str, price: float, indicators: Dict) -> Dict:
+    async def _create_signal(self, action: str, reason: str, price: float, indicators: Dict, persona_id: str = "default", prompt_version: str = "v1") -> Dict:
         """기록 및 전송을 위한 정형화된 시그널 객체 생성"""
         regime = await self.detect_market_regime()
-        return {
+        signal = {
             "id": str(time.time()), # 고유 ID 추가
             "timestamp": datetime.now().isoformat(),
             "symbol": self.symbol,
@@ -141,13 +145,66 @@ class AutoTrader:
             "action": action, # 'buy', 'sell', 'hold'
             "price": price,
             "strategy_name": self.strategy,
+            "persona_id": persona_id,
+            "session_id": self.session_id, # 세션 ID 추가
             "reason": reason,
+            "reasoning_trace": f"Persona {persona_id} reasoning based on {self.strategy} strategy.", # Placeholder for trace
             "indicators_snapshot": indicators,
             "market_regime": regime,
             "confidence": 1.0,
             "outcomes": {}, # { "5m": {"pct": 0, "price_delta": 0, "observed_at": "..."}, ... }
-            "resolved_at": None
+            "resolved_at": None,
+            "prompt_version": prompt_version
         }
+        
+        # Reasoning 품질 및 Drift 평가 추가
+        signal["evaluation"] = self.evaluator.evaluate_reasoning_quality(signal)
+        
+        return signal
+
+    async def generate_persona_signals(self, personas: List[Dict]) -> List[Dict]:
+        """여러 페르소나의 분석 결과 생성"""
+        signals = []
+        try:
+            ticker = await self.market.fetch_ticker(self.symbol)
+            current_price = ticker['last']
+            
+            for persona_data in personas:
+                persona_id = persona_data['persona_id']
+                prompt_version = persona_data.get('version', 'v1')
+                strategy = persona_data.get('strategy_mapping', self.strategy)
+                
+                # 원본 전략 백업
+                original_strategy = self.strategy
+                self.strategy = strategy
+                
+                signal = None
+                if strategy == "price_change":
+                    signal = await self.check_price_change_strategy(current_price)
+                elif strategy == "rsi_ma":
+                    signal = await self.check_rsi_ma_strategy(current_price)
+                elif strategy == "combined":
+                    signal = await self.check_combined_strategy(current_price)
+                
+                if signal:
+                    signal['persona_id'] = persona_id
+                    signal['prompt_version'] = prompt_version
+                    signal['reasoning_trace'] = f"Persona {persona_id} (ver {prompt_version}) analyzed {self.symbol} using {strategy} strategy under {signal['market_regime']} regime. Risk preference: {persona_data.get('risk_preference', 'N/A')}."
+                    
+                    # 추후 실제 LLM 연동 시 reasoning_trace가 업데이트된 후 다시 평가해야 할 수도 있음
+                    # 현재는 placeholder trace를 기반으로 재평가
+                    signal["evaluation"] = self.evaluator.evaluate_reasoning_quality(signal)
+                    
+                    signals.append(signal)
+                    await self._log_to_journal(signal)
+                
+                # 전략 복구
+                self.strategy = original_strategy
+                
+            return signals
+        except Exception as e:
+            print(f"Persona signals generation error: {e}")
+            return []
 
     async def _log_to_journal(self, signal: Dict):
         """시그널을 로컬 JSON 파일에 기록 (Append-only)"""

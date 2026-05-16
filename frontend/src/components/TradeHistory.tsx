@@ -8,7 +8,8 @@ import {
   Th,
   Td,
   Text,
-  TableContainer,
+  HStack,
+  Center,
 } from '@chakra-ui/react';
 
 interface Trade {
@@ -25,54 +26,49 @@ interface TradeHistoryProps {
 
 const TradeHistory: React.FC<TradeHistoryProps> = ({ trades }) => {
   return (
-    <Box
-      bg="gray.900"
-      borderRadius="lg"
-      p={3}
-    >
-      <Text mb={3} fontWeight="bold" color="gray.300" fontSize="sm">Trade History</Text>
-      <Box
-        sx={{
-          '.chakra-table': {
-            tableLayout: 'fixed',
-            width: '100%',
-          },
-          'th, td': {
-            textOverflow: 'ellipsis',
-            overflow: 'hidden',
-            whiteSpace: 'nowrap',
-          }
-        }}
-      >
-        <Table variant="unstyled" size="sm">
-          <Thead>
-            <Tr>
-              <Th color="gray.500" fontSize="xs" width="25%">Time</Th>
-              <Th color="gray.500" fontSize="xs" width="30%" isNumeric>Price(USDT)</Th>
-              <Th color="gray.500" fontSize="xs" width="25%" isNumeric>Amount</Th>
-              <Th color="gray.500" fontSize="xs" width="20%" isNumeric>Total</Th>
-            </Tr>
-          </Thead>
-          <Tbody>
-            {trades.map((trade, index) => (
-              <Tr key={index} _hover={{ bg: 'whiteAlpha.50' }}>
-                <Td color="gray.400" fontSize="xs">{trade.time}</Td>
-                <Td 
-                  color={trade.type === 'buy' ? 'green.400' : 'red.400'} 
-                  isNumeric
-                  fontSize="xs"
-                >
-                  {trade.price.toFixed(2)}
-                </Td>
-                <Td color="gray.400" isNumeric fontSize="xs">{trade.amount.toFixed(4)}</Td>
-                <Td color="gray.400" isNumeric fontSize="xs">{trade.total.toFixed(2)}</Td>
-              </Tr>
-            ))}
-          </Tbody>
-        </Table>
-      </Box>
+    <Box height="100%" display="flex" flexDirection="column">
+      <HStack justify="space-between" mb={2} px={1}>
+        <Text fontSize="xs" fontWeight="bold" letterSpacing="tight" color="gray.400">RECENT TRADES</Text>
+      </HStack>
+
+      {trades.length === 0 ? (
+        <Center h="100%">
+            <Text fontSize="10px" color="ui.muted">NO RECENT MARKET ACTIVITY</Text>
+        </Center>
+      ) : (
+        <Box overflowY="auto" flex={1}>
+            <Table variant="unstyled" size="xs">
+                <Thead>
+                    <Tr borderBottom="1px" borderColor="ui.border">
+                        <Th fontSize="9px" color="ui.muted">TIME</Th>
+                        <Th fontSize="9px" color="ui.muted" isNumeric>PRICE</Th>
+                        <Th fontSize="9px" color="ui.muted" isNumeric>AMOUNT</Th>
+                    </Tr>
+                </Thead>
+                <Tbody>
+                    {trades.map((trade, index) => (
+                    <Tr key={index} height="20px" _hover={{ bg: 'whiteAlpha.50' }}>
+                        <Td py={1} fontSize="9px" color="ui.muted">{trade.time}</Td>
+                        <Td 
+                            py={1}
+                            color={trade.type === 'buy' ? 'status.success' : 'status.error'} 
+                            isNumeric
+                            fontSize="10px"
+                            fontWeight="600"
+                        >
+                        {trade.price.toLocaleString()}
+                        </Td>
+                        <Td py={1} color="gray.400" isNumeric fontSize="10px" fontFamily="mono">
+                            {trade.amount.toFixed(4)}
+                        </Td>
+                    </Tr>
+                    ))}
+                </Tbody>
+            </Table>
+        </Box>
+      )}
     </Box>
   );
 };
 
-export default TradeHistory; 
+export default TradeHistory;

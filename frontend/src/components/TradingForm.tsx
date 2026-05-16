@@ -6,7 +6,10 @@ import {
   Input,
   Select,
   Button,
-  useColorModeValue,
+  HStack,
+  Text,
+  Badge,
+  Divider,
 } from '@chakra-ui/react';
 
 interface TradingFormProps {
@@ -24,103 +27,112 @@ const TradingForm: React.FC<TradingFormProps> = ({
   symbol,
   onSymbolChange,
 }) => {
-  const selectBg = useColorModeValue('gray.50', 'gray.800');
-  const selectBorder = useColorModeValue('gray.200', 'gray.600');
-  const selectHoverBg = useColorModeValue('gray.100', 'gray.700');
-
   return (
     <VStack spacing={4} align="stretch">
-      <FormControl>
-        <FormLabel>마켓</FormLabel>
-        <Select
-          value={symbol}
-          onChange={(e) => onSymbolChange(e.target.value)}
-          bg={selectBg}
-          borderColor={selectBorder}
-          _hover={{ bg: selectHoverBg }}
-          sx={{
-            '& option': {
-              bg: selectBg,
-              color: useColorModeValue('gray.800', 'white'),
-            }
-          }}
+      <HStack justify="space-between" mb={1}>
+        <Text fontSize="xs" fontWeight="bold" letterSpacing="tight" color="gray.400">SIMULATION CONTROL</Text>
+        <Badge colorScheme="orange" variant="outline" fontSize="9px">PAPER TRADING ONLY</Badge>
+      </HStack>
+
+      <HStack spacing={4}>
+        <FormControl>
+            <FormLabel fontSize="10px" color="ui.muted" mb={1}>SYMBOL</FormLabel>
+            <Select
+                size="sm"
+                value={symbol}
+                onChange={(e) => onSymbolChange(e.target.value)}
+                bg="blackAlpha.300"
+                borderColor="ui.border"
+                fontSize="xs"
+                fontWeight="bold"
+            >
+                <option value="BTC/USDT">BTC/USDT</option>
+                <option value="ETH/USDT">ETH/USDT</option>
+                <option value="XRP/USDT">XRP/USDT</option>
+                <option value="LOKA/USDT">LOKA/USDT</option>
+            </Select>
+        </FormControl>
+
+        <FormControl>
+            <FormLabel fontSize="10px" color="ui.muted" mb={1}>ORDER TYPE</FormLabel>
+            <Select
+                size="sm"
+                defaultValue="limit"
+                bg="blackAlpha.300"
+                borderColor="ui.border"
+                fontSize="xs"
+            >
+                <option value="market">Market</option>
+                <option value="limit">Limit</option>
+            </Select>
+        </FormControl>
+      </HStack>
+
+      <HStack spacing={4}>
+        <FormControl>
+            <FormLabel fontSize="10px" color="ui.muted" mb={1}>AMOUNT</FormLabel>
+            <Input
+                size="sm"
+                type="number"
+                placeholder="0.00"
+                bg="blackAlpha.300"
+                borderColor="ui.border"
+                fontSize="xs"
+            />
+        </FormControl>
+
+        <FormControl>
+            <FormLabel fontSize="10px" color="ui.muted" mb={1}>PRICE (USDT)</FormLabel>
+            <Input
+                size="sm"
+                type="number"
+                placeholder="0.00"
+                bg="blackAlpha.300"
+                borderColor="ui.border"
+                fontSize="xs"
+            />
+        </FormControl>
+      </HStack>
+
+      <HStack spacing={2} pt={2}>
+        <Button
+            size="sm"
+            colorScheme="green"
+            flex={1}
+            borderRadius="sm"
+            fontSize="xs"
+            letterSpacing="widest"
         >
-          <option value="BTC/USDT">BTC/USDT</option>
-          <option value="ETH/USDT">ETH/USDT</option>
-          <option value="XRP/USDT">XRP/USDT</option>
-          <option value="LOKA/USDT">LOKA/USDT</option>
-        </Select>
-      </FormControl>
-
-      <FormControl>
-        <FormLabel>주문 유형</FormLabel>
-        <Select
-          defaultValue="limit"
-          bg={selectBg}
-          borderColor={selectBorder}
-          _hover={{ bg: selectHoverBg }}
-          sx={{
-            '& option': {
-              bg: selectBg,
-              color: useColorModeValue('gray.800', 'white'),
-            }
-          }}
+            BUY / LONG
+        </Button>
+        <Button
+            size="sm"
+            colorScheme="red"
+            flex={1}
+            borderRadius="sm"
+            fontSize="xs"
+            letterSpacing="widest"
         >
-          <option value="market">시장가</option>
-          <option value="limit">지정가</option>
-        </Select>
-      </FormControl>
+            SELL / SHORT
+        </Button>
+      </HStack>
 
-      <FormControl>
-        <FormLabel>수량</FormLabel>
-        <Input
-          type="number"
-          placeholder="0.00"
-          bg={selectBg}
-          borderColor={selectBorder}
-          _hover={{ borderColor: 'blue.500' }}
-        />
-      </FormControl>
-
-      <FormControl>
-        <FormLabel>가격</FormLabel>
-        <Input
-          type="number"
-          placeholder="0.00"
-          bg={selectBg}
-          borderColor={selectBorder}
-          _hover={{ borderColor: 'blue.500' }}
-        />
-      </FormControl>
+      <Divider borderColor="ui.border" my={1} />
 
       <Button
-        colorScheme="green"
-        size="lg"
-        width="100%"
-        _hover={{ transform: 'translateY(-2px)', boxShadow: 'lg' }}
-      >
-        매수
-      </Button>
-      <Button
-        colorScheme="red"
-        size="lg"
-        width="100%"
-        _hover={{ transform: 'translateY(-2px)', boxShadow: 'lg' }}
-      >
-        매도
-      </Button>
-
-      <Button
-        colorScheme={isTrading ? 'red' : 'blue'}
+        colorScheme={isTrading ? 'red' : 'brand'}
+        variant={isTrading ? 'solid' : 'outline'}
         onClick={isTrading ? onStopTrading : onStartTrading}
-        size="lg"
+        size="sm"
         width="100%"
-        _hover={{ transform: 'translateY(-2px)', boxShadow: 'lg' }}
+        fontSize="xs"
+        fontWeight="800"
+        letterSpacing="widest"
       >
-        {isTrading ? '자동 매매 중지' : '자동 매매 시작'}
+        {isTrading ? 'STOP AUTOMATED RESEARCH' : 'START AUTOMATED RESEARCH'}
       </Button>
     </VStack>
   );
 };
 
-export default TradingForm; 
+export default TradingForm;

@@ -14,6 +14,7 @@ import {
   useColorMode,
   Spinner,
   Center,
+  Badge,
 } from '@chakra-ui/react';
 import { useWebSocket } from '../hooks/useWebSocket';
 
@@ -24,10 +25,6 @@ interface OrderBookProps {
 interface OrderBookData {
   bids: [number, number][];
   asks: [number, number][];
-}
-
-interface WebSocketOrderBookMessage {
-  orderbook: OrderBookData;
 }
 
 const OrderBook: React.FC<OrderBookProps> = ({ symbol }) => {
@@ -41,20 +38,14 @@ const OrderBook: React.FC<OrderBookProps> = ({ symbol }) => {
   useEffect(() => {
     const fetchOrderBook = async () => {
       try {
-        setIsLoading(true);
-        setError(null);
         const response = await fetch(`http://localhost:8000/orderbook?symbol=${symbol}`);
         const data = await response.json();
         if (data.status === 'success') {
           setOrderBook(data.data as OrderBookData);
-        } else {
-          setError('Failed to load order book data');
+          setIsLoading(false);
         }
       } catch (error) {
         console.error('Failed to fetch order book:', error);
-        setError('Failed to connect to server');
-      } finally {
-        setIsLoading(false);
       }
     };
 
@@ -75,32 +66,32 @@ const OrderBook: React.FC<OrderBookProps> = ({ symbol }) => {
     return Math.max(...orders.map(([_, volume]) => volume));
   };
 
-  const maxBidVolume = getMaxVolume(orderBook.bids);
-  const maxAskVolume = getMaxVolume(orderBook.asks);
+  const maxVolume = Math.max(getMaxVolume(orderBook.bids), getMaxVolume(orderBook.asks), 0.0001);
 
   const renderOrders = (orders: [number, number][], isBids: boolean) => {
     const sortedOrders = [...orders].sort((a, b) => 
       isBids ? b[0] - a[0] : a[0] - b[0]
-    ).slice(0, 15);
+    ).slice(0, 10);
 
     return sortedOrders.map(([orderPrice, orderVolume], index) => (
-      <Tr key={index}>
-        <Td>
-          <HStack spacing={2}>
-            <Text color={isBids ? 'green.400' : 'red.400'}>
+      <Tr key={index} height="20px">
+        <Td py={1} border="none">
+            <Text fontSize="10px" fontWeight="600" color={isBids ? 'status.success' : 'status.error'}>
               {orderPrice.toLocaleString()}
             </Text>
-            <Progress
-              value={(orderVolume / (isBids ? maxBidVolume : maxAskVolume)) * 100}
-              size="sm"
-              colorScheme={isBids ? 'green' : 'red'}
-              bg={isDarkMode ? 'gray.700' : 'gray.100'}
-              width="100px"
-            />
-          </HStack>
         </Td>
-        <Td isNumeric>
-          <Text color={isDarkMode ? 'gray.300' : 'gray.600'}>
+        <Td py={1} isNumeric position="relative" border="none">
+          <Box 
+            position="absolute" 
+            right={0} 
+            top={0} 
+            h="100%" 
+            w={`${(orderVolume / maxVolume) * 100}%`} 
+            bg={isBids ? 'green.900' : 'red.900'} 
+            opacity={0.3} 
+            zIndex={0}
+          />
+          <Text fontSize="10px" color="gray.400" position="relative" zIndex={1} fontFamily="mono">
             {orderVolume.toFixed(4)}
           </Text>
         </Td>
@@ -108,67 +99,41 @@ const OrderBook: React.FC<OrderBookProps> = ({ symbol }) => {
     ));
   };
 
-  const renderContent = () => {
-    if (isLoading) {
-      return (
-        <Center h="200px">
-          <Spinner size="xl" color={isDarkMode ? 'white' : 'gray.800'} />
-        </Center>
-      );
-    }
-
-    if (error) {
-      return (
-        <Center h="200px">
-          <Text color="red.400">{error}</Text>
-        </Center>
-      );
-    }
-
-    if (!orderBook.bids.length && !orderBook.asks.length) {
-      return (
-        <Center h="200px">
-          <Text color={isDarkMode ? 'gray.400' : 'gray.600'}>No order book data available</Text>
-        </Center>
-      );
-    }
-
-    return (
-      <Table variant="simple" size="sm">
-        <Thead>
-          <Tr>
-            <Th>Price</Th>
-            <Th isNumeric>Volume</Th>
-          </Tr>
-        </Thead>
-        <Tbody>
-          {renderOrders(orderBook.asks, false)}
-          {renderOrders(orderBook.bids, true)}
-        </Tbody>
-      </Table>
-    );
-  };
-
   return (
-    <Box
-      bg={isDarkMode ? 'gray.800' : 'white'}
-      borderRadius="lg"
-      p={4}
-      boxShadow="sm"
-    >
-      <VStack spacing={4} align="stretch">
-        <HStack justify="space-between" align="center">
-          <Text fontSize="lg" fontWeight="bold">
-            Order Book
-          </Text>
-          <Text fontSize="sm" color={isConnected ? 'green.400' : 'red.400'}>
-            {isConnected ? 'Connected' : 'Disconnected'}
-          </Text>
-        </HStack>
-        {renderContent()}
-      </VStack>
+    <Box height="100%" display="flex" flexDirection="column">
+      <HStack justify="space-between" mb={2} px={1}>
+        <Text fontSize="xs" fontWeight="bold" letterSpacing="tight" color="gray.400">ORDER BOOK</Text>
+        <Badge variant="subtle" fontSize="8px" colorScheme={isConnected ? 'green' : 'gray'}>
+            {isConnected ? 'LIVE' : 'IDLE'}
+        </Badge>
+      </HStack>
+      
+      {isLoading ? (
+        <Center h="100%">
+            <VStack spacing={2}>
+                <Spinner size="xs" color="brand.500" />
+                <Text fontSize="9px" color="ui.muted">SYNCING LEDGER</Text>
+            </VStack>
+        </Center>
+      ) : (
+        <Box overflowY="auto" flex={1}>
+            <Table variant="unstyled" size="xs">
+                <Thead>
+                    <Tr borderBottom="1px" borderColor="ui.border">
+                        <Th fontSize="9px" color="ui.muted">PRICE</Th>
+                        <Th fontSize="9px" color="ui.muted" isNumeric>AMOUNT</Th>
+                    </Tr>
+                </Thead>
+                <Tbody>
+                    {renderOrders(orderBook.asks, false)}
+                    <Tr height="4px" />
+                    {renderOrders(orderBook.bids, true)}
+                </Tbody>
+            </Table>
+        </Box>
+      )}
     </Box>
   );
 };
 
-export default OrderBook; 
+export default OrderBook;

@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Grid,
+  SimpleGrid,
   Stat,
   StatLabel,
   StatNumber,
   StatHelpText,
   Text,
-  VStack,
   HStack,
+  Icon,
 } from '@chakra-ui/react';
+import { InfoOutlineIcon } from '@chakra-ui/icons';
 
 interface Metrics {
   total_trades: number;
@@ -39,22 +40,26 @@ const PerformanceMetrics: React.FC = () => {
   if (!metrics) return null;
 
   return (
-    <Box bg="gray.800" borderRadius="lg" p={4} shadow="md">
-      <Text fontSize="lg" fontWeight="bold" mb={4}>Research Performance</Text>
-      <Grid templateColumns="repeat(2, 1fr)" gap={4}>
+    <Box bg="background.surface" borderRadius="lg" p={4} borderWidth="1px" borderColor="ui.border" shadow="sm">
+      <HStack justify="space-between" mb={4}>
+        <Text fontSize="xs" fontWeight="bold" letterSpacing="tight" color="gray.400">RESEARCH PERFORMANCE</Text>
+        <Icon as={InfoOutlineIcon} w={3} h={3} color="ui.muted" />
+      </HStack>
+      
+      <SimpleGrid columns={2} gap={4}>
         <Stat>
-          <StatLabel color="gray.400">Total Decisions</StatLabel>
-          <StatNumber fontSize="2xl">{metrics.total_trades}</StatNumber>
-          <StatHelpText>{metrics.mode}</StatHelpText>
+          <StatLabel fontSize="10px" color="ui.muted" textTransform="uppercase">Decisions</StatLabel>
+          <StatNumber fontSize="md" fontWeight="800" color="gray.200">{metrics.total_trades}</StatNumber>
+          <StatHelpText fontSize="9px" color="ui.muted" m={0}>{metrics.mode.toUpperCase()}</StatHelpText>
         </Stat>
         <Stat>
-          <StatLabel color="gray.400">Total PnL (Simulated)</StatLabel>
-          <StatNumber fontSize="2xl" color={metrics.total_pnl >= 0 ? "green.400" : "red.400"}>
-            ${metrics.total_pnl.toFixed(2)}
+          <StatLabel fontSize="10px" color="ui.muted" textTransform="uppercase">Simulated PnL</StatLabel>
+          <StatNumber fontSize="md" fontWeight="800" color={metrics.total_pnl >= 0 ? "status.success" : "status.error"}>
+            ${metrics.total_pnl.toLocaleString(undefined, { minimumFractionDigits: 2 })}
           </StatNumber>
-          <StatHelpText>Unrealized</StatHelpText>
+          <StatHelpText fontSize="9px" color="ui.muted" m={0}>UNREALIZED</StatHelpText>
         </Stat>
-      </Grid>
+      </SimpleGrid>
     </Box>
   );
 };

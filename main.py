@@ -1,4 +1,4 @@
-from fastapi import FastAPI, WebSocket, HTTPException
+from fastapi import FastAPI, WebSocket, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import asyncio
@@ -9,13 +9,37 @@ import json
 import ccxt
 from dotenv import load_dotenv
 import time
+from datetime import datetime, timedelta
 
 from trader import AutoTrader, MultiCoinTrader, RepeatTrader
 from exchange import MarketProvider, AssetType
+from backend.personas import PersonaManager
+from persona_evaluator import PersonaEvaluator
+from session_manager import SessionManager
+from insight_manager import InsightManager
+from reliability_manager import ReliabilityManager
+from archive_manager import ArchiveManager
+from workflow_manager import WorkflowManager
+from pattern_manager import PatternManager
+from replay_snapshot_manager import ReplaySnapshotManager
+from backend.walkthrough_manager import WalkthroughManager
 
 load_dotenv()
 
 app = FastAPI(title="PaperQuantLab: Research Workstation")
+
+# 전역 객체 초기화
+persona_manager = PersonaManager()
+persona_evaluator = PersonaEvaluator()
+session_manager = SessionManager()
+insight_manager = InsightManager()
+reliability_manager = ReliabilityManager()
+archive_manager = ArchiveManager()
+review_manager = ReviewManager()
+workflow_manager = WorkflowManager()
+pattern_manager = PatternManager()
+snapshot_manager = ReplaySnapshotManager()
+walkthrough_manager = WalkthroughManager()
 
 # CORS 설정
 app.add_middleware(
@@ -84,6 +108,365 @@ class RepeatTradingRequest(BaseModel):
     max_trades: Optional[int] = None
     test_mode: bool = True
 
+class PersonaAnalysisRequest(BaseModel):
+    symbol: str
+    persona_ids: Optional[List[str]] = None
+
+class SessionCreateRequest(BaseModel):
+    title: str
+    asset_type: str
+    market: str
+    personas: List[str]
+    notes: Optional[str] = ""
+    tags: Optional[List[str]] = []
+
+class InsightCreateRequest(BaseModel):
+    title: str
+    summary: str
+    linked_sessions: Optional[List[str]] = []
+    linked_personas: Optional[List[str]] = []
+    supporting_signals: Optional[List[str]] = []
+    market_regimes: Optional[List[str]] = []
+    failure_tags: Optional[List[str]] = []
+
+@app.get("/api/reliability/status")
+async def get_reliability_status():
+    """연구 데이터 무결성 및 상태 보고서 조회"""
+    return reliability_manager.validate_integrity()
+
+@app.get("/api/reliability/reproducibility")
+async def get_reproducibility_report():
+    """재현성 및 리플레이 일관성 전용 진단 보고서 조회"""
+    integrity = reliability_manager.validate_integrity()
+    return {
+        "status": integrity["status"],
+        "schema_version": integrity["schema_version"],
+        "replay_version": integrity["replay_version"],
+        "broken_links": integrity["broken_links"],
+        "recommendations": [
+            "Ensure indicators_snapshot is present for all critical signals.",
+            "Verify all bookmarked signals exist in the current journal.",
+            "Update research environment metadata if migrating between machines."
+        ]
+    }
+
+@app.post("/api/reliability/backup")
+async def create_data_backup():
+    """현재 연구 데이터의 수동 백업 생성"""
+    backup_path = reliability_manager.create_backup()
+    if backup_path:
+        return {"status": "success", "backup_id": os.path.basename(backup_path)}
+    raise HTTPException(status_code=500, detail="백업 생성 실패")
+
+@app.get("/api/reliability/backups")
+async def list_data_backups():
+    """사용 가능한 모든 백업 목록 조회"""
+    return reliability_manager.list_backups()
+
+@app.post("/api/reliability/restore/{backup_id}")
+async def restore_data_backup(backup_id: str):
+    """특정 백업에서 데이터 복구"""
+    success = reliability_manager.restore_backup(backup_id)
+    if success:
+        return {"status": "success", "message": "데이터 복구가 완료되었습니다. 애플리케이션 재시작을 권장합니다."}
+    raise HTTPException(status_code=404, detail="백업을 찾을 수 없거나 복구에 실패했습니다.")
+
+# Research Archive Endpoints
+@app.get("/api/archives")
+async def list_archives():
+    """모든 연구 아카이브 목록 조회"""
+    return archive_manager.list_archives()
+
+class ArchiveCreateRequest(BaseModel):
+    title: str
+    description: Optional[str] = ""
+
+@app.post("/api/archives/create")
+async def create_archive(request: ArchiveCreateRequest):
+    """현재 연구 데이터의 스냅샷 아카이브 생성"""
+    try:
+        path = archive_manager.create_research_archive(request.title, request.description)
+        return {"status": "success", "archive_id": os.path.basename(path)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/archives/{archive_name}/validate")
+async def validate_archive(archive_name: str):
+    """특정 아카이브의 무결성 검증"""
+    path = os.path.join(archive_manager.archive_root, archive_name)
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="아카이브를 찾을 수 없습니다.")
+    return archive_manager.validate_archive_integrity(path)
+
+@app.post("/api/archives/{archive_name}/import")
+async def import_archive(archive_name: str, mode: str = "merge"):
+    """아카이브 데이터를 현재 환경으로 수입 (merge 또는 overwrite)"""
+    path = os.path.join(archive_manager.archive_root, archive_name)
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="아카이브를 찾을 수 없습니다.")
+    
+    success = archive_manager.import_archive(path, mode)
+    if success:
+        return {"status": "success", "message": f"아카이브 수입 완료 (모드: {mode})"}
+    raise HTTPException(status_code=400, detail="아카이브 수입 실패")
+
+# Research Review & Longitudinal Synthesis Endpoints
+@app.get("/api/reviews")
+async def list_reviews():
+    """모든 연구 회고(Review) 목록 조회"""
+    return review_manager.list_reviews()
+
+@app.get("/api/reviews/{review_id}/governance")
+async def get_review_governance(review_id: str):
+    """특정 회고 내러티브의 거버넌스 및 신뢰도 보고서 조회"""
+    return review_manager.validate_review_reliability(review_id)
+
+@app.get("/api/reviews/contradictions")
+async def get_review_contradictions():
+    """연구 내러티브 간의 모순 보고서 조회"""
+    return review_manager.detect_contradictions()
+
+class ReviewCreateRequest(BaseModel):
+    title: str
+    summary: str
+    linked_sessions: Optional[List[str]] = []
+    linked_insights: Optional[List[str]] = []
+    key_findings: Optional[List[str]] = []
+    failure_patterns: Optional[List[str]] = []
+    scope: Optional[str] = "multi-session"
+
+@app.post("/api/reviews")
+async def create_review(request: ReviewCreateRequest):
+    """새로운 연구 회고 내러티브 생성"""
+    return review_manager.create_review(
+        title=request.title,
+        summary=request.summary,
+        linked_sessions=request.linked_sessions,
+        linked_insights=request.linked_insights,
+        key_findings=request.key_findings,
+        failure_patterns=request.failure_patterns,
+        scope=request.scope
+    )
+
+@app.put("/api/reviews/{review_id}")
+async def update_review(review_id: str, request: ReviewCreateRequest):
+    """기존 연구 회고 내러티브 업데이트"""
+    updated = review_manager.update_review(review_id, request.dict())
+    if updated:
+        return updated
+    raise HTTPException(status_code=404, detail="Review not found")
+
+@app.get("/api/reviews/synthesis")
+async def get_longitudinal_synthesis(session_ids: List[str] = Query(...)):
+    """여러 세션을 가로지르는 종단적 연구 합성 데이터 조회"""
+    journal_path = "decision_journal.json"
+    signals = []
+    if os.path.exists(journal_path):
+        with open(journal_path, "r", encoding="utf-8") as f:
+            journal_data = json.load(f)
+            signals = [s for s in journal_data if s.get("session_id") in session_ids]
+    
+    return review_manager.generate_longitudinal_summary(session_ids, signals)
+
+@app.get("/api/insights")
+async def list_insights():
+    return insight_manager.list_insights()
+
+@app.post("/api/insights")
+async def create_insight(request: InsightCreateRequest):
+    return insight_manager.create_insight(
+        title=request.title,
+        summary=request.summary,
+        linked_sessions=request.linked_sessions,
+        linked_personas=request.linked_personas,
+        supporting_signals=request.supporting_signals,
+        market_regimes=request.market_regimes,
+        failure_tags=request.failure_tags
+    )
+
+@app.get("/api/taxonomy/failures")
+async def get_failure_taxonomy():
+    return insight_manager.get_failure_taxonomy()
+
+# Research Pattern Library Endpoints
+@app.get("/api/patterns")
+async def list_patterns():
+    """모든 연구 패턴 아키타입 목록 조회"""
+    return pattern_manager.list_patterns()
+
+@app.post("/api/patterns")
+async def create_pattern(request: Dict):
+    """새로운 연구 패턴 아키타입 생성"""
+    return pattern_manager.create_pattern_archetype(
+        title=request.get("title"),
+        description=request.get("description"),
+        linked_failure_types=request.get("linked_failure_types"),
+        linked_replay_ids=request.get("linked_replay_ids"),
+        linked_personas=request.get("linked_personas")
+    )
+
+@app.get("/api/patterns/presets")
+async def get_pattern_presets():
+    """정의된 핵심 분석 패턴 아키타입 라이브러리 조회"""
+    return pattern_manager.get_pattern_library_presets()
+
+@app.get("/api/patterns/comparative")
+async def get_comparative_stats(ids: str, type: str = "persona"):
+    """페르소나 또는 장세 간의 비교 연구 데이터 조회"""
+    target_ids = ids.split(",")
+    return pattern_manager.generate_comparative_stats(target_ids, type)
+
+@app.get("/api/sessions/{session_id}/summary")
+async def get_session_summary(session_id: str):
+    # 해당 세션의 시그널 가져오기
+    journal_path = "decision_journal.json"
+    signals = []
+    if os.path.exists(journal_path):
+        with open(journal_path, "r", encoding="utf-8") as f:
+            journal_data = json.load(f)
+            signals = [s for s in journal_data if s.get("session_id") == session_id]
+    
+    return insight_manager.generate_session_summary(session_id, signals)
+
+@app.get("/api/sessions")
+async def list_sessions():
+    return session_manager.list_sessions()
+
+@app.post("/api/sessions/start")
+async def start_session(request: SessionCreateRequest):
+    session = session_manager.create_session(
+        title=request.title,
+        asset_type=request.asset_type,
+        market=request.market,
+        personas=request.personas,
+        notes=request.notes,
+        tags=request.tags
+    )
+    # 현재 활성 AutoTrader가 있다면 세션 ID 업데이트
+    if auto_trader:
+        auto_trader.session_id = session["session_id"]
+    return session
+
+@app.post("/api/sessions/stop")
+async def stop_session():
+    session = session_manager.stop_active_session()
+    if auto_trader:
+        auto_trader.session_id = None
+    return session
+
+@app.get("/api/sessions/active")
+async def get_active_session():
+    return session_manager.get_active_session()
+
+@app.post("/api/journal/bookmark/{signal_id}")
+async def bookmark_signal(signal_id: str):
+    active = session_manager.get_active_session()
+    if not active:
+        raise HTTPException(status_code=400, detail="활성 세션이 없습니다.")
+    success = session_manager.add_bookmark(active["session_id"], signal_id)
+    return {"status": "success" if success else "already_bookmarked"}
+
+@app.get("/api/personas")
+async def get_personas():
+    return persona_manager.list_personas()
+
+@app.get("/api/personas/evaluation/{persona_id}")
+async def get_persona_evaluation(persona_id: str):
+    """페르소나의 일관성 및 성과 상관관계 리포트 조회"""
+    try:
+        report = persona_evaluator.generate_full_report(persona_id)
+        return report
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/personas/evolution/{persona_id}")
+async def get_persona_evolution(persona_id: str):
+    """페르소나의 버전별/시간별 추론 드리프트 및 성과 변화 조회"""
+    try:
+        report = persona_evaluator.generate_full_report(persona_id)
+        journal = persona_evaluator._load_journal()
+        persona_signals = [s for s in journal if s.get("persona_id") == persona_id]
+        
+        drift_history = []
+        for s in persona_signals:
+            drift_history.append({
+                "timestamp": s.get("timestamp"),
+                "version": s.get("prompt_version"),
+                "drift": s.get("evaluation", {}).get("drift_score", 0),
+                "quality": s.get("evaluation", {}).get("quality_score", 0)
+            })
+            
+        report["drift_history"] = drift_history
+        return report
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/journal/similar/{signal_id}")
+async def get_similar_reasoning(signal_id: str, limit: int = 3):
+    """특정 시그널과 유사한 과거 추론 사례 조회"""
+    try:
+        similar = persona_evaluator.find_similar_reasoning(signal_id, limit)
+        return similar
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Replay Snapshot Endpoints
+@app.get("/api/replays/snapshots")
+async def list_snapshots():
+    """모든 리플레이 스냅샷 목록 조회"""
+    return snapshot_manager.list_snapshots()
+
+class SnapshotCreateRequest(BaseModel):
+    title: str
+    symbol: str
+    timestamp: str
+    signal_ids: Optional[List[str]] = []
+    notes: Optional[str] = ""
+
+@app.post("/api/replays/snapshots")
+async def create_snapshot(request: SnapshotCreateRequest):
+    """현재 리플레이 상태의 스냅샷 생성"""
+    return snapshot_manager.create_snapshot(
+        title=request.title,
+        symbol=request.symbol,
+        timestamp=request.timestamp,
+        signals=request.signal_ids,
+        notes=request.notes
+    )
+
+@app.delete("/api/replays/snapshots/{snapshot_id}")
+async def delete_snapshot(snapshot_id: str):
+    """특정 리플레이 스냅샷 삭제"""
+    success = snapshot_manager.delete_snapshot(snapshot_id)
+    if success:
+        return {"status": "success"}
+    raise HTTPException(status_code=404, detail="Snapshot not found")
+
+@app.post("/api/persona-analysis")
+async def analyze_personas(request: PersonaAnalysisRequest):
+    global market_provider
+    if not market_provider:
+        raise HTTPException(status_code=400, detail="거래소가 연결되지 않았습니다.")
+    
+    # 임시 AutoTrader 생성하여 분석 수행
+    temp_trader = AutoTrader(market_provider=market_provider, symbol=request.symbol)
+    
+    personas_to_run = []
+    if request.persona_ids:
+        for pid in request.persona_ids:
+            p = persona_manager.get_persona(pid)
+            if p:
+                personas_to_run.append(p.to_dict())
+    else:
+        # 페르소나 ID가 제공되지 않으면 전체 실행
+        personas_to_run = persona_manager.list_personas()
+        
+    if not personas_to_run:
+        raise HTTPException(status_code=400, detail="실행할 페르소나가 없습니다.")
+        
+    signals = await temp_trader.generate_persona_signals(personas_to_run)
+    return {"status": "success", "signals": signals}
+
 @app.get("/api/load-env-keys")
 async def load_env_keys(exchange: str = "binance"):
     try:
@@ -141,7 +524,7 @@ async def select_exchange(exchange_data: Dict):
 
 @app.get("/api/journal")
 async def get_decision_journal(limit: int = 100):
-    """최근 생성된 전략 시그널 및 결정 이력 조회"""
+    """최근 생성된 전략 시그널 및 결정 이력 조회 (결정론적 정렬 포함)"""
     journal_path = "decision_journal.json"
     try:
         if not os.path.exists(journal_path):
@@ -151,7 +534,12 @@ async def get_decision_journal(limit: int = 100):
             try:
                 journal_data = json.load(f)
                 if not isinstance(journal_data, list):
-                    journal_data = []
+                    return []
+                
+                # 결정론적 정렬: 타임스탬프 기준 (재현성 보장)
+                # 동일한 타임스탬프가 있을 경우 ID로 2차 정렬
+                journal_data.sort(key=lambda x: (x.get("timestamp", ""), x.get("id", "")))
+                
                 return journal_data[-limit:]
             except json.JSONDecodeError:
                 return []
@@ -207,6 +595,92 @@ async def annotate_signal(update_data: Dict):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# Research Workflow Endpoints
+@app.get("/api/workflows/presets")
+async def list_workflow_presets():
+    """모든 연구 워크플로우 프리셋 목록 조회"""
+    return workflow_manager.list_presets()
+
+@app.get("/api/workflows/presets/{preset_id}")
+async def get_workflow_preset(preset_id: str):
+    """특정 연구 워크플로우 프리셋 상세 조회"""
+    preset = workflow_manager.get_preset(preset_id)
+    if preset:
+        return preset
+    raise HTTPException(status_code=404, detail="Preset not found")
+
+# Guided Replay Walkthrough Endpoints
+@app.get("/api/walkthroughs")
+async def list_walkthroughs():
+    """모든 가이드 워크스루 목록 조회"""
+    return walkthrough_manager.list_walkthroughs()
+
+@app.get("/api/walkthroughs/presets")
+async def get_walkthrough_presets():
+    """기본 제공 가이드 워크스루 프리셋 조회"""
+    return walkthrough_manager.get_walkthrough_presets()
+
+@app.post("/api/walkthroughs")
+async def create_walkthrough(request: Dict):
+    """새로운 가이드 워크스루 생성"""
+    return walkthrough_manager.create_walkthrough(
+        title=request.get("title"),
+        description=request.get("description"),
+        steps=request.get("steps", [])
+    )
+
+@app.get("/api/walkthroughs/{walkthrough_id}")
+async def get_walkthrough(walkthrough_id: str):
+    """특정 가이드 워크스루 상세 조회"""
+    w = walkthrough_manager.get_walkthrough(walkthrough_id)
+    if w:
+        return w
+    raise HTTPException(status_code=404, detail="Walkthrough not found")
+
+@app.delete("/api/walkthroughs/{walkthrough_id}")
+async def delete_walkthrough(walkthrough_id: str):
+    """특정 가이드 워크스루 삭제"""
+    success = walkthrough_manager.delete_walkthrough(walkthrough_id)
+    if success:
+        return {"status": "success"}
+    raise HTTPException(status_code=404, detail="Walkthrough not found")
+
+# Guided Replay Walkthrough Endpoints
+@app.get("/api/walkthroughs")
+async def list_walkthroughs():
+    """모든 가이드 워크스루 목록 조회"""
+    return walkthrough_manager.list_walkthroughs()
+
+@app.get("/api/walkthroughs/presets")
+async def get_walkthrough_presets():
+    """기본 제공 가이드 워크스루 프리셋 조회"""
+    return walkthrough_manager.get_walkthrough_presets()
+
+@app.post("/api/walkthroughs")
+async def create_walkthrough(request: Dict):
+    """새로운 가이드 워크스루 생성"""
+    return walkthrough_manager.create_walkthrough(
+        title=request.get("title"),
+        description=request.get("description"),
+        steps=request.get("steps", [])
+    )
+
+@app.get("/api/walkthroughs/{walkthrough_id}")
+async def get_walkthrough(walkthrough_id: str):
+    """특정 가이드 워크스루 상세 조회"""
+    w = walkthrough_manager.get_walkthrough(walkthrough_id)
+    if w:
+        return w
+    raise HTTPException(status_code=404, detail="Walkthrough not found")
+
+@app.delete("/api/walkthroughs/{walkthrough_id}")
+async def delete_walkthrough(walkthrough_id: str):
+    """특정 가이드 워크스루 삭제"""
+    success = walkthrough_manager.delete_walkthrough(walkthrough_id)
+    if success:
+        return {"status": "success"}
+    raise HTTPException(status_code=404, detail="Walkthrough not found")
+
 async def track_outcomes():
     """시그널 생성 후 일정 시간(5m, 15m, 1h, 1d)이 지났을 때의 성과를 추적하는 백그라운드 태스크"""
     journal_path = "decision_journal.json"
@@ -220,13 +694,16 @@ async def track_outcomes():
     while True:
         try:
             if os.path.exists(journal_path):
-                with open(journal_path, "r", encoding="utf-8") as f:
-                    try:
+                journal_data = []
+                try:
+                    with open(journal_path, "r", encoding="utf-8") as f:
                         journal_data = json.load(f)
                         if not isinstance(journal_data, list):
                             journal_data = []
-                    except json.JSONDecodeError:
-                        journal_data = []
+                except (json.JSONDecodeError, Exception) as e:
+                    print(f"Outcome tracking: Error reading journal: {e}")
+                    await asyncio.sleep(60)
+                    continue
                 
                 updated = False
                 now = datetime.now()
@@ -239,14 +716,14 @@ async def track_outcomes():
                     if signal["action"] == "hold":
                         continue
                         
-                    sig_time = datetime.fromisoformat(signal["timestamp"])
-                    elapsed = (now - sig_time).total_seconds()
-                    
-                    for label, seconds in intervals.items():
-                        if elapsed >= seconds and label not in signal.get("outcomes", {}):
-                            # 해당 시점의 가격 가져오기 (시뮬레이션이므로 현재가로 근사치 기록)
-                            if market_provider:
-                                try:
+                    try:
+                        sig_time = datetime.fromisoformat(signal["timestamp"])
+                        elapsed = (now - sig_time).total_seconds()
+                        
+                        for label, seconds in intervals.items():
+                            if elapsed >= seconds and label not in signal.get("outcomes", {}):
+                                # 해당 시점의 가격 가져오기 (시뮬레이션이므로 현재가로 근사치 기록)
+                                if market_provider:
                                     ticker = await market_provider.fetch_ticker(signal["symbol"])
                                     current_price = ticker["last"]
                                     entry_price = signal["price"]
@@ -265,12 +742,15 @@ async def track_outcomes():
                                     }
                                     updated = True
                                     print(f"Outcome tracked for {signal['id']} at {label}: {pct}%")
-                                except Exception as e:
-                                    print(f"Error fetching ticker for outcome: {e}")
+                    except Exception as e:
+                        print(f"Error tracking signal outcome: {e}")
                 
                 if updated:
-                    with open(journal_path, "w", encoding="utf-8") as f:
-                        json.dump(journal_data, f, ensure_ascii=False, indent=2)
+                    try:
+                        with open(journal_path, "w", encoding="utf-8") as f:
+                            json.dump(journal_data, f, ensure_ascii=False, indent=2)
+                    except Exception as e:
+                        print(f"Error saving updated journal: {e}")
                         
         except Exception as e:
             print(f"Outcome tracking task error: {e}")
@@ -279,11 +759,16 @@ async def track_outcomes():
 
 @app.on_event("startup")
 async def startup_event():
+    # 데이터 무결성 초기 검사 및 누락 파일 복구
+    report = reliability_manager.validate_integrity()
+    print(f"Startup Reliability Report: {report['status']}")
+    
+    # 백그라운드 태스크 시작
     asyncio.create_task(track_outcomes())
 
 @app.get("/api/strategy/stats")
-async def get_strategy_stats():
-    """전략별 상세 성과 및 Outcome 기반 통계 조회"""
+async def get_strategy_stats(session_id: Optional[str] = None):
+    """전략 및 페르소나별 상세 성과 및 Outcome 기반 통계 조회"""
     journal_path = "decision_journal.json"
     try:
         if not os.path.exists(journal_path):
@@ -299,11 +784,21 @@ async def get_strategy_stats():
             
         stats = {}
         for signal in journal_data:
-            if not isinstance(signal, dict) or "strategy_name" not in signal:
+            if not isinstance(signal, dict):
                 continue
-            strat = signal["strategy_name"]
-            if strat not in stats:
-                stats[strat] = {
+            
+            # 세션 필터링
+            if session_id and signal.get("session_id") != session_id:
+                continue
+                
+            strat = signal.get("strategy_name", "unknown")
+            persona = signal.get("persona_id", "default")
+            
+            # Key can be strategy or persona
+            key = f"{persona} ({strat})"
+            
+            if key not in stats:
+                stats[key] = {
                     "total": 0, 
                     "buy": 0, 
                     "sell": 0, 
@@ -311,16 +806,18 @@ async def get_strategy_stats():
                     "outcomes_count": 0,
                     "total_return_5m": 0,
                     "wins_5m": 0,
-                    "losses_5m": 0
+                    "losses_5m": 0,
+                    "persona_id": persona,
+                    "strategy_name": strat
                 }
             
-            s = stats[strat]
+            s = stats[key]
             s["total"] += 1
-            if signal["action"] == "buy":
+            if signal.get("action") == "buy":
                 s["buy"] += 1
-            elif signal["action"] == "sell":
+            elif signal.get("action") == "sell":
                 s["sell"] += 1
-            elif signal["action"] == "hold":
+            elif signal.get("action") == "hold":
                 s["hold"] += 1
                 
             # Outcome 기반 통계 (5분 기준 샘플)
@@ -332,7 +829,7 @@ async def get_strategy_stats():
                 elif ret < 0: s["losses_5m"] += 1
         
         # 가공
-        for strat, data in stats.items():
+        for key, data in stats.items():
             if data["outcomes_count"] > 0:
                 data["avg_return_5m"] = round(data["total_return_5m"] / data["outcomes_count"], 4)
                 data["win_rate_5m"] = round(data["wins_5m"] / data["outcomes_count"] * 100, 2)

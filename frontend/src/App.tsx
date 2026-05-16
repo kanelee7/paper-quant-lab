@@ -12,12 +12,16 @@ import {
   IconButton,
   Flex,
   Heading,
-  Select,
-  ChakraProvider,
   Input,
   HStack,
-} from '@chakra-ui/react';
-import { SunIcon, MoonIcon } from '@chakra-ui/icons';
+  useDisclosure,
+  Collapse,
+  ChakraProvider,
+  Divider,
+  Icon,
+  } from '@chakra-ui/react';
+
+import { SunIcon, MoonIcon, ChevronUpIcon, ChevronDownIcon } from '@chakra-ui/icons';
 import OrderBook from './components/OrderBook';
 import TradeHistory from './components/TradeHistory';
 import TradingForm from './components/TradingForm';
@@ -28,9 +32,50 @@ import RepeatTrading from './components/RepeatTrading';
 import SignalJournal from './components/SignalJournal';
 import PerformanceMetrics from './components/PerformanceMetrics';
 import QuantInsights from './components/QuantInsights';
+import PersonaSandbox from './components/PersonaSandbox';
+import ResearchSessionManager from './components/ResearchSessionManager';
+import ResearchKnowledgeBase from './components/ResearchKnowledgeBase';
+import ReliabilityDashboard from './components/ReliabilityDashboard';
+import ResearchArchiveManager from './components/ResearchArchiveManager';
+import ResearchReviewBoard from './components/ResearchReviewBoard';
+import ResearchWorkflowGuide from './components/ResearchWorkflowGuide';
+import ComparativeStudyBoard from './components/ComparativeStudyBoard';
+import ReplayTimeline from './components/ReplayTimeline';
+import ReplaySnapshotManager from './components/ReplaySnapshotManager';
+import GuidedWalkthrough from './components/GuidedWalkthrough';
+import Landing from './pages/Landing';
+import Vision from './pages/Vision';
+import Philosophy from './pages/Philosophy';
+
+const SidebarSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean }> = ({ title, children, defaultOpen = true }) => {
+  const { isOpen, onToggle } = useDisclosure({ defaultIsOpen: defaultOpen });
+  return (
+    <VStack align="stretch" spacing={2} bg="blackAlpha.200" p={2} borderRadius="md" borderWidth="1px" borderColor="ui.border">
+      <HStack 
+        justifyContent="space-between" 
+        cursor="pointer" 
+        onClick={onToggle}
+        px={1}
+      >
+        <Text fontSize="10px" fontWeight="800" color="ui.muted" letterSpacing="0.1em">{title}</Text>
+        <IconButton 
+            size="2xs" 
+            variant="ghost" 
+            icon={isOpen ? <ChevronUpIcon w={3} h={3} /> : <ChevronDownIcon w={3} h={3} />} 
+            aria-label="Toggle Section" 
+        />
+      </HStack>
+      <Collapse in={isOpen}>
+        <VStack align="stretch" spacing={4} pt={2}>
+          {children}
+        </VStack>
+      </Collapse>
+    </VStack>
+  );
+};
 
 const App: React.FC = () => {
-  const [settingsUpdated, setSettingsUpdated] = useState(0);
+  const [currentPage, setCurrentPage] = useState<'LANDING' | 'VISION' | 'PHILOSOPHY' | 'WORKSTATION'>('LANDING');
   const [isTrading, setIsTrading] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [selectedExchange, setSelectedExchange] = useState('binance');
@@ -40,424 +85,224 @@ const App: React.FC = () => {
   const [showApiInput, setShowApiInput] = useState(false);
   const [isDeveloperMode, setIsDeveloperMode] = useState(false);
   const [testMode, setTestMode] = useState(true);
+  const [workspaceMode, setWorkspaceMode] = useState<'RESEARCH' | 'REVIEW' | 'TRAINING'>('RESEARCH');
+  
   const toast = useToast();
   const { colorMode, toggleColorMode } = useColorMode();
-  const bgColor = useColorModeValue('gray.50', 'gray.900');
-  const cardBg = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
+  const bgColor = useColorModeValue('gray.50', 'background.deep');
+  const cardBg = useColorModeValue('white', 'background.surface');
+  const borderColor = useColorModeValue('gray.200', 'ui.border');
 
-  const handleSettingsUpdate = () => {
-    setSettingsUpdated(prev => prev + 1);
+  const handleLaunchWorkstation = () => {
+    setCurrentPage('WORKSTATION');
+  };
+
+  const handleNavigate = (page: 'VISION' | 'PHILOSOPHY') => {
+    setCurrentPage(page);
+  };
+
+  const handleBackToLanding = () => {
+    setCurrentPage('LANDING');
+  };
+
+  const handleFocusSignal = (signal: any) => {
+    const event = new CustomEvent('focus-chart', {
+      detail: { timestamp: new Date(signal.timestamp).getTime() }
+    });
+    window.dispatchEvent(event);
   };
 
   const handleStartTrading = async () => {
     try {
       const response = await fetch('http://localhost:8000/auto-trading/start', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          symbol: selectedSymbol,
-          strategy: 'price_change',
-          interval: 60,
-          test_mode: testMode,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ symbol: selectedSymbol, strategy: 'price_change', interval: 60, test_mode: testMode }),
       });
-
       const data = await response.json();
       if (data.status === 'success') {
         setIsTrading(true);
-        toast({
-          title: '자동 매매 시작',
-          description: data.message,
-          status: 'success',
-          duration: 3000,
-          isClosable: true,
-        });
-      } else {
-        toast({
-          title: '자동 매매 시작 실패',
-          description: data.message,
-          status: 'error',
-          duration: 3000,
-          isClosable: true,
-        });
+        toast({ title: 'Simulation Started', status: 'success' });
       }
-    } catch (error) {
-      toast({
-        title: '자동 매매 시작 오류',
-        description: '서버에 연결할 수 없습니다.',
-        status: 'error',
-        duration: 3000,
-        isClosable: true,
-      });
-    }
+    } catch (e) {}
   };
 
   const handleStopTrading = async () => {
     try {
-      const response = await fetch('http://localhost:8000/auto-trading/stop', {
-        method: 'POST',
-      });
-
+      const response = await fetch('http://localhost:8000/auto-trading/stop', { method: 'POST' });
       const data = await response.json();
       if (data.status === 'success') {
         setIsTrading(false);
-        toast({
-          title: '자동 매매 중지',
-          description: data.message,
-          status: 'success',
-          duration: 3000,
-          isClosable: true,
-        });
-      } else {
-        toast({
-          title: '자동 매매 중지 실패',
-          description: data.message,
-          status: 'error',
-          duration: 3000,
-          isClosable: true,
-        });
+        toast({ title: 'Simulation Stopped', status: 'info' });
       }
-    } catch (error) {
-      toast({
-        title: '자동 매매 중지 오류',
-        description: '서버에 연결할 수 없습니다.',
-        status: 'error',
-        duration: 3000,
-        isClosable: true,
-      });
-    }
+    } catch (e) {}
   };
 
   const handleConnect = async () => {
     try {
       const response = await fetch('http://localhost:8000/select-exchange', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          exchange: selectedExchange,
-          api_key: apiKey,
-          secret: secretKey,
-          test_mode: testMode,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ exchange: selectedExchange, api_key: apiKey, secret: secretKey, test_mode: testMode }),
       });
-
       const data = await response.json();
       if (data.status === 'success') {
         setIsConnected(true);
         setShowApiInput(false);
-        toast({
-          title: '거래소 연결 성공',
-          description: data.message,
-          status: 'success',
-          duration: 3000,
-          isClosable: true,
-        });
-      } else {
-        toast({
-          title: '거래소 연결 실패',
-          description: data.message,
-          status: 'error',
-          duration: 3000,
-          isClosable: true,
-        });
+        toast({ title: 'Market Connected', status: 'success' });
       }
-    } catch (error) {
-      toast({
-        title: '거래소 연결 실패',
-        description: '서버에 연결할 수 없습니다.',
-        status: 'error',
-        duration: 3000,
-        isClosable: true,
-      });
-    }
+    } catch (e) {}
   };
 
   const handleDisconnect = async () => {
     try {
-      const response = await fetch('http://localhost:8000/disconnect', {
-        method: 'POST',
-      });
-
+      const response = await fetch('http://localhost:8000/disconnect', { method: 'POST' });
       const data = await response.json();
       if (data.status === 'success') {
         setIsConnected(false);
-        setApiKey('');
-        setSecretKey('');
-        toast({
-          title: '거래소 연결 해제',
-          description: data.message,
-          status: 'info',
-          duration: 3000,
-          isClosable: true,
-        });
+        toast({ title: 'Market Disconnected', status: 'info' });
       }
-    } catch (error) {
-      toast({
-        title: '거래소 연결 해제 실패',
-        description: '서버에 연결할 수 없습니다.',
-        status: 'error',
-        duration: 3000,
-        isClosable: true,
-      });
-    }
+    } catch (e) {}
   };
 
-  const handleTestConnection = async () => {
-    try {
-      const response = await fetch('http://localhost:8000/test-connection', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          exchange: selectedExchange,
-          api_key: apiKey,
-          secret: secretKey,
-        }),
-      });
+  if (currentPage === 'LANDING') {
+    return (
+      <ChakraProvider theme={theme}>
+        <Landing onLaunch={handleLaunchWorkstation} onNavigate={handleNavigate} />
+      </ChakraProvider>
+    );
+  }
 
-      const data = await response.json();
-      if (data.status === 'success') {
-        toast({
-          title: 'API 연결 테스트 성공',
-          description: data.message,
-          status: 'success',
-          duration: 3000,
-          isClosable: true,
-        });
-      } else {
-        toast({
-          title: 'API 연결 테스트 실패',
-          description: data.message,
-          status: 'error',
-          duration: 3000,
-          isClosable: true,
-        });
-      }
-    } catch (error) {
-      toast({
-        title: 'API 연결 테스트 실패',
-        description: '서버에 연결할 수 없습니다.',
-        status: 'error',
-        duration: 3000,
-        isClosable: true,
-      });
-    }
-  };
+  if (currentPage === 'VISION') {
+    return (
+      <ChakraProvider theme={theme}>
+        <Vision onBack={handleBackToLanding} />
+      </ChakraProvider>
+    );
+  }
 
-  const handleLoadEnvKeys = async () => {
-    try {
-      const response = await fetch(`http://localhost:8000/api/load-env-keys?exchange=${selectedExchange}`, {
-        method: 'GET',
-      });
-
-      const data = await response.json();
-      if (data.status === 'success') {
-        setApiKey(data.api_key || '');
-        setSecretKey(data.secret_key || '');
-        toast({
-          title: 'API 키 로드 성공',
-          description: '.env 파일에서 API 키를 불러왔습니다.',
-          status: 'success',
-          duration: 3000,
-          isClosable: true,
-        });
-      } else {
-        toast({
-          title: 'API 키 로드 실패',
-          description: data.message,
-          status: 'error',
-          duration: 3000,
-          isClosable: true,
-        });
-      }
-    } catch (error) {
-      toast({
-        title: 'API 키 로드 실패',
-        description: '서버에 연결할 수 없습니다.',
-        status: 'error',
-        duration: 3000,
-        isClosable: true,
-      });
-    }
-  };
-
-  const toggleDeveloperMode = () => {
-    setIsDeveloperMode(!isDeveloperMode);
-  };
+  if (currentPage === 'PHILOSOPHY') {
+    return (
+      <ChakraProvider theme={theme}>
+        <Philosophy onBack={handleBackToLanding} />
+      </ChakraProvider>
+    );
+  }
 
   return (
     <ChakraProvider theme={theme}>
       <Box minH="100vh" bg={bgColor}>
-        <Container maxW="container.xl" py={4}>
-          <VStack spacing={4} align="stretch">
-            <Flex justifyContent="space-between" alignItems="center" mb={4}>
-              <Heading size="lg">TRADING BOT</Heading>
-              <HStack>
-                <IconButton
-                  aria-label="Toggle color mode"
-                  icon={colorMode === 'light' ? <MoonIcon /> : <SunIcon />}
-                  onClick={toggleColorMode}
-                />
-                <Button
-                  size="sm"
-                  onClick={() => setIsDeveloperMode(!isDeveloperMode)}
-                  colorScheme={isDeveloperMode ? 'blue' : 'gray'}
-                >
-                  {isDeveloperMode ? '개발자 모드 ON' : '개발자 모드 OFF'}
-                </Button>
-              </HStack>
-            </Flex>
+        <Box borderBottom="1px" borderColor={borderColor} bg="background.surface" position="sticky" top={0} zIndex={10} boxShadow="sm">
+            <Container maxW="container.2xl" py={2}>
+                <Flex justifyContent="space-between" alignItems="center">
+                <HStack spacing={6}>
+                    <HStack spacing={2} cursor="pointer" onClick={handleBackToLanding}>
+                        <Box w={2} h={2} bg="brand.500" borderRadius="full" />
+                        <Heading size="sm" letterSpacing="tight">PaperQuantLab</Heading>
+                    </HStack>
+                    <Divider orientation="vertical" h="16px" borderColor="ui.border" />
+                    <HStack bg="blackAlpha.400" p={0.5} borderRadius="sm" borderWidth="1px" borderColor="ui.border">
+                        <Button size="2xs" variant={workspaceMode === 'RESEARCH' ? 'solid' : 'ghost'} colorScheme={workspaceMode === 'RESEARCH' ? 'brand' : 'gray'} onClick={() => setWorkspaceMode('RESEARCH')}>Research</Button>
+                        <Button size="2xs" variant={workspaceMode === 'REVIEW' ? 'solid' : 'ghost'} colorScheme={workspaceMode === 'REVIEW' ? 'pink' : 'gray'} onClick={() => setWorkspaceMode('REVIEW')}>Review</Button>
+                        <Button size="2xs" variant={workspaceMode === 'TRAINING' ? 'solid' : 'ghost'} colorScheme={workspaceMode === 'TRAINING' ? 'green' : 'gray'} onClick={() => setWorkspaceMode('TRAINING')}>Training</Button>
+                    </HStack>
+                </HStack>
+                <HStack spacing={4}>
+                    <IconButton aria-label="Toggle color mode" size="xs" variant="ghost" icon={colorMode === 'light' ? <MoonIcon /> : <SunIcon />} onClick={toggleColorMode} />
+                    <Button size="xs" onClick={() => setIsDeveloperMode(!isDeveloperMode)} colorScheme={isDeveloperMode ? 'brand' : 'gray'} variant="ghost" fontSize="10px" fontWeight="800">
+                        {isDeveloperMode ? 'DEV MODE' : 'USER MODE'}
+                    </Button>
+                </HStack>
+                </Flex>
+            </Container>
+        </Box>
 
-            <Grid
-              templateColumns={{ base: "1fr", lg: "1fr 300px" }}
-              gap={4}
-            >
-              <Box>
-                <Grid
-                  templateColumns={{ base: "1fr", xl: "1fr 300px" }}
-                  gap={4}
-                  mb={4}
-                >
-                  <Box
-                    p={4}
-                    borderRadius="lg"
-                    bg={cardBg}
-                    borderWidth="1px"
-                    borderColor={borderColor}
-                    height="600px"
-                    overflow="hidden"
-                  >
-                    <Box h="100%" w="100%">
-                      <PriceChart
-                        symbol={selectedSymbol}
-                        onSymbolChange={setSelectedSymbol}
-                      />
-                    </Box>
+        <Container maxW="container.2xl" py={4}>
+          <Grid templateColumns={{ base: "1fr", lg: "1fr 360px" }} gap={6}>
+            <Box>
+              <VStack spacing={6} align="stretch">
+                <Grid templateColumns={workspaceMode === 'REVIEW' ? { base: "1fr", xl: "1fr 1fr" } : { base: "1fr", xl: "1fr 320px" }} gap={4}>
+                  <Box borderRadius="md" bg={cardBg} borderWidth="1px" borderColor={borderColor} height="600px" overflow="hidden" boxShadow="panel">
+                    <PriceChart symbol={selectedSymbol} onSymbolChange={setSelectedSymbol} />
                   </Box>
-                  <VStack spacing={4} maxH="600px">
-                    <Box
-                      p={4}
-                      borderRadius="lg"
-                      bg={cardBg}
-                      borderWidth="1px"
-                      borderColor={borderColor}
-                      w="100%"
-                      h="300px"
-                      overflow="auto"
-                      css={{
-                        '&::-webkit-scrollbar': {
-                          width: '4px',
-                        },
-                        '&::-webkit-scrollbar-track': {
-                          width: '6px',
-                        },
-                        '&::-webkit-scrollbar-thumb': {
-                          background: borderColor,
-                          borderRadius: '24px',
-                        },
-                      }}
-                    >
-                      <OrderBook symbol={selectedSymbol} />
-                    </Box>
-                    <Box
-                      p={4}
-                      borderRadius="lg"
-                      bg={cardBg}
-                      borderWidth="1px"
-                      borderColor={borderColor}
-                      w="100%"
-                      h="300px"
-                      overflow="auto"
-                      css={{
-                        '&::-webkit-scrollbar': {
-                          width: '4px',
-                        },
-                        '&::-webkit-scrollbar-track': {
-                          width: '6px',
-                        },
-                        '&::-webkit-scrollbar-thumb': {
-                          background: borderColor,
-                          borderRadius: '24px',
-                        },
-                      }}
-                    >
-                      <TradeHistory trades={[]} />
-                    </Box>
-                  </VStack>
+                  
+                  {workspaceMode === 'REVIEW' ? (
+                      <Box borderRadius="md" bg={cardBg} borderWidth="1px" borderColor={borderColor} height="600px" overflow="hidden" boxShadow="panel">
+                         <PriceChart symbol="ETH/USDT" onSymbolChange={() => {}} />
+                      </Box>
+                  ) : (
+                    <VStack spacing={4}>
+                        <Box p={4} borderRadius="md" bg={cardBg} borderWidth="1px" borderColor={borderColor} w="100%" h="290px" overflow="auto" boxShadow="panel">
+                        <OrderBook symbol={selectedSymbol} />
+                        </Box>
+                        <Box p={4} borderRadius="md" bg={cardBg} borderWidth="1px" borderColor={borderColor} w="100%" h="290px" overflow="auto" boxShadow="panel">
+                        <TradeHistory trades={[]} />
+                        </Box>
+                    </VStack>
+                  )}
                 </Grid>
-                <Box
-                  p={4}
-                  borderRadius="lg"
-                  bg={cardBg}
-                  borderWidth="1px"
-                  borderColor={borderColor}
-                  mb={4}
-                >
-                  <TradingForm
-                    isTrading={isTrading}
-                    onStartTrading={handleStartTrading}
-                    onStopTrading={handleStopTrading}
-                    symbol={selectedSymbol}
-                    onSymbolChange={setSelectedSymbol}
-                  />
-                </Box>
-                <Box
-                  p={4}
-                  borderRadius="lg"
-                  bg={cardBg}
-                  borderWidth="1px"
-                  borderColor={borderColor}
-                >
-                  <RepeatTrading isConnected={isConnected} />
-                </Box>
-              </Box>
-              
-              <Box>
-                <VStack spacing={4} align="stretch">
-                  <Box
-                    p={4}
-                    borderRadius="lg"
-                    bg={cardBg}
-                    borderWidth="1px"
-                    borderColor={borderColor}
-                  >
-                    <ExchangeSettings
-                      selectedExchange={selectedExchange}
-                      setSelectedExchange={setSelectedExchange}
-                      apiKey={apiKey}
-                      setApiKey={setApiKey}
-                      secretKey={secretKey}
-                      setSecretKey={setSecretKey}
-                      showApiInput={showApiInput}
-                      setShowApiInput={setShowApiInput}
-                      isConnected={isConnected}
-                      onConnect={handleConnect}
-                      onDisconnect={handleDisconnect}
-                      onTestConnection={handleTestConnection}
-                      onLoadEnvKeys={handleLoadEnvKeys}
-                      onSettingsUpdate={handleSettingsUpdate}
-                      isDeveloperMode={isDeveloperMode}
-                      testMode={testMode}
-                      setTestMode={setTestMode}
-                    />
+
+                <ReplayTimeline symbol={selectedSymbol} onFocusSignal={handleFocusSignal} />
+                
+                {workspaceMode !== 'REVIEW' && (
+                  <Box p={4} borderRadius="md" bg={cardBg} borderWidth="1px" borderColor={borderColor} boxShadow="panel">
+                    <TradingForm isTrading={isTrading} onStartTrading={handleStartTrading} onStopTrading={handleStopTrading} symbol={selectedSymbol} onSymbolChange={setSelectedSymbol} />
                   </Box>
-                  <PerformanceMetrics />
-                  <QuantInsights />
-                  <SignalJournal />
-                </VStack>
-              </Box>
-            </Grid>
-          </VStack>
+                )}
+                {workspaceMode === 'RESEARCH' && (
+                  <Box p={4} borderRadius="md" bg={cardBg} borderWidth="1px" borderColor={borderColor} boxShadow="panel">
+                    <RepeatTrading isConnected={isConnected} />
+                  </Box>
+                )}
+                <SignalJournal workspaceMode={workspaceMode} />
+              </VStack>
+            </Box>
+            
+            <Box>
+              <VStack spacing={6} align="stretch">
+                <SidebarSection title="RESEARCH GUIDANCE">
+                    <VStack spacing={4} align="stretch">
+                      <ResearchWorkflowGuide onModeChange={setWorkspaceMode} />
+                      <GuidedWalkthrough workspaceMode={workspaceMode} />
+                    </VStack>
+                </SidebarSection>
+
+                {workspaceMode !== 'REVIEW' && (
+                  <SidebarSection title="ACTIVE EXPERIMENTATION">
+                      <Box p={4} borderRadius="md" bg="blackAlpha.300" borderWidth="1px" borderColor="ui.border">
+                        <ExchangeSettings selectedExchange={selectedExchange} setSelectedExchange={setSelectedExchange} apiKey={apiKey} setApiKey={setApiKey} secretKey={secretKey} setSecretKey={setSecretKey} showApiInput={showApiInput} setShowApiInput={setShowApiInput} isConnected={isConnected} onConnect={handleConnect} onDisconnect={handleDisconnect} onTestConnection={async () => {}} onLoadEnvKeys={async () => {}} onSettingsUpdate={() => {}} isDeveloperMode={isDeveloperMode} testMode={testMode} setTestMode={setTestMode} />
+                      </Box>
+                      <ResearchSessionManager />
+                      <PersonaSandbox symbol={selectedSymbol} workspaceMode={workspaceMode} />
+                  </SidebarSection>
+                )}
+                <SidebarSection title="RESEARCH KNOWLEDGE">
+                    <VStack spacing={4} align="stretch">
+                        <ResearchKnowledgeBase />
+                        <ResearchReviewBoard />
+                        <ComparativeStudyBoard />
+                        <QuantInsights />
+                    </VStack>
+                </SidebarSection>
+                <SidebarSection title="REPLAY & RELIABILITY" defaultOpen={workspaceMode === 'REVIEW'}>
+                    <VStack spacing={4} align="stretch">
+                      <ReplaySnapshotManager symbol={selectedSymbol} />
+                      <ReliabilityDashboard />
+                      {workspaceMode === 'RESEARCH' && (
+                          <>
+                            <ResearchArchiveManager />
+                            <PerformanceMetrics />
+                          </>
+                      )}
+                    </VStack>
+                </SidebarSection>
+              </VStack>
+            </Box>
+          </Grid>
         </Container>
       </Box>
     </ChakraProvider>
   );
 };
 
-export default App; 
+export default App;
