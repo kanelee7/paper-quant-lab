@@ -35,19 +35,20 @@ import {
   PopoverBody,
   PopoverArrow,
   Progress,
-} from '@chakra-ui/react';
-import { 
-  ViewIcon, 
-  SearchIcon, 
-  StarIcon, 
-  InfoIcon, 
+  Avatar,
+  } from '@chakra-ui/react';
+  import {
+  ViewIcon,
+  SearchIcon,
+  StarIcon,
+  InfoIcon,
   QuestionOutlineIcon,
   WarningIcon,
   RepeatIcon,
-} from '@chakra-ui/icons';
+  } from '@chakra-ui/icons';
+  import ResearchCommentary from './ResearchCommentary';
 
-interface Signal {
-  id: string;
+  interface Signal {  id: string;
   timestamp: string;
   symbol: string;
   action: 'buy' | 'sell' | 'hold';
@@ -593,6 +594,9 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
                     Save Qualitative Audit
                   </Button>
                 </Box>
+
+                {/* Collaborative Research Commentary Layer */}
+                <ResearchCommentary signal_id={selectedSignal.id} />
 
                 {/* Research Reflections / Critique Layer */}
                 <Box p={3} bg="blue.900" borderRadius="md" borderLeft="4px solid" borderColor="blue.400">

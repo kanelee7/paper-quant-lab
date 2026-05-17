@@ -21,6 +21,8 @@ This file contains concise implementation rules for **PaperQuantLab**, a multi-a
 16. **Workstation Productization & Visual Design**: Maintain a premium, high-density technical aesthetic. Follow the PaperQuantLab design system (Charcoal/Old-Gold) to ensure a cohesive and calm research environment. Prioritize information hierarchy and evidence visibility across all workstation components.
 17. **Interactive Replay & Exploration**: Enable dynamic evidence exploration through interactive replay tools. Use the `ReplayTimeline` for temporal navigation, implement side-by-side comparison workspaces, and support `ReplaySnapshots` to preserve specific analytical moments for longitudinal review.
 18. **Knowledge Experience & Guided Interpretation**: Transform accumulated research data into guided understanding. Use `GuidedWalkthroughs` to narrate analytical stories, implement progressive disclosure to manage workstation complexity, and provide critique reflection prompts to support deep human interpretation.
+19. **Onboarding & Workstation Continuity**: Prioritize researcher orientation and sustained usability. Implement structured onboarding, learning paths, and session continuity systems (e.g., recent context memory) to support long-term analytical operating cycles.
+20. **Collaborative Evidence Continuity**: Facilitate multi-researcher collaboration through shared research packages and evidence-linked commentary. Ensure all shared interpretations preserve provenance metadata and remain deterministic during replay across different workstations.
 
 ## Product Positioning
 PaperQuantLab is a **local-first human-centered AI reasoning research workstation**. 
@@ -29,14 +31,17 @@ PaperQuantLab is a **local-first human-centered AI reasoning research workstatio
 - It is a **structured experimentation engine** supporting repeatable research workflows.
 - It is an **interactive analytical laboratory** for temporal market research.
 - It is a **guided knowledge experience** for internalizing longitudinal research findings.
+- It is a **cohesive analytical operating environment** for sustained research productivity.
+- It is a **shared research environment** built on absolute evidence continuity and deterministic replay.
 - It is **simulation-only** and does not support autonomous financial decision authority.
 
-## Phase 19: Research Knowledge Experience & Guided Interpretation
-- **Guided Replay Walkthroughs**: Implement the `WalkthroughManager` and `GuidedWalkthrough` UI to narrate structured research stories across historical evidence.
-- **Progressive Disclosure**: Manage workstation density through context-aware detail expansion and simplified training interfaces.
-- **Analytical Teaching Layers**: Extend Training Mode with guided interpretation cards, reflection prompts, and analytical challenges.
-- **Knowledge Navigation**: Enable lightweight relationship exploration between patterns, insights, and replay cases.
-- **Critique & Reflection**: Introduce heuristic-based research prompts to guide human critique of AI reasoning behavior.
+## Phase 21: Multi-Researcher Collaboration Foundations & Shared Analytical Context
+- **Shared Research Packages**: Implement workflows for exporting and importing bounded research studies with replay-linked evidence.
+- **Collaborative Commentary Layer**: Introduce evidence-linked discussion threads and interpretation notes attached to specific replay moments.
+- **Comparative Review Workspaces**: Enable side-by-side comparison of differing researcher annotations, narratives, and conclusions.
+- **Shared Pattern Libraries**: Allow for the exchange of research archetypes and failure taxonomies with full source attribution and provenance.
+- **Governance for Shared Context**: Extend data validation to handle imported evidence, surfacing contradictions or provenance conflicts.
+- **Subtle Presence & Metadata**: Introduce lightweight awareness of shared or external research contexts within the workstation UX.
 
 ## References
 - **Project Identity**: See `/docs/VISION.md`

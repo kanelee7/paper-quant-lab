@@ -83,6 +83,23 @@ const ResearchArchiveManager: React.FC = () => {
     }
   };
 
+  const handleImport = async () => {
+    if (!selectedArchive) return;
+    try {
+      const response = await fetch(`http://localhost:8000/api/archives/${selectedArchive.archive_id}/import?mode=${importMode}`, {
+        method: 'POST'
+      });
+      if (response.ok) {
+        toast({ title: 'Research State Restored', description: `Successfully imported ${selectedArchive.title}`, status: 'success' });
+        onDetailClose();
+        // Refresh page or trigger global data refresh
+        window.location.reload();
+      }
+    } catch (error) {
+      toast({ title: 'Restoration Failed', status: 'error' });
+    }
+  };
+
   return (
     <Box bg="background.surface" borderRadius="lg" p={4} borderWidth="1px" borderColor="ui.border" shadow="sm">
       <HStack justifyContent="space-between" mb={4}>
@@ -210,11 +227,11 @@ const ResearchArchiveManager: React.FC = () => {
                         size="xs" 
                         colorScheme="brand" 
                         leftIcon={<AttachmentIcon />}
-                        isDisabled
+                        onClick={handleImport}
                         fontWeight="800"
                         letterSpacing="widest"
                     >
-                        APPLY TO LIVE RESEARCH (LOCKED)
+                        APPLY TO LIVE RESEARCH
                     </Button>
                 </Box>
               </VStack>

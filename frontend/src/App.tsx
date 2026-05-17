@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Container,
@@ -28,19 +28,26 @@ import ExchangeSettings from './components/ExchangeSettings';
 import theme from './theme';
 import RepeatTrading from './components/RepeatTrading';
 import SignalJournal from './components/SignalJournal';
+import ResearchJournal from './components/ResearchJournal';
 import PerformanceMetrics from './components/PerformanceMetrics';
 import QuantInsights from './components/QuantInsights';
 import PersonaSandbox from './components/PersonaSandbox';
 import ResearchSessionManager from './components/ResearchSessionManager';
 import ResearchKnowledgeBase from './components/ResearchKnowledgeBase';
+import ResearchDiscovery from './components/ResearchDiscovery';
+import ResearchCommentary from './components/ResearchCommentary';
 import ReliabilityDashboard from './components/ReliabilityDashboard';
+import CollaborativeGovernance from './components/CollaborativeGovernance';
 import ResearchArchiveManager from './components/ResearchArchiveManager';
 import ResearchReviewBoard from './components/ResearchReviewBoard';
 import ResearchWorkflowGuide from './components/ResearchWorkflowGuide';
 import ComparativeStudyBoard from './components/ComparativeStudyBoard';
+import MultiPerspectiveReview from './components/MultiPerspectiveReview';
 import ReplayTimeline from './components/ReplayTimeline';
 import ReplaySnapshotManager from './components/ReplaySnapshotManager';
 import GuidedWalkthrough from './components/GuidedWalkthrough';
+import WorkspaceOnboarding from './components/WorkspaceOnboarding';
+import LearningPathManager from './components/LearningPathManager';
 import Landing from './pages/Landing';
 import Vision from './pages/Vision';
 import Philosophy from './pages/Philosophy';
@@ -73,23 +80,48 @@ const SidebarSection: React.FC<{ title: string; children: React.ReactNode; defau
 };
 
 const App: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState<'LANDING' | 'VISION' | 'PHILOSOPHY' | 'WORKSTATION'>('LANDING');
+  const [currentPage, setCurrentPage] = React.useState<'LANDING' | 'VISION' | 'PHILOSOPHY' | 'WORKSTATION'>(() => {
+    return (localStorage.getItem('pql_current_page') as any) || 'LANDING';
+  });
   const [isTrading, setIsTrading] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
-  const [selectedExchange, setSelectedExchange] = useState('binance');
-  const [selectedSymbol, setSelectedSymbol] = useState('BTC/USDT');
+  const [selectedExchange, setSelectedExchange] = useState(() => {
+    return localStorage.getItem('pql_selected_exchange') || 'binance';
+  });
+  const [selectedSymbol, setSelectedSymbol] = useState(() => {
+    return localStorage.getItem('pql_selected_symbol') || 'BTC/USDT';
+  });
   const [apiKey, setApiKey] = useState('');
   const [secretKey, setSecretKey] = useState('');
   const [showApiInput, setShowApiInput] = useState(false);
   const [isDeveloperMode, setIsDeveloperMode] = useState(false);
   const [testMode, setTestMode] = useState(true);
-  const [workspaceMode, setWorkspaceMode] = useState<'RESEARCH' | 'REVIEW' | 'TRAINING'>('RESEARCH');
+  const [workspaceMode, setWorkspaceMode] = useState<'RESEARCH' | 'REVIEW' | 'TRAINING'>(() => {
+    return (localStorage.getItem('pql_workspace_mode') as any) || 'RESEARCH';
+  });
   
   const toast = useToast();
   const { colorMode, toggleColorMode } = useColorMode();
   const bgColor = useColorModeValue('gray.50', 'background.deep');
   const cardBg = useColorModeValue('white', 'background.surface');
   const borderColor = useColorModeValue('gray.200', 'ui.border');
+
+  // Continuity Persistence
+  useEffect(() => {
+    localStorage.setItem('pql_current_page', currentPage);
+  }, [currentPage]);
+
+  useEffect(() => {
+    localStorage.setItem('pql_selected_exchange', selectedExchange);
+  }, [selectedExchange]);
+
+  useEffect(() => {
+    localStorage.setItem('pql_selected_symbol', selectedSymbol);
+  }, [selectedSymbol]);
+
+  useEffect(() => {
+    localStorage.setItem('pql_workspace_mode', workspaceMode);
+  }, [workspaceMode]);
 
   const handleLaunchWorkstation = () => {
     setCurrentPage('WORKSTATION');
@@ -189,6 +221,7 @@ const App: React.FC = () => {
 
   return (
     <ChakraProvider theme={theme}>
+      <WorkspaceOnboarding />
       <Box minH="100vh" bg={bgColor}>
         <Box borderBottom="1px" borderColor={borderColor} bg="background.surface" position="sticky" top={0} zIndex={10} boxShadow="sm">
             <Container maxW="container.2xl" py={2}>
@@ -253,6 +286,7 @@ const App: React.FC = () => {
                   </Box>
                 )}
                 <SignalJournal workspaceMode={workspaceMode} />
+                <ResearchJournal />
               </VStack>
             </Box>
             
@@ -260,6 +294,7 @@ const App: React.FC = () => {
               <VStack spacing={6} align="stretch">
                 <SidebarSection title="RESEARCH GUIDANCE">
                     <VStack spacing={4} align="stretch">
+                      <LearningPathManager />
                       <ResearchWorkflowGuide onModeChange={setWorkspaceMode} />
                       <GuidedWalkthrough workspaceMode={workspaceMode} />
                     </VStack>
@@ -276,6 +311,9 @@ const App: React.FC = () => {
                 )}
                 <SidebarSection title="RESEARCH KNOWLEDGE">
                     <VStack spacing={4} align="stretch">
+                        <ResearchDiscovery />
+                        <ResearchCommentary />
+                        <MultiPerspectiveReview />
                         <ResearchKnowledgeBase />
                         <ResearchReviewBoard />
                         <ComparativeStudyBoard />
@@ -285,6 +323,7 @@ const App: React.FC = () => {
                 <SidebarSection title="REPLAY & RELIABILITY" defaultOpen={workspaceMode === 'REVIEW'}>
                     <VStack spacing={4} align="stretch">
                       <ReplaySnapshotManager symbol={selectedSymbol} />
+                      <CollaborativeGovernance />
                       <ReliabilityDashboard />
                       {workspaceMode === 'RESEARCH' && (
                           <>

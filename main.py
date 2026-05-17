@@ -171,6 +171,53 @@ async def restore_data_backup(backup_id: str):
         return {"status": "success", "message": "데이터 복구가 완료되었습니다. 애플리케이션 재시작을 권장합니다."}
     raise HTTPException(status_code=404, detail="백업을 찾을 수 없거나 복구에 실패했습니다.")
 
+# 연구 주석 데이터 (Collaboration)
+RESEARCH_COMMENTS_FILE = "research_comments.json"
+
+def load_research_comments():
+    if os.path.exists(RESEARCH_COMMENTS_FILE):
+        try:
+            with open(RESEARCH_COMMENTS_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except:
+            return []
+    return []
+
+def save_research_comments(comments):
+    with open(RESEARCH_COMMENTS_FILE, "w", encoding="utf-8") as f:
+        json.dump(comments, f, ensure_ascii=False, indent=2)
+
+@app.get("/api/comments")
+async def get_comments(signal_id: Optional[str] = Query(None)):
+    comments = load_research_comments()
+    if signal_id:
+        comments = [c for c in comments if c.get("signal_id") == signal_id]
+    return comments
+
+@app.post("/api/comments")
+async def add_comment(comment_data: Dict):
+    import uuid
+    from datetime import datetime
+    comments = load_research_comments()
+    new_comment = {
+        "id": str(uuid.uuid4()),
+        "author": comment_data.get("author", "Researcher"),
+        "timestamp": datetime.now().isoformat(),
+        "content": comment_data.get("content"),
+        "signal_id": comment_data.get("signal_id"),
+        "replay_context": comment_data.get("replay_context"),
+    }
+    comments.append(new_comment)
+    save_research_comments(comments)
+    return {"status": "success", "comment": new_comment}
+
+@app.delete("/api/comments/{comment_id}")
+async def delete_comment(comment_id: str):
+    comments = load_research_comments()
+    comments = [c for c in comments if c.get("id") != comment_id]
+    save_research_comments(comments)
+    return {"status": "success"}
+
 # Research Archive Endpoints
 @app.get("/api/archives")
 async def list_archives():
