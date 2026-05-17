@@ -10,8 +10,6 @@ import {
   Text,
   VStack,
   HStack,
-  Progress,
-  useColorMode,
   Spinner,
   Center,
   Badge,
@@ -30,10 +28,7 @@ interface OrderBookData {
 const OrderBook: React.FC<OrderBookProps> = ({ symbol }) => {
   const [orderBook, setOrderBook] = useState<OrderBookData>({ bids: [], asks: [] });
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const { isConnected, lastMessage } = useWebSocket(symbol);
-  const { colorMode } = useColorMode();
-  const isDarkMode = colorMode === 'dark';
 
   useEffect(() => {
     const fetchOrderBook = async () => {
@@ -58,7 +53,6 @@ const OrderBook: React.FC<OrderBookProps> = ({ symbol }) => {
     if (lastMessage && lastMessage.type === 'orderbook') {
       setOrderBook(lastMessage.data);
       setIsLoading(false);
-      setError(null);
     }
   }, [lastMessage]);
 

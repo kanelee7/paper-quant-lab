@@ -12,13 +12,11 @@ import {
   IconButton,
   Flex,
   Heading,
-  Input,
   HStack,
   useDisclosure,
   Collapse,
   ChakraProvider,
   Divider,
-  Icon,
   } from '@chakra-ui/react';
 
 import { SunIcon, MoonIcon, ChevronUpIcon, ChevronDownIcon } from '@chakra-ui/icons';

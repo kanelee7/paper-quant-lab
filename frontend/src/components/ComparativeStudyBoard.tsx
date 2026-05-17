@@ -8,8 +8,6 @@ import {
   Heading,
   Badge,
   Divider,
-  List,
-  ListItem,
   IconButton,
   useDisclosure,
   Modal,
@@ -26,7 +24,7 @@ import {
   Tooltip,
   Icon,
 } from '@chakra-ui/react';
-import { AddIcon, SearchIcon, InfoIcon, ExternalLinkIcon, LinkIcon } from '@chakra-ui/icons';
+import { AddIcon, InfoIcon, ExternalLinkIcon, LinkIcon } from '@chakra-ui/icons';
 
 interface Pattern {
   pattern_id: string;
