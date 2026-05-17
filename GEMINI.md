@@ -23,6 +23,7 @@ This file contains concise implementation rules for **PaperQuantLab**, a multi-a
 18. **Knowledge Experience & Guided Interpretation**: Transform accumulated research data into guided understanding. Use `GuidedWalkthroughs` to narrate analytical stories, implement progressive disclosure to manage workstation complexity, and provide critique reflection prompts to support deep human interpretation.
 19. **Onboarding & Workstation Continuity**: Prioritize researcher orientation and sustained usability. Implement structured onboarding, learning paths, and session continuity systems (e.g., recent context memory) to support long-term analytical operating cycles.
 20. **Collaborative Evidence Continuity**: Facilitate multi-researcher collaboration through shared research packages and evidence-linked commentary. Ensure all shared interpretations preserve provenance metadata and remain deterministic during replay across different workstations.
+21. **Research Focus & Operational Coherence**: Prioritize analytical immersion and ergonomic flow. Implement workspace compression (sidebar collapse), contextual UI reveal systems, and fast navigation via command palettes. Maintain high-density clarity while reducing cognitive load during long research sessions.
 
 ## Product Positioning
 PaperQuantLab is a **local-first human-centered AI reasoning research workstation**. 
@@ -33,15 +34,16 @@ PaperQuantLab is a **local-first human-centered AI reasoning research workstatio
 - It is a **guided knowledge experience** for internalizing longitudinal research findings.
 - It is a **cohesive analytical operating environment** for sustained research productivity.
 - It is a **shared research environment** built on absolute evidence continuity and deterministic replay.
+- It is a **professional analytical workstation** optimized for deep focus and operational efficiency.
 - It is **simulation-only** and does not support autonomous financial decision authority.
 
-## Phase 21: Multi-Researcher Collaboration Foundations & Shared Analytical Context
-- **Shared Research Packages**: Implement workflows for exporting and importing bounded research studies with replay-linked evidence.
-- **Collaborative Commentary Layer**: Introduce evidence-linked discussion threads and interpretation notes attached to specific replay moments.
-- **Comparative Review Workspaces**: Enable side-by-side comparison of differing researcher annotations, narratives, and conclusions.
-- **Shared Pattern Libraries**: Allow for the exchange of research archetypes and failure taxonomies with full source attribution and provenance.
-- **Governance for Shared Context**: Extend data validation to handle imported evidence, surfacing contradictions or provenance conflicts.
-- **Subtle Presence & Metadata**: Introduce lightweight awareness of shared or external research contexts within the workstation UX.
+## Phase 22: Research Focus Systems, Workspace Compression & Internationalization Foundations
+- **Research Focus Modes**: Introduce immersive layouts and distraction-free analysis views to reduce visual fatigue.
+- **Workspace Compression**: Implement sidebar collapse/expand and responsive panel density management.
+- **Contextual Reveal Systems**: Minimize UI noise by showing relevant controls and analytics only when contextually applicable.
+- **Command Palette & Fast Navigation**: Deploy a keyboard-first navigation layer for jumping between sessions, replay contexts, and tools.
+- **i18n Foundations (EN/KR)**: Establish a centralized translation structure to support multilingual research environments.
+- **Workspace Memory & Preferences**: Expand local persistence for UI states (sidebar, collapse) and introduce researcher preference settings.
 
 ## References
 - **Project Identity**: See `/docs/VISION.md`

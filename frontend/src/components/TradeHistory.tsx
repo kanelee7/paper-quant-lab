@@ -12,6 +12,8 @@ import {
   Center,
 } from '@chakra-ui/react';
 
+import { useI18n } from '../i18n';
+
 interface Trade {
   time: string;
   price: number;
@@ -25,10 +27,12 @@ interface TradeHistoryProps {
 }
 
 const TradeHistory: React.FC<TradeHistoryProps> = ({ trades }) => {
+  const { t } = useI18n();
+
   return (
     <Box height="100%" display="flex" flexDirection="column">
       <HStack justify="space-between" mb={2} px={1}>
-        <Text fontSize="xs" fontWeight="bold" letterSpacing="tight" color="gray.400">RECENT TRADES</Text>
+        <Text fontSize="xs" fontWeight="bold" letterSpacing="tight" color="gray.400">{t('label.activity_log')}</Text>
       </HStack>
 
       {trades.length === 0 ? (

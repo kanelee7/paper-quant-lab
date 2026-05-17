@@ -21,6 +21,7 @@ import {
   StatLabel,
   StatNumber,
   StatGroup,
+  HStack,
 } from '@chakra-ui/react';
 
 interface RepeatTradingProps {
@@ -55,7 +56,7 @@ const RepeatTrading: React.FC<RepeatTradingProps> = ({ isConnected }) => {
           setMaxTrades(data.settings.max_trades);
         }
       } catch (error) {
-        console.error('상태 조회 실패:', error);
+        console.error('Status fetch failed:', error);
       }
     };
 
@@ -90,7 +91,7 @@ const RepeatTrading: React.FC<RepeatTradingProps> = ({ isConnected }) => {
       if (data.status === 'success') {
         setIsRunning(true);
         toast({
-          title: '반복 매매 시작',
+          title: 'Recursive Run Started',
           description: data.message,
           status: 'success',
           duration: 3000,
@@ -98,7 +99,7 @@ const RepeatTrading: React.FC<RepeatTradingProps> = ({ isConnected }) => {
         });
       } else {
         toast({
-          title: '반복 매매 시작 실패',
+          title: 'Run Failed to Start',
           description: data.message,
           status: 'error',
           duration: 3000,
@@ -107,8 +108,8 @@ const RepeatTrading: React.FC<RepeatTradingProps> = ({ isConnected }) => {
       }
     } catch (error) {
       toast({
-        title: '반복 매매 시작 오류',
-        description: '서버에 연결할 수 없습니다.',
+        title: 'Network Error',
+        description: 'Failed to communicate with recursive runner.',
         status: 'error',
         duration: 3000,
         isClosable: true,
@@ -126,7 +127,7 @@ const RepeatTrading: React.FC<RepeatTradingProps> = ({ isConnected }) => {
       if (data.status === 'success') {
         setIsRunning(false);
         toast({
-          title: '반복 매매 중지',
+          title: 'Recursive Run Terminated',
           description: data.message,
           status: 'success',
           duration: 3000,
@@ -134,7 +135,7 @@ const RepeatTrading: React.FC<RepeatTradingProps> = ({ isConnected }) => {
         });
       } else {
         toast({
-          title: '반복 매매 중지 실패',
+          title: 'Termination Failed',
           description: data.message,
           status: 'error',
           duration: 3000,
@@ -143,8 +144,8 @@ const RepeatTrading: React.FC<RepeatTradingProps> = ({ isConnected }) => {
       }
     } catch (error) {
       toast({
-        title: '반복 매매 중지 오류',
-        description: '서버에 연결할 수 없습니다.',
+        title: 'Network Error',
+        description: 'Failed to stop recursive runner.',
         status: 'error',
         duration: 3000,
         isClosable: true,
@@ -153,33 +154,38 @@ const RepeatTrading: React.FC<RepeatTradingProps> = ({ isConnected }) => {
   };
 
   return (
-    <Box p={4} borderWidth="1px" borderRadius="lg">
+    <Box p={4} borderWidth="1px" borderRadius="lg" bg="blackAlpha.300">
       <VStack spacing={4} align="stretch">
-        <Text fontSize="xl" fontWeight="bold">반복 매매 설정</Text>
+        <HStack justify="space-between">
+            <Text fontSize="xs" fontWeight="bold" color="gray.400">RECURSIVE RUN SETTINGS</Text>
+            <Badge colorScheme="purple" variant="outline" fontSize="9px">STRESS TEST</Badge>
+        </HStack>
         
-        <StatGroup>
+        <StatGroup bg="blackAlpha.200" p={2} borderRadius="md">
           <Stat>
-            <StatLabel>상태</StatLabel>
-            <StatNumber>
+            <StatLabel fontSize="10px">RUN STATUS</StatLabel>
+            <StatNumber fontSize="sm">
               <Badge colorScheme={isRunning ? 'green' : 'gray'}>
-                {isRunning ? '실행 중' : '중지됨'}
+                {isRunning ? 'ACTIVE' : 'IDLE'}
               </Badge>
             </StatNumber>
           </Stat>
           <Stat>
-            <StatLabel>거래 횟수</StatLabel>
-            <StatNumber>{tradeCount}</StatNumber>
+            <StatLabel fontSize="10px">EXECUTION COUNT</StatLabel>
+            <StatNumber fontSize="sm">{tradeCount}</StatNumber>
           </Stat>
         </StatGroup>
 
-        <Divider />
+        <Divider borderColor="ui.border" />
 
         <FormControl>
-          <FormLabel>거래 쌍</FormLabel>
+          <FormLabel fontSize="10px">TARGET SYMBOL</FormLabel>
           <Select
             value={symbol}
             onChange={(e) => setSymbol(e.target.value)}
             isDisabled={isRunning}
+            size="sm"
+            bg="background.deep"
           >
             <option value="BTC/USDT">BTC/USDT</option>
             <option value="ETH/USDT">ETH/USDT</option>
@@ -187,14 +193,15 @@ const RepeatTrading: React.FC<RepeatTradingProps> = ({ isConnected }) => {
         </FormControl>
 
         <FormControl>
-          <FormLabel>매매 간격 (초)</FormLabel>
+          <FormLabel fontSize="10px">RUN INTERVAL (SEC)</FormLabel>
           <NumberInput
             value={interval}
             onChange={(_, value) => setInterval(value)}
             min={1}
             isDisabled={isRunning}
+            size="sm"
           >
-            <NumberInputField />
+            <NumberInputField bg="background.deep" />
             <NumberInputStepper>
               <NumberIncrementStepper />
               <NumberDecrementStepper />
@@ -203,7 +210,7 @@ const RepeatTrading: React.FC<RepeatTradingProps> = ({ isConnected }) => {
         </FormControl>
 
         <FormControl>
-          <FormLabel>매매 수량</FormLabel>
+          <FormLabel fontSize="10px">RUN VOLUME</FormLabel>
           <NumberInput
             value={amount}
             onChange={(_, value) => setAmount(value)}
@@ -211,8 +218,9 @@ const RepeatTrading: React.FC<RepeatTradingProps> = ({ isConnected }) => {
             step={0.001}
             precision={3}
             isDisabled={isRunning}
+            size="sm"
           >
-            <NumberInputField />
+            <NumberInputField bg="background.deep" />
             <NumberInputStepper>
               <NumberIncrementStepper />
               <NumberDecrementStepper />
@@ -221,60 +229,45 @@ const RepeatTrading: React.FC<RepeatTradingProps> = ({ isConnected }) => {
         </FormControl>
 
         <FormControl>
-          <FormLabel>매매 모드</FormLabel>
+          <FormLabel fontSize="10px">RUN MODE</FormLabel>
           <Select
             value={mode}
             onChange={(e) => setMode(e.target.value)}
             isDisabled={isRunning}
+            size="sm"
+            bg="background.deep"
           >
-            <option value="buy_only">매수만</option>
-            <option value="buy_sell">매수/매도 반복</option>
+            <option value="buy_only">Initialize Only</option>
+            <option value="buy_sell">Initialize & Terminate Loop</option>
           </Select>
         </FormControl>
 
-        <FormControl>
-          <FormLabel>최대 거래 횟수 (선택)</FormLabel>
-          <NumberInput
-            value={maxTrades ?? ''}
-            onChange={(_, value) => setMaxTrades(value || null)}
-            min={1}
-            isDisabled={isRunning}
-          >
-            <NumberInputField />
-            <NumberInputStepper>
-              <NumberIncrementStepper />
-              <NumberDecrementStepper />
-            </NumberInputStepper>
-          </NumberInput>
-        </FormControl>
-
         <FormControl display="flex" alignItems="center">
-          <FormLabel mb="0">
-            테스트 모드
+          <FormLabel mb="0" fontSize="10px">
+            SIMULATION MODE
           </FormLabel>
           <Switch
             isChecked={testMode}
             onChange={(e) => setTestMode(e.target.checked)}
             isDisabled={isRunning}
+            size="sm"
           />
         </FormControl>
 
-        {!testMode && (
-          <Text fontSize="sm" color="red.500" fontWeight="bold">
-            ⚠️ 실제 모드에서는 실제 자산으로 거래가 이루어집니다.
-          </Text>
-        )}
-
         <Button
-          colorScheme={isRunning ? 'red' : 'green'}
+          colorScheme={isRunning ? 'red' : 'brand'}
+          variant={isRunning ? 'solid' : 'outline'}
           onClick={isRunning ? handleStop : handleStart}
           isDisabled={!isConnected}
+          size="sm"
+          fontSize="xs"
+          letterSpacing="widest"
         >
-          {isRunning ? '중지' : '시작'}
+          {isRunning ? 'STOP RUN' : 'START RECURSIVE RUN'}
         </Button>
       </VStack>
     </Box>
   );
 };
 
-export default RepeatTrading; 
+export default RepeatTrading;

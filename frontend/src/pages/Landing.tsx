@@ -140,8 +140,16 @@ const Landing: React.FC<{
           >
             RESEARCH-CENTRIC & LOCAL-FIRST
           </Badge>
-          <Heading size="4xl" maxW="900px" lineHeight="1.0" letterSpacing="tighter">
-            High-Fidelity AI Reasoning <Text as="span" color={brandColor}>Research</Text>
+          <Heading 
+            size="4xl" 
+            maxW="1100px" 
+            lineHeight="1.1" 
+            letterSpacing="tighter"
+            textAlign="center"
+          >
+            <Box as="span" display="block">PaperQuantLab</Box>
+            <Box as="span" display="block">AI Reasoning</Box>
+            <Box as="span" display="block" color={brandColor}>Research Workstation</Box>
           </Heading>
           <Text fontSize="xl" color="ui.muted" maxW="700px" lineHeight="tall">
             Study AI analytical styles, validate reasoning patterns, and accumulate 

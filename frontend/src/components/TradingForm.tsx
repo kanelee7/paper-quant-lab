@@ -11,6 +11,7 @@ import {
   Badge,
   Divider,
 } from '@chakra-ui/react';
+import { useI18n } from '../i18n';
 
 interface TradingFormProps {
   isTrading: boolean;
@@ -27,11 +28,13 @@ const TradingForm: React.FC<TradingFormProps> = ({
   symbol,
   onSymbolChange,
 }) => {
+  const { t } = useI18n();
+
   return (
     <VStack spacing={4} align="stretch">
       <HStack justify="space-between" mb={1}>
-        <Text fontSize="xs" fontWeight="bold" letterSpacing="tight" color="gray.400">SIMULATION CONTROL</Text>
-        <Badge colorScheme="orange" variant="outline" fontSize="9px">PAPER TRADING ONLY</Badge>
+        <Text fontSize="xs" fontWeight="bold" letterSpacing="tight" color="gray.400">{t('label.run_control')}</Text>
+        <Badge colorScheme="orange" variant="outline" fontSize="9px">{t('status.simulation_only')}</Badge>
       </HStack>
 
       <HStack spacing={4}>
@@ -129,7 +132,7 @@ const TradingForm: React.FC<TradingFormProps> = ({
         fontWeight="800"
         letterSpacing="widest"
       >
-        {isTrading ? 'STOP AUTOMATED RESEARCH' : 'START AUTOMATED RESEARCH'}
+        {isTrading ? t('btn.stop_run') : t('btn.start_run')}
       </Button>
     </VStack>
   );

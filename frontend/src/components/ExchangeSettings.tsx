@@ -13,6 +13,7 @@ import {
   HStack,
   Spinner,
 } from '@chakra-ui/react';
+import { useI18n } from '../i18n';
 
 interface ExchangeSettingsProps {
   selectedExchange: string;
@@ -53,6 +54,7 @@ const ExchangeSettings: React.FC<ExchangeSettingsProps> = ({
   testMode,
   setTestMode,
 }) => {
+  const { t } = useI18n();
   const [isLoading, setIsLoading] = useState(false);
   const [assetType, setAssetType] = useState('CRYPTO');
   const toast = useToast();
@@ -167,7 +169,7 @@ const ExchangeSettings: React.FC<ExchangeSettingsProps> = ({
     <Box p={4} borderWidth="1px" borderRadius="lg" bg="gray.800">
       <VStack spacing={4} align="stretch">
         <FormControl>
-          <FormLabel fontSize="xs" color="gray.400">RESEARCH ASSET TYPE</FormLabel>
+          <FormLabel fontSize="xs" color="gray.400">{t('label.asset_type')}</FormLabel>
           <Select
             value={assetType}
             onChange={(e) => setAssetType(e.target.value)}
@@ -183,7 +185,7 @@ const ExchangeSettings: React.FC<ExchangeSettingsProps> = ({
         </FormControl>
 
         <FormControl>
-          <FormLabel fontSize="xs" color="gray.400">DATA PROVIDER</FormLabel>
+          <FormLabel fontSize="xs" color="gray.400">{t('label.data_source')}</FormLabel>
           <Select
             value={selectedExchange}
             onChange={(e) => setSelectedExchange(e.target.value)}
@@ -252,7 +254,7 @@ const ExchangeSettings: React.FC<ExchangeSettingsProps> = ({
                 width="100%"
                 size="sm"
               >
-                {isLoading ? <Spinner size="xs" /> : 'Start Session'}
+                {isLoading ? <Spinner size="xs" /> : t('btn.initialize')}
               </Button>
 
               <Button
@@ -262,7 +264,7 @@ const ExchangeSettings: React.FC<ExchangeSettingsProps> = ({
                 width="100%"
                 size="sm"
               >
-                {isLoading ? <Spinner size="xs" /> : 'Test Provider'}
+                {isLoading ? <Spinner size="xs" /> : 'Verify Access'}
               </Button>
             </HStack>
           </>
@@ -276,7 +278,7 @@ const ExchangeSettings: React.FC<ExchangeSettingsProps> = ({
             width="100%"
             size="sm"
           >
-            {isLoading ? <Spinner size="xs" /> : 'End Session'}
+            {isLoading ? <Spinner size="xs" /> : t('btn.terminate')}
           </Button>
         )}
       </VStack>

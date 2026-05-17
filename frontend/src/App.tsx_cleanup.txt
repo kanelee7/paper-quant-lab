@@ -1,0 +1,16 @@
+                            <ResearchArchiveManager />
+                            <PerformanceMetrics />
+                          </>
+                      )}
+                    </VStack>
+                </SidebarSection>
+              </VStack>
+            </Box>
+          </Grid>
+        </Container>
+      </Box>
+    </ChakraProvider>
+  );
+};
+
+export default App;

@@ -15,6 +15,7 @@ import {
   Badge,
 } from '@chakra-ui/react';
 import { useWebSocket } from '../hooks/useWebSocket';
+import { useI18n } from '../i18n';
 
 interface OrderBookProps {
   symbol: string;
@@ -26,6 +27,7 @@ interface OrderBookData {
 }
 
 const OrderBook: React.FC<OrderBookProps> = ({ symbol }) => {
+  const { t } = useI18n();
   const [orderBook, setOrderBook] = useState<OrderBookData>({ bids: [], asks: [] });
   const [isLoading, setIsLoading] = useState(true);
   const { isConnected, lastMessage } = useWebSocket(symbol);
@@ -96,9 +98,9 @@ const OrderBook: React.FC<OrderBookProps> = ({ symbol }) => {
   return (
     <Box height="100%" display="flex" flexDirection="column">
       <HStack justify="space-between" mb={2} px={1}>
-        <Text fontSize="xs" fontWeight="bold" letterSpacing="tight" color="gray.400">ORDER BOOK</Text>
+        <Text fontSize="xs" fontWeight="bold" letterSpacing="tight" color="gray.400">{t('label.market_depth')}</Text>
         <Badge variant="subtle" fontSize="8px" colorScheme={isConnected ? 'green' : 'gray'}>
-            {isConnected ? 'LIVE' : 'IDLE'}
+            {isConnected ? t('status.live') : t('status.idle')}
         </Badge>
       </HStack>
       
