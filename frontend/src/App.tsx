@@ -54,6 +54,8 @@ import Philosophy from './pages/Philosophy';
 import { useI18n } from './i18n';
 import { usePreferences } from './hooks/usePreferences';
 import CommandPalette from './components/CommandPalette';
+import { isDemoModeActive, setDemoMode as setDemoModeInService } from './demo/demoService';
+import { demoFetch } from './demo/demoFetch';
 
 const SidebarSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean }> = ({ title, children, defaultOpen = true }) => {
   const { isOpen, onToggle } = useDisclosure({ defaultIsOpen: defaultOpen });
@@ -91,6 +93,8 @@ const App: React.FC = () => {
   });
   const [isTrading, setIsTrading] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(isDemoModeActive());
+
   const [selectedExchange, setSelectedExchange] = useState(() => {
     return localStorage.getItem('pql_selected_exchange') || 'binance';
   });
@@ -139,6 +143,23 @@ const App: React.FC = () => {
 
   const handleBackToLanding = () => {
     setCurrentPage('LANDING');
+  };
+
+  const handleToggleDemoMode = () => {
+    const nextMode = !isDemoMode;
+    setIsDemoMode(nextMode);
+    setDemoModeInService(nextMode);
+    toast({
+      title: nextMode ? 'Demo Environment Seeded' : 'Returning to Live Environment',
+      description: nextMode ? 'Workstation populated with historical research data.' : 'Resyncing with active data providers.',
+      status: 'info',
+      duration: 3000
+    });
+    // Hard reload or state trigger for components
+    if (nextMode) {
+        setIsConnected(true);
+    }
+    setTimeout(() => window.location.reload(), 500);
   };
 
   const handleFocusSignal = (signal: any) => {
@@ -229,8 +250,17 @@ const App: React.FC = () => {
     <ChakraProvider theme={theme}>
       <WorkspaceOnboarding />
       <CommandPalette onModeChange={setWorkspaceMode} onFocusModeToggle={toggleFocusMode} />
-      <Box minH="100vh" bg={bgColor}>
-        <Box borderBottom="1px" borderColor={borderColor} bg="background.surface" position="sticky" top={0} zIndex={10} boxShadow="sm">
+      
+      <Flex h="100vh" flexDir="column" bg={bgColor} overflow="hidden">
+        {/* Fixed Header */}
+        <Box 
+          borderBottom="1px" 
+          borderColor={borderColor} 
+          bg="background.surface" 
+          zIndex={10} 
+          boxShadow="sm"
+          flexShrink={0}
+        >
             <Container maxW="container.2xl" py={2}>
                 <Flex justifyContent="space-between" alignItems="center">
                 <HStack spacing={6}>
@@ -239,130 +269,229 @@ const App: React.FC = () => {
                         <Heading size="sm" letterSpacing="tight">PaperQuantLab</Heading>
                     </HStack>
                     <Divider orientation="vertical" h="16px" borderColor="ui.border" />
-                    <HStack bg="blackAlpha.400" p={0.5} borderRadius="sm" borderWidth="1px" borderColor="ui.border">
-                        <Button size="2xs" variant={workspaceMode === 'RESEARCH' ? 'solid' : 'ghost'} colorScheme={workspaceMode === 'RESEARCH' ? 'brand' : 'gray'} onClick={() => setWorkspaceMode('RESEARCH')}>{t('nav.research')}</Button>
-                        <Button size="2xs" variant={workspaceMode === 'REVIEW' ? 'solid' : 'ghost'} colorScheme={workspaceMode === 'REVIEW' ? 'pink' : 'gray'} onClick={() => setWorkspaceMode('REVIEW')}>{t('nav.review')}</Button>
-                        <Button size="2xs" variant={workspaceMode === 'TRAINING' ? 'solid' : 'ghost'} colorScheme={workspaceMode === 'TRAINING' ? 'green' : 'gray'} onClick={() => setWorkspaceMode('TRAINING')}>{t('nav.training')}</Button>
+                    <HStack bg="blackAlpha.400" p={0.5} borderRadius="sm" borderWidth="1px" borderColor="ui.border" spacing={0}>
+                        <Button 
+                          size="2xs" 
+                          variant="ghost" 
+                          color={workspaceMode === 'RESEARCH' ? 'brand.500' : 'ui.muted'} 
+                          bg={workspaceMode === 'RESEARCH' ? 'whiteAlpha.100' : 'transparent'}
+                          _hover={{ bg: 'whiteAlpha.200' }}
+                          onClick={() => setWorkspaceMode('RESEARCH')}
+                          fontSize="10px"
+                          fontWeight="700"
+                          px={3}
+                          borderRadius="xs"
+                        >
+                          {t('nav.research')}
+                        </Button>
+                        <Button 
+                          size="2xs" 
+                          variant="ghost" 
+                          color={workspaceMode === 'REVIEW' ? 'pink.400' : 'ui.muted'} 
+                          bg={workspaceMode === 'REVIEW' ? 'whiteAlpha.100' : 'transparent'}
+                          _hover={{ bg: 'whiteAlpha.200' }}
+                          onClick={() => setWorkspaceMode('REVIEW')}
+                          fontSize="10px"
+                          fontWeight="700"
+                          px={3}
+                          borderRadius="xs"
+                        >
+                          {t('nav.review')}
+                        </Button>
+                        <Button 
+                          size="2xs" 
+                          variant="ghost" 
+                          color={workspaceMode === 'TRAINING' ? 'green.400' : 'ui.muted'} 
+                          bg={workspaceMode === 'TRAINING' ? 'whiteAlpha.100' : 'transparent'}
+                          _hover={{ bg: 'whiteAlpha.200' }}
+                          onClick={() => setWorkspaceMode('TRAINING')}
+                          fontSize="10px"
+                          fontWeight="700"
+                          px={3}
+                          borderRadius="xs"
+                        >
+                          {t('nav.training')}
+                        </Button>
                     </HStack>
                 </HStack>
                 <HStack spacing={4}>
-                    <HStack bg="blackAlpha.300" p={1} borderRadius="md" borderWidth="1px" borderColor="ui.border">
-                        <Button size="2xs" variant={lang === 'en' ? 'solid' : 'ghost'} onClick={() => changeLanguage('en')}>EN</Button>
-                        <Button size="2xs" variant={lang === 'ko' ? 'solid' : 'ghost'} onClick={() => changeLanguage('ko')}>KR</Button>
+                    <Button 
+                        size="xs" 
+                        variant="outline" 
+                        colorScheme={isDemoMode ? "brand" : "gray"} 
+                        onClick={handleToggleDemoMode}
+                        fontSize="9px"
+                        fontWeight="800"
+                        letterSpacing="wider"
+                        px={3}
+                        borderRadius="sm"
+                    >
+                        {isDemoMode ? "IDLE: DEMO ACTIVE" : "SEED DEMO ENVIRONMENT"}
+                    </Button>
+                    <HStack bg="blackAlpha.300" p={1} borderRadius="md" borderWidth="1px" borderColor="ui.border" spacing={0}>
+                        <Button 
+                          size="2xs" 
+                          variant="ghost" 
+                          bg={lang === 'en' ? 'whiteAlpha.200' : 'transparent'}
+                          color={lang === 'en' ? 'white' : 'ui.muted'}
+                          onClick={() => changeLanguage('en')}
+                          fontSize="9px"
+                          px={2}
+                        >
+                          EN
+                        </Button>
+                        <Button 
+                          size="2xs" 
+                          variant="ghost" 
+                          bg={lang === 'ko' ? 'whiteAlpha.200' : 'transparent'}
+                          color={lang === 'ko' ? 'white' : 'ui.muted'}
+                          onClick={() => changeLanguage('ko')}
+                          fontSize="9px"
+                          px={2}
+                        >
+                          KR
+                        </Button>
                     </HStack>
                     <IconButton 
                         aria-label="Toggle Focus Mode" 
                         size="xs" 
-                        variant={preferences.focusMode ? 'solid' : 'ghost'} 
-                        colorScheme={preferences.focusMode ? 'brand' : 'gray'}
+                        variant="ghost" 
+                        color={preferences.focusMode ? 'brand.500' : 'ui.muted'}
                         icon={<ViewIcon />} 
                         onClick={toggleFocusMode} 
+                        _hover={{ bg: 'whiteAlpha.100' }}
                     />
-                    <IconButton aria-label="Toggle color mode" size="xs" variant="ghost" icon={colorMode === 'light' ? <MoonIcon /> : <SunIcon />} onClick={toggleColorMode} />
-                    <Button size="xs" onClick={() => setIsDeveloperMode(!isDeveloperMode)} colorScheme={isDeveloperMode ? 'brand' : 'gray'} variant="ghost" fontSize="10px" fontWeight="800">
-                        {isDeveloperMode ? 'DEV MODE' : 'USER MODE'}
+                    <IconButton aria-label="Toggle color mode" size="xs" variant="ghost" icon={colorMode === 'light' ? <MoonIcon /> : <SunIcon />} onClick={toggleColorMode} color="ui.muted" />
+                    <Button size="xs" onClick={() => setIsDeveloperMode(!isDeveloperMode)} color={isDeveloperMode ? 'brand.500' : 'ui.muted'} variant="ghost" fontSize="9px" fontWeight="800" px={2}>
+                        {isDeveloperMode ? 'DEV' : 'USER'}
                     </Button>
                 </HStack>
                 </Flex>
             </Container>
         </Box>
 
-        <Container maxW="container.2xl" py={4}>
-          <Grid templateColumns={preferences.focusMode ? "1fr" : { base: "1fr", lg: "1fr 360px" }} gap={6}>
-            <Box>
-              <VStack spacing={6} align="stretch">
-                <Grid templateColumns={workspaceMode === 'REVIEW' ? { base: "1fr", xl: "1fr 1fr" } : { base: "1fr", xl: "1fr 320px" }} gap={4}>
-                  <Box borderRadius="md" bg={cardBg} borderWidth="1px" borderColor={borderColor} height="600px" overflow="hidden" boxShadow="panel">
-                    <PriceChart symbol={selectedSymbol} onSymbolChange={setSelectedSymbol} />
-                  </Box>
-                  
-                  {workspaceMode === 'REVIEW' ? (
-                      <Box borderRadius="md" bg={cardBg} borderWidth="1px" borderColor={borderColor} height="600px" overflow="hidden" boxShadow="panel">
-                         <PriceChart symbol="ETH/USDT" onSymbolChange={() => {}} />
-                      </Box>
-                  ) : workspaceMode === 'RESEARCH' ? (
-                    <VStack spacing={4}>
-                        <Box p={4} borderRadius="md" bg={cardBg} borderWidth="1px" borderColor={borderColor} w="100%" h="290px" overflow="auto" boxShadow="panel">
-                        <OrderBook symbol={selectedSymbol} />
+        {/* Main Workspace Area */}
+        <Box flex={1} overflow="hidden" position="relative">
+          <Container maxW="container.2xl" h="100%" py={3}>
+            <Grid 
+              templateColumns={preferences.focusMode ? "1fr" : { base: "1fr", lg: "1fr 340px" }} 
+              gap={5} 
+              h="100%"
+              overflow="hidden"
+            >
+              {/* Left Content: Scrollable */}
+              <Box 
+                h="100%" 
+                overflowY="auto" 
+                pr={1}
+                sx={{
+                  '&::-webkit-scrollbar': { width: '3px' },
+                  '&::-webkit-scrollbar-thumb': { bg: 'whiteAlpha.100', borderRadius: 'full' }
+                }}
+              >
+                <VStack spacing={5} align="stretch" pb={10}>
+                  <Grid templateColumns={workspaceMode === 'REVIEW' ? { base: "1fr", xl: "1fr 1fr" } : { base: "1fr", xl: "1fr 320px" }} gap={4}>
+                    <Box borderRadius="md" bg={cardBg} borderWidth="1px" borderColor={borderColor} height="520px" overflow="hidden" boxShadow="panel">
+                      <PriceChart symbol={selectedSymbol} onSymbolChange={setSelectedSymbol} />
+                    </Box>
+                    
+                    {workspaceMode === 'REVIEW' ? (
+                        <Box borderRadius="md" bg={cardBg} borderWidth="1px" borderColor={borderColor} height="520px" overflow="hidden" boxShadow="panel">
+                           <PriceChart symbol="ETH/USDT" onSymbolChange={() => {}} />
                         </Box>
-                        <Box p={4} borderRadius="md" bg={cardBg} borderWidth="1px" borderColor={borderColor} w="100%" h="290px" overflow="auto" boxShadow="panel">
-                        <TradeHistory trades={[]} />
-                        </Box>
-                    </VStack>
-                  ) : null}
-                </Grid>
-
-                {workspaceMode === 'RESEARCH' && isConnected && (
-                    <ReplayTimeline symbol={selectedSymbol} onFocusSignal={handleFocusSignal} />
-                )}
-                
-                {workspaceMode === 'RESEARCH' && isConnected && (
-                  <Box p={4} borderRadius="md" bg={cardBg} borderWidth="1px" borderColor={borderColor} boxShadow="panel">
-                    <TradingForm isTrading={isTrading} onStartTrading={handleStartTrading} onStopTrading={handleStopTrading} symbol={selectedSymbol} onSymbolChange={setSelectedSymbol} />
-                  </Box>
-                )}
-                {workspaceMode === 'RESEARCH' && isConnected && (
-                  <Box p={4} borderRadius="md" bg={cardBg} borderWidth="1px" borderColor={borderColor} boxShadow="panel">
-                    <RepeatTrading isConnected={isConnected} />
-                  </Box>
-                )}
-                {isConnected && (
-                    <SignalJournal workspaceMode={workspaceMode} />
-                )}
-                <ResearchJournal />
-              </VStack>
-            </Box>
-            
-            {!preferences.focusMode && (
-              <Box>
-                <VStack spacing={6} align="stretch">
-                  <SidebarSection title={t('sidebar.guidance')}>
-                      <VStack spacing={4} align="stretch">
-                        <LearningPathManager />
-                        <ResearchWorkflowGuide onModeChange={setWorkspaceMode} />
-                        <GuidedWalkthrough workspaceMode={workspaceMode} />
+                    ) : workspaceMode === 'RESEARCH' ? (
+                      <VStack spacing={4}>
+                          <Box p={3} borderRadius="md" bg={cardBg} borderWidth="1px" borderColor={borderColor} w="100%" h="250px" overflow="auto" boxShadow="panel">
+                          <OrderBook symbol={selectedSymbol} />
+                          </Box>
+                          <Box p={3} borderRadius="md" bg={cardBg} borderWidth="1px" borderColor={borderColor} w="100%" h="250px" overflow="auto" boxShadow="panel">
+                          <TradeHistory trades={[]} />
+                          </Box>
                       </VStack>
-                  </SidebarSection>
+                    ) : null}
+                  </Grid>
 
-                  {workspaceMode === 'RESEARCH' && (
-                    <SidebarSection title={t('sidebar.experimentation')}>
-                        <Box p={4} borderRadius="md" bg="blackAlpha.300" borderWidth="1px" borderColor="ui.border">
-                          <ExchangeSettings selectedExchange={selectedExchange} setSelectedExchange={setSelectedExchange} apiKey={apiKey} setApiKey={setApiKey} secretKey={secretKey} setSecretKey={setSecretKey} showApiInput={showApiInput} setShowApiInput={setShowApiInput} isConnected={isConnected} onConnect={handleConnect} onDisconnect={handleDisconnect} onTestConnection={async () => {}} onLoadEnvKeys={async () => {}} onSettingsUpdate={() => {}} isDeveloperMode={isDeveloperMode} testMode={testMode} setTestMode={setTestMode} />
-                        </Box>
-                        <ResearchSessionManager />
-                        <PersonaSandbox symbol={selectedSymbol} workspaceMode={workspaceMode} />
-                    </SidebarSection>
+                  {workspaceMode === 'RESEARCH' && isConnected && (
+                      <ReplayTimeline symbol={selectedSymbol} onFocusSignal={handleFocusSignal} />
                   )}
-                  <SidebarSection title={t('sidebar.knowledge')}>
-                      <VStack spacing={4} align="stretch">
-                          <ResearchDiscovery />
-                          <ResearchCommentary />
-                          <MultiPerspectiveReview />
-                          <ResearchKnowledgeBase />
-                          <ResearchReviewBoard />
-                          <ComparativeStudyBoard />
-                          <QuantInsights />
-                      </VStack>
-                  </SidebarSection>
-                  <SidebarSection title={t('sidebar.reliability')} defaultOpen={workspaceMode === 'REVIEW'}>
-                      <VStack spacing={4} align="stretch">
-                        <ReplaySnapshotManager symbol={selectedSymbol} />
-                        <CollaborativeGovernance />
-                        <ReliabilityDashboard />
-                        {workspaceMode === 'RESEARCH' && (
-                            <>
-                              <ResearchArchiveManager />
-                              <PerformanceMetrics />
-                            </>
-                        )}
-                      </VStack>
-                  </SidebarSection>
+                  
+                  {workspaceMode === 'RESEARCH' && isConnected && (
+                    <Box p={4} borderRadius="md" bg={cardBg} borderWidth="1px" borderColor={borderColor} boxShadow="panel">
+                      <TradingForm isTrading={isTrading} onStartTrading={handleStartTrading} onStopTrading={handleStopTrading} symbol={selectedSymbol} onSymbolChange={setSelectedSymbol} />
+                    </Box>
+                  )}
+                  {workspaceMode === 'RESEARCH' && isConnected && (
+                    <Box p={4} borderRadius="md" bg={cardBg} borderWidth="1px" borderColor={borderColor} boxShadow="panel">
+                      <RepeatTrading isConnected={isConnected} />
+                    </Box>
+                  )}
+                  {isConnected && (
+                      <SignalJournal workspaceMode={workspaceMode} />
+                  )}
+                  <ResearchJournal />
                 </VStack>
               </Box>
-            )}
-          </Grid>
-        </Container>
-      </Box>
+              
+              {/* Right Sidebar: Independently Scrollable */}
+              {!preferences.focusMode && (
+                <Box 
+                  h="100%" 
+                  overflowY="auto" 
+                  pr={1}
+                  sx={{
+                    '&::-webkit-scrollbar': { width: '3px' },
+                    '&::-webkit-scrollbar-thumb': { bg: 'whiteAlpha.100', borderRadius: 'full' }
+                  }}
+                >
+                  <VStack spacing={5} align="stretch" pb={10}>
+                    <SidebarSection title={t('sidebar.guidance')} defaultOpen={workspaceMode === 'TRAINING'}>
+                        <VStack spacing={3} align="stretch">
+                          <LearningPathManager />
+                          <ResearchWorkflowGuide onModeChange={setWorkspaceMode} />
+                          <GuidedWalkthrough workspaceMode={workspaceMode} />
+                        </VStack>
+                    </SidebarSection>
+
+                    {workspaceMode === 'RESEARCH' && (
+                      <SidebarSection title={t('sidebar.experimentation')} defaultOpen={!isConnected}>
+                          <VStack spacing={3} align="stretch">
+                            <ExchangeSettings selectedExchange={selectedExchange} setSelectedExchange={setSelectedExchange} apiKey={apiKey} setApiKey={setApiKey} secretKey={secretKey} setSecretKey={setSecretKey} showApiInput={showApiInput} setShowApiInput={setShowApiInput} isConnected={isConnected} onConnect={handleConnect} onDisconnect={handleDisconnect} onTestConnection={async () => {}} onLoadEnvKeys={async () => {}} onSettingsUpdate={() => {}} isDeveloperMode={isDeveloperMode} testMode={testMode} setTestMode={setTestMode} />
+                            <ResearchSessionManager />
+                            <PersonaSandbox symbol={selectedSymbol} workspaceMode={workspaceMode} />
+                          </VStack>
+                      </SidebarSection>
+                    )}
+                    <SidebarSection title={t('sidebar.knowledge')} defaultOpen={false}>
+                        <VStack spacing={3} align="stretch">
+                            <ResearchDiscovery />
+                            <ResearchCommentary />
+                            <MultiPerspectiveReview />
+                            <ResearchKnowledgeBase />
+                            <ResearchReviewBoard />
+                            <ComparativeStudyBoard />
+                            <QuantInsights />
+                        </VStack>
+                    </SidebarSection>
+                    <SidebarSection title={t('sidebar.reliability')} defaultOpen={workspaceMode === 'REVIEW'}>
+                        <VStack spacing={3} align="stretch">
+                          <ReplaySnapshotManager symbol={selectedSymbol} />
+                          <CollaborativeGovernance />
+                          <ReliabilityDashboard />
+                          {workspaceMode === 'RESEARCH' && (
+                              <>
+                                <ResearchArchiveManager />
+                                <PerformanceMetrics />
+                              </>
+                          )}
+                        </VStack>
+                    </SidebarSection>
+                  </VStack>
+                </Box>
+              )}
+            </Grid>
+          </Container>
+        </Box>
+      </Flex>
     </ChakraProvider>
   );
 };

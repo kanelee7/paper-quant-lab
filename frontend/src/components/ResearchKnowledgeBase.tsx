@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { demoFetch } from "../demo/demoFetch";
 import {
   Box,
   VStack,
@@ -65,7 +66,7 @@ const ResearchKnowledgeBase: React.FC = () => {
 
   const fetchInsights = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/insights');
+      const response = await demoFetch('http://localhost:8000/api/insights');
       const data = await response.json();
       setInsights(data.reverse());
     } catch (error) {
@@ -75,7 +76,7 @@ const ResearchKnowledgeBase: React.FC = () => {
 
   const fetchReliabilityReport = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/reliability/reproducibility');
+      const response = await demoFetch('http://localhost:8000/api/reliability/reproducibility');
       const data = await response.json();
       setReport(data);
     } catch (error) {
@@ -85,7 +86,7 @@ const ResearchKnowledgeBase: React.FC = () => {
 
   const fetchFailures = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/taxonomy/failures');
+      const response = await demoFetch('http://localhost:8000/api/taxonomy/failures');
       const data = await response.json();
       setFailures(data);
     } catch (error) {
@@ -101,7 +102,7 @@ const ResearchKnowledgeBase: React.FC = () => {
 
   const handleCreateInsight = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/insights', {
+      const response = await demoFetch('http://localhost:8000/api/insights', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newInsight)

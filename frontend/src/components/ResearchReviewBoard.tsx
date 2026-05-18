@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { demoFetch } from "../demo/demoFetch";
 import {
   Box,
   VStack,
@@ -75,7 +76,7 @@ const ResearchReviewBoard: React.FC = () => {
 
   const fetchReviews = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/reviews');
+      const response = await demoFetch('http://localhost:8000/api/reviews');
       const data = await response.json();
       setReviews(data.reverse());
     } catch (error) {
@@ -85,7 +86,7 @@ const ResearchReviewBoard: React.FC = () => {
 
   const fetchContradictions = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/reviews/contradictions');
+      const response = await demoFetch('http://localhost:8000/api/reviews/contradictions');
       const data = await response.json();
       setContradictions(data);
     } catch (error) {
@@ -95,7 +96,7 @@ const ResearchReviewBoard: React.FC = () => {
 
   const fetchSessions = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/sessions');
+      const response = await demoFetch('http://localhost:8000/api/sessions');
       const data = await response.json();
       setSessions(data);
     } catch (error) {
@@ -105,7 +106,7 @@ const ResearchReviewBoard: React.FC = () => {
 
   const fetchInsights = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/insights');
+      const response = await demoFetch('http://localhost:8000/api/insights');
       const data = await response.json();
       setInsights(data);
     } catch (error) {
@@ -128,10 +129,10 @@ const ResearchReviewBoard: React.FC = () => {
     
     try {
       const sessionIds = newReview.linked_sessions.join(',');
-      const synthRes = await fetch(`http://localhost:8000/api/reviews/synthesis?session_ids=${sessionIds}`);
+      const synthRes = await demoFetch(`http://localhost:8000/api/reviews/synthesis?session_ids=${sessionIds}`);
       const synthData = await synthRes.json();
       
-      const response = await fetch('http://localhost:8000/api/reviews', {
+      const response = await demoFetch('http://localhost:8000/api/reviews', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -164,11 +165,11 @@ const ResearchReviewBoard: React.FC = () => {
     
     try {
       const sessionIds = review.linked_sessions.join(',');
-      const response = await fetch(`http://localhost:8000/api/reviews/synthesis?session_ids=${sessionIds}`);
+      const response = await demoFetch(`http://localhost:8000/api/reviews/synthesis?session_ids=${sessionIds}`);
       const data = await response.json();
       setSynthesisData(data);
       
-      const govRes = await fetch(`http://localhost:8000/api/reviews/${review.review_id}/governance`);
+      const govRes = await demoFetch(`http://localhost:8000/api/reviews/${review.review_id}/governance`);
       const govData = await govRes.json();
       setGovernanceReport(govData);
     } catch (error) {

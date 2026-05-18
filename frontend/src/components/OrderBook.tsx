@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { demoFetch } from "../demo/demoFetch";
 import {
   Box,
   Table,
@@ -13,9 +14,11 @@ import {
   Spinner,
   Center,
   Badge,
+  Icon,
 } from '@chakra-ui/react';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useI18n } from '../i18n';
+import { RepeatIcon } from '@chakra-ui/icons';
 
 interface OrderBookProps {
   symbol: string;
@@ -35,7 +38,7 @@ const OrderBook: React.FC<OrderBookProps> = ({ symbol }) => {
   useEffect(() => {
     const fetchOrderBook = async () => {
       try {
-        const response = await fetch(`http://localhost:8000/orderbook?symbol=${symbol}`);
+        const response = await demoFetch(`http://localhost:8000/orderbook?symbol=${symbol}`);
         const data = await response.json();
         if (data.status === 'success') {
           setOrderBook(data.data as OrderBookData);
@@ -98,31 +101,45 @@ const OrderBook: React.FC<OrderBookProps> = ({ symbol }) => {
   return (
     <Box height="100%" display="flex" flexDirection="column">
       <HStack justify="space-between" mb={2} px={1}>
-        <Text fontSize="xs" fontWeight="bold" letterSpacing="tight" color="gray.400">{t('label.market_depth')}</Text>
-        <Badge variant="subtle" fontSize="8px" colorScheme={isConnected ? 'green' : 'gray'}>
+        <Text fontSize="10px" fontWeight="800" letterSpacing="widest" color="ui.muted" textTransform="uppercase">{t('label.market_depth')}</Text>
+        <Badge variant="subtle" fontSize="8px" colorScheme={isConnected ? 'green' : 'gray'} borderRadius="xs">
             {isConnected ? t('status.live') : t('status.idle')}
         </Badge>
       </HStack>
       
-      {isLoading ? (
-        <Center h="100%">
+      {!isConnected ? (
+        <Center h="100%" flex={1} bg="blackAlpha.200" borderRadius="sm" border="1px dashed" borderColor="ui.border">
+            <VStack spacing={2} opacity={0.6}>
+                <Icon as={RepeatIcon} w={4} h={4} color="ui.muted" />
+                <Text fontSize="9px" color="ui.muted" letterSpacing="widest" fontWeight="bold">LEDGER OFFLINE</Text>
+                <Text fontSize="8px" color="ui.muted">AWAITING RESEARCH FEED INITIALIZATION</Text>
+            </VStack>
+        </Center>
+      ) : isLoading ? (
+        <Center h="100%" flex={1}>
             <VStack spacing={2}>
-                <Spinner size="xs" color="brand.500" />
-                <Text fontSize="9px" color="ui.muted">SYNCING LEDGER</Text>
+                <Spinner size="xs" color="brand.500" thickness="1px" />
+                <Text fontSize="9px" color="ui.muted" letterSpacing="widest">SYNCING L2 LEDGER</Text>
             </VStack>
         </Center>
       ) : (
-        <Box overflowY="auto" flex={1}>
+        <Box overflowY="auto" flex={1} pr={1} sx={{ '&::-webkit-scrollbar': { width: '2px' }, '&::-webkit-scrollbar-thumb': { bg: 'whiteAlpha.100' } }}>
             <Table variant="unstyled" size="xs">
                 <Thead>
                     <Tr borderBottom="1px" borderColor="ui.border">
-                        <Th fontSize="9px" color="ui.muted">PRICE</Th>
-                        <Th fontSize="9px" color="ui.muted" isNumeric>AMOUNT</Th>
+                        <Th fontSize="8px" color="ui.muted" pb={1}>PRICE</Th>
+                        <Th fontSize="8px" color="ui.muted" isNumeric pb={1}>AMOUNT</Th>
                     </Tr>
                 </Thead>
                 <Tbody>
                     {renderOrders(orderBook.asks, false)}
-                    <Tr height="4px" />
+                    <Tr height="2px" />
+                    <Tr bg="whiteAlpha.100">
+                        <Td colSpan={2} py={0.5} textAlign="center">
+                            <Text fontSize="9px" fontWeight="bold" color="brand.500">SPREAD: {Math.abs(orderBook.asks[0]?.[0] - orderBook.bids[0]?.[0]).toFixed(2)}</Text>
+                        </Td>
+                    </Tr>
+                    <Tr height="2px" />
                     {renderOrders(orderBook.bids, true)}
                 </Tbody>
             </Table>

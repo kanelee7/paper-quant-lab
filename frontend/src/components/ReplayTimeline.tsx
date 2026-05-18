@@ -21,6 +21,7 @@ import {
   ArrowRightIcon,
   SearchIcon 
 } from '@chakra-ui/icons';
+import { demoFetch } from "../demo/demoFetch";
 
 interface Signal {
   id: string;
@@ -47,7 +48,7 @@ const ReplayTimeline: React.FC<ReplayTimelineProps> = ({ symbol, onFocusSignal }
 
   const fetchSignals = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/api/journal?limit=200`);
+      const response = await demoFetch(`http://localhost:8000/api/journal?limit=200`);
       const data = await response.json();
       const filtered = data.filter((s: any) => s.symbol === symbol).sort((a: any, b: any) => 
         new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()

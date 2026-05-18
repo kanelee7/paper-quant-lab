@@ -13,6 +13,7 @@ import {
   Tooltip,
 } from '@chakra-ui/react';
 import { WarningIcon, CheckCircleIcon, LinkIcon, RepeatIcon } from '@chakra-ui/icons';
+import { demoFetch } from "../demo/demoFetch";
 
 interface ReproducibilityReport {
   status: 'healthy' | 'degraded';
@@ -33,7 +34,7 @@ const ReliabilityDashboard: React.FC = () => {
 
   const fetchReport = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/reliability/reproducibility');
+      const response = await demoFetch('http://localhost:8000/api/reliability/reproducibility');
       const data = await response.json();
       setReport(data);
     } catch (error) {
@@ -49,7 +50,7 @@ const ReliabilityDashboard: React.FC = () => {
 
   const handleCreateBackup = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/reliability/backup', { method: 'POST' });
+      const response = await demoFetch('http://localhost:8000/api/reliability/backup', { method: 'POST' });
       if (response.ok) {
         toast({ title: 'Research State Snapshot Created', status: 'success', duration: 2000 });
         fetchReport();

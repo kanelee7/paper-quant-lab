@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { demoFetch } from "../demo/demoFetch";
 import {
   Box,
   VStack,
@@ -57,10 +58,10 @@ const ResearchJournal: React.FC = () => {
 
   const fetchSessions = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/sessions');
+      const response = await demoFetch('http://localhost:8000/api/sessions');
       const data = await response.json();
       setSessions(data);
-    } catch (e) {}
+    } catch (e) { }
   };
 
   const saveEntries = (updated: ReflectionEntry[]) => {
@@ -108,15 +109,15 @@ const ResearchJournal: React.FC = () => {
   };
 
   return (
-    <Box bg="background.surface" borderRadius="lg" p={4} borderWidth="1px" borderColor="ui.border" shadow="sm">
+    <Box bg="background.surface" borderRadius="md" p={4} borderWidth="1px" borderColor="ui.border" shadow="sm">
       <HStack justifyContent="space-between" mb={2}>
         <HStack spacing={2}>
-            <Heading size="xs" color="brand.500" letterSpacing="widest" textTransform="uppercase">Research Reflections</Heading>
-            <Badge variant="subtle" fontSize="9px">{entries.length} ENTRIES</Badge>
+            <Heading size="xs" color="brand.500" letterSpacing="widest" textTransform="uppercase">Analytical Reflections</Heading>
+            {entries.length > 0 && <Badge variant="subtle" fontSize="9px">{entries.length} RECORDS</Badge>}
         </HStack>
         <HStack spacing={2}>
-            <Button size="2xs" leftIcon={isEditing ? <ChevronRightIcon /> : <EditIcon />} colorScheme="brand" variant="ghost" onClick={() => setIsEditing(!isEditing)}>
-                {isEditing ? 'Cancel' : 'Add Reflection'}
+            <Button size="2xs" leftIcon={isEditing ? <ChevronRightIcon /> : <EditIcon />} colorScheme="brand" variant="ghost" onClick={() => setIsEditing(!isEditing)} fontSize="10px">
+                {isEditing ? 'Discard' : 'New Entry'}
             </Button>
             <IconButton 
             size="xs" 
@@ -129,29 +130,29 @@ const ResearchJournal: React.FC = () => {
       </HStack>
 
       <Collapse in={isOpen}>
-        <VStack align="stretch" spacing={4} mt={2}>
-          <Text fontSize="11px" color="ui.muted">Record longitudinal takeaways and analytical conclusions.</Text>
+        <VStack align="stretch" spacing={4} mt={entries.length > 0 || isEditing ? 2 : 0}>
+          {entries.length > 0 && <Text fontSize="11px" color="ui.muted">Synthesized takeaways from longitudinal market observation.</Text>}
           
           <Collapse in={isEditing}>
-            <VStack align="stretch" spacing={3} p={3} bg="blackAlpha.300" borderRadius="md" borderWidth="1px" borderColor="brand.500">
+            <VStack align="stretch" spacing={3} p={3} bg="blackAlpha.300" borderRadius="sm" borderWidth="1px" borderColor="brand.500" mb={4}>
                 <HStack spacing={2}>
-                    <Select size="xs" w="120px" bg="background.deep" value={newType} onChange={(e) => setNewType(e.target.value as any)}>
+                    <Select size="xs" w="120px" bg="background.deep" borderColor="ui.border" value={newType} onChange={(e) => setNewType(e.target.value as any)} fontSize="10px">
                         <option value="Observation">Observation</option>
                         <option value="Learning">Learning</option>
                         <option value="Hypothesis">Hypothesis</option>
                         <option value="Conclusion">Conclusion</option>
                     </Select>
-                    <Select size="xs" bg="background.deep" value={linkedSession} onChange={(e) => setLinkedSession(e.target.value)}>
-                        <option value="">Link to Session (Optional)</option>
+                    <Select size="xs" bg="background.deep" borderColor="ui.border" value={linkedSession} onChange={(e) => setLinkedSession(e.target.value)} fontSize="10px">
+                        <option value="">Contextual Link (Optional)</option>
                         {sessions.map(s => (
                             <option key={s.session_id} value={s.session_id}>{s.title}</option>
                         ))}
                     </Select>
                 </HStack>
                 <Box>
-                    <Text fontSize="10px" color="ui.muted" mb={1} fontWeight="bold">TITLE</Text>
+                    <Text fontSize="9px" color="ui.muted" mb={1} fontWeight="800" textTransform="uppercase">Identifier</Text>
                     <Textarea 
-                        placeholder="e.g., Identifying False Volatility Spikes" 
+                        placeholder="e.g., Sentiment Divergence Analysis" 
                         size="sm" 
                         fontSize="xs" 
                         rows={1}
@@ -159,12 +160,13 @@ const ResearchJournal: React.FC = () => {
                         onChange={(e) => setNewTitle(e.target.value)}
                         bg="background.deep"
                         borderColor="ui.border"
+                        borderRadius="xs"
                     />
                 </Box>
                 <Box>
-                    <Text fontSize="10px" color="ui.muted" mb={1} fontWeight="bold">REFLECTIVE CONTENT</Text>
+                    <Text fontSize="9px" color="ui.muted" mb={1} fontWeight="800" textTransform="uppercase">Qualitative Synthesis</Text>
                     <Textarea 
-                        placeholder="What did you learn from this experiment?" 
+                        placeholder="Detail the analytical findings..." 
                         size="sm" 
                         fontSize="xs" 
                         rows={4}
@@ -172,26 +174,27 @@ const ResearchJournal: React.FC = () => {
                         onChange={(e) => setNewContent(e.target.value)}
                         bg="background.deep"
                         borderColor="ui.border"
+                        borderRadius="xs"
                     />
                 </Box>
-                <Button size="xs" colorScheme="brand" rightIcon={<CheckIcon />} onClick={handleAddEntry}>Capture Reflection</Button>
+                <Button size="xs" colorScheme="brand" rightIcon={<CheckIcon />} onClick={handleAddEntry} fontWeight="800" letterSpacing="wider">COMMIT REFLECTION</Button>
             </VStack>
           </Collapse>
 
-          <VStack align="stretch" spacing={3} maxH="500px" overflowY="auto" pr={2}>
+          <VStack align="stretch" spacing={3} maxH={entries.length > 3 ? "400px" : "auto"} overflowY="auto" pr={2}>
             {entries.length === 0 && !isEditing && (
-                <Box p={8} textAlign="center" borderRadius="md" border="1px dashed" borderColor="ui.border">
-                    <Icon as={ChatIcon} color="ui.muted" mb={2} />
-                    <Text fontSize="xs" color="ui.muted">No reflections captured yet.</Text>
+                <Box py={6} px={4} textAlign="center" borderRadius="sm" border="1px dashed" borderColor="ui.border" bg="blackAlpha.100">
+                    <Icon as={ChatIcon} color="ui.muted" mb={2} w={4} h={4} />
+                    <Text fontSize="xs" color="ui.muted" fontStyle="italic">No analytical reflections recorded for this session.</Text>
                 </Box>
             )}
             
             {entries.map(entry => (
-                <Box key={entry.id} p={3} bg="blackAlpha.200" borderRadius="md" borderLeft="3px solid" borderColor={getTypeColor(entry.type) + ".500"}>
+                <Box key={entry.id} p={3} bg="blackAlpha.200" borderRadius="sm" borderLeft="3px solid" borderColor={getTypeColor(entry.type) + ".500"}>
                     <VStack align="stretch" spacing={2}>
                         <HStack justifyContent="space-between">
                             <HStack spacing={2}>
-                                <Badge colorScheme={getTypeColor(entry.type)} fontSize="8px">{entry.type}</Badge>
+                                <Badge colorScheme={getTypeColor(entry.type)} fontSize="8px" variant="solid" borderRadius="xs">{entry.type}</Badge>
                                 <Text fontSize="xs" fontWeight="bold" color="gray.200">{entry.title}</Text>
                             </HStack>
                             <IconButton 
@@ -204,7 +207,7 @@ const ResearchJournal: React.FC = () => {
                             />
                         </HStack>
                         
-                        <Text fontSize="xs" color="gray.400" lineHeight="tall">{entry.content}</Text>
+                        <Text fontSize="11px" color="gray.400" lineHeight="1.6">{entry.content}</Text>
                         
                         <Divider borderColor="whiteAlpha.50" />
                         
@@ -217,7 +220,7 @@ const ResearchJournal: React.FC = () => {
                                 {entry.linked_session_id && (
                                     <HStack spacing={1}>
                                         <Icon as={LinkIcon} w={2.5} h={2.5} color="brand.500" />
-                                        <Text fontSize="9px" color="brand.500" fontWeight="bold">{getSessionTitle(entry.linked_session_id)}</Text>
+                                        <Text fontSize="9px" color="brand.500" fontWeight="bold" textTransform="uppercase" letterSpacing="tighter">{getSessionTitle(entry.linked_session_id)}</Text>
                                     </HStack>
                                 )}
                             </HStack>

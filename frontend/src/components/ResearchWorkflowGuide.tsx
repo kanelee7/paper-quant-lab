@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { demoFetch } from "../demo/demoFetch";
 import {
   Box,
   VStack,
@@ -56,7 +57,7 @@ const ResearchWorkflowGuide: React.FC<ResearchWorkflowGuideProps> = ({ onModeCha
 
   const fetchPresets = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/workflows/presets');
+      const response = await demoFetch('http://localhost:8000/api/workflows/presets');
       const data = await response.json();
       setPresets(data);
     } catch (error) {

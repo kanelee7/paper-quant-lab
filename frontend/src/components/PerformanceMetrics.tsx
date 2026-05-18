@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { demoFetch } from "../demo/demoFetch";
 import {
   Box,
   SimpleGrid,
@@ -23,7 +24,7 @@ const PerformanceMetrics: React.FC = () => {
 
   const fetchMetrics = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/performance');
+      const response = await demoFetch('http://localhost:8000/api/performance');
       const data = await response.json();
       setMetrics(data);
     } catch (error) {

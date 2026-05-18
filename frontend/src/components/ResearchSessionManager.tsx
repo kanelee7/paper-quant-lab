@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { demoFetch } from "../demo/demoFetch";
 import {
   Box,
   VStack,
@@ -60,7 +61,7 @@ const ResearchSessionManager: React.FC = () => {
 
   const fetchSessions = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/sessions');
+      const response = await demoFetch('http://localhost:8000/api/sessions');
       const data = await response.json();
       setSessions(data.reverse());
       
@@ -81,7 +82,7 @@ const ResearchSessionManager: React.FC = () => {
       return;
     }
     try {
-      const response = await fetch('http://localhost:8000/api/sessions/start', {
+      const response = await demoFetch('http://localhost:8000/api/sessions/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newSession)
@@ -97,7 +98,7 @@ const ResearchSessionManager: React.FC = () => {
 
   const handleStopSession = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/sessions/stop', { method: 'POST' });
+      const response = await demoFetch('http://localhost:8000/api/sessions/stop', { method: 'POST' });
       const stopped = await response.json();
       setActiveSession(null);
       fetchSessions();
@@ -114,7 +115,7 @@ const ResearchSessionManager: React.FC = () => {
 
   const handleViewSummary = async (sessionId: string) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/sessions/${sessionId}/summary`);
+      const response = await demoFetch(`http://localhost:8000/api/sessions/${sessionId}/summary`);
       const data = await response.json();
       setSelectedSessionSummary(data);
       onOpen();

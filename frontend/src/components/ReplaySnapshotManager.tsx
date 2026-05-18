@@ -24,6 +24,7 @@ import {
   Icon,
 } from '@chakra-ui/react';
 import { AddIcon, DeleteIcon, AttachmentIcon, InfoOutlineIcon } from '@chakra-ui/icons';
+import { demoFetch } from "../demo/demoFetch";
 
 interface ReplaySnapshot {
   snapshot_id: string;
@@ -43,7 +44,7 @@ const ReplaySnapshotManager: React.FC<{ symbol: string }> = ({ symbol }) => {
 
   const fetchSnapshots = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/replays/snapshots');
+      const response = await demoFetch('http://localhost:8000/api/replays/snapshots');
       const data = await response.json();
       setSnapshots(data.reverse());
     } catch (error) {
@@ -62,7 +63,7 @@ const ReplaySnapshotManager: React.FC<{ symbol: string }> = ({ symbol }) => {
     }
     
     try {
-      const response = await fetch('http://localhost:8000/api/replays/snapshots', {
+      const response = await demoFetch('http://localhost:8000/api/replays/snapshots', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -87,7 +88,7 @@ const ReplaySnapshotManager: React.FC<{ symbol: string }> = ({ symbol }) => {
 
   const handleDeleteSnapshot = async (id: string) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/replays/snapshots/${id}`, { method: 'DELETE' });
+      const response = await demoFetch(`http://localhost:8000/api/replays/snapshots/${id}`, { method: 'DELETE' });
       if (response.ok) {
         toast({ title: 'Snapshot deleted', status: 'info' });
         fetchSnapshots();

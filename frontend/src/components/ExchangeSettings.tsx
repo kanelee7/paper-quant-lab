@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { demoFetch } from "../demo/demoFetch";
 import {
   Box,
   Button,
@@ -62,7 +63,7 @@ const ExchangeSettings: React.FC<ExchangeSettingsProps> = ({
   const handleConnect = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:8000/select-market', {
+      const response = await demoFetch('http://localhost:8000/select-market', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -78,7 +79,7 @@ const ExchangeSettings: React.FC<ExchangeSettingsProps> = ({
       const data = await response.json();
       if (data.status === 'success') {
         toast({
-          title: 'Research Session Initialized',
+          title: 'Research Environment Ready',
           description: data.message,
           status: 'success',
           duration: 3000,
@@ -111,7 +112,7 @@ const ExchangeSettings: React.FC<ExchangeSettingsProps> = ({
   const handleTestConnection = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:8000/test-connection', {
+      const response = await demoFetch('http://localhost:8000/test-connection', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -125,7 +126,7 @@ const ExchangeSettings: React.FC<ExchangeSettingsProps> = ({
 
       const data = await response.json();
       toast({
-        title: data.status === 'success' ? 'API Key Valid' : 'Test Failed',
+        title: data.status === 'success' ? 'Access Validated' : 'Validation Failed',
         description: data.message,
         status: data.status === 'success' ? 'success' : 'error',
         duration: 3000,
@@ -141,7 +142,7 @@ const ExchangeSettings: React.FC<ExchangeSettingsProps> = ({
   const handleDisconnect = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:8000/disconnect-exchange', {
+      const response = await demoFetch('http://localhost:8000/disconnect-exchange', {
         method: 'POST',
       });
 
@@ -151,7 +152,7 @@ const ExchangeSettings: React.FC<ExchangeSettingsProps> = ({
         setSecretKey('');
         setShowApiInput(false);
         toast({
-          title: 'Session Disconnected',
+          title: 'Data Feed Detached',
           status: 'info',
           duration: 3000,
           isClosable: true,
@@ -166,119 +167,141 @@ const ExchangeSettings: React.FC<ExchangeSettingsProps> = ({
   };
 
   return (
-    <Box p={4} borderWidth="1px" borderRadius="lg" bg="gray.800">
+    <Box p={4} borderWidth="1px" borderRadius="md" bg="blackAlpha.300" borderColor="ui.border">
       <VStack spacing={4} align="stretch">
         <FormControl>
-          <FormLabel fontSize="xs" color="gray.400">{t('label.asset_type')}</FormLabel>
+          <FormLabel fontSize="10px" color="ui.muted" fontWeight="800" textTransform="uppercase" letterSpacing="widest">{t('label.asset_type')}</FormLabel>
           <Select
             value={assetType}
             onChange={(e) => setAssetType(e.target.value)}
             isDisabled={isConnected}
-            bg="gray.700"
-            borderColor="gray.600"
-            size="sm"
+            bg="background.deep"
+            borderColor="ui.border"
+            size="xs"
+            borderRadius="xs"
+            fontSize="11px"
           >
-            <option value="CRYPTO">Crypto (CCXT)</option>
-            <option value="STOCK">US Stocks (Simulated)</option>
+            <option value="CRYPTO">Crypto Assets (CCXT)</option>
+            <option value="STOCK">Equities (Simulated)</option>
             <option value="ETF">Global ETFs (Simulated)</option>
           </Select>
         </FormControl>
 
         <FormControl>
-          <FormLabel fontSize="xs" color="gray.400">{t('label.data_source')}</FormLabel>
+          <FormLabel fontSize="10px" color="ui.muted" fontWeight="800" textTransform="uppercase" letterSpacing="widest">Research Data Provider</FormLabel>
           <Select
             value={selectedExchange}
             onChange={(e) => setSelectedExchange(e.target.value)}
             isDisabled={isConnected}
-            bg="gray.700"
-            borderColor="gray.600"
-            size="sm"
+            bg="background.deep"
+            borderColor="ui.border"
+            size="xs"
+            borderRadius="xs"
+            fontSize="11px"
           >
             <option value="binance">Binance</option>
             <option value="digifinex">Digifinex</option>
             <option value="weex">Weex</option>
-            <option value="yahoo">Yahoo Finance (Coming soon)</option>
+            <option value="yahoo">Yahoo Finance (Restricted)</option>
           </Select>
         </FormControl>
 
         {!isConnected && !showApiInput ? (
           <Button
-            colorScheme="blue"
+            variant="outline"
+            colorScheme="brand"
             onClick={() => setShowApiInput(true)}
             width="100%"
-            size="sm"
+            size="xs"
+            fontSize="10px"
+            letterSpacing="wider"
+            fontWeight="800"
           >
-            Enter API Credentials (Optional)
+            CONFIGURE DATA ACCESS
           </Button>
         ) : null}
 
         {showApiInput && (
           <>
             <FormControl>
-              <FormLabel fontSize="xs" color="gray.400">API Key</FormLabel>
+              <FormLabel fontSize="10px" color="ui.muted" fontWeight="800" textTransform="uppercase" letterSpacing="widest">Provider API Key</FormLabel>
               <Input
                 type="password"
                 value={apiKey}
+                placeholder="Required for direct feed access"
                 onChange={(e) => setApiKey(e.target.value)}
                 isDisabled={isConnected}
-                bg="gray.700"
-                borderColor="gray.600"
-                size="sm"
+                bg="background.deep"
+                borderColor="ui.border"
+                size="xs"
+                borderRadius="xs"
+                fontSize="11px"
               />
             </FormControl>
 
             <FormControl>
-              <FormLabel fontSize="xs" color="gray.400">Secret Key</FormLabel>
+              <FormLabel fontSize="10px" color="ui.muted" fontWeight="800" textTransform="uppercase" letterSpacing="widest">Provider Secret</FormLabel>
               <Input
                 type="password"
                 value={secretKey}
+                placeholder="Secure analytical token"
                 onChange={(e) => setSecretKey(e.target.value)}
                 isDisabled={isConnected}
-                bg="gray.700"
-                borderColor="gray.600"
-                size="sm"
+                bg="background.deep"
+                borderColor="ui.border"
+                size="xs"
+                borderRadius="xs"
+                fontSize="11px"
               />
             </FormControl>
 
-            <Text fontSize="xs" color="blue.300">
-              * Paper trading is enabled by default for all sessions.
+            <Text fontSize="9px" color="ui.muted" fontStyle="italic">
+              * Research integrity: All orders remain in simulation mode.
             </Text>
 
-            <Divider />
+            <Divider borderColor="whiteAlpha.100" />
 
-            <HStack spacing={4} justify="space-between">
+            <VStack spacing={2} width="100%">
               <Button
-                colorScheme="blue"
+                colorScheme="brand"
                 onClick={handleConnect}
                 isDisabled={isConnected || isLoading}
                 width="100%"
-                size="sm"
+                size="xs"
+                fontWeight="800"
+                letterSpacing="wider"
               >
-                {isLoading ? <Spinner size="xs" /> : t('btn.initialize')}
+                {isLoading ? <Spinner size="2xs" /> : "INITIALIZE RESEARCH FEED"}
               </Button>
 
               <Button
+                variant="ghost"
                 colorScheme="gray"
                 onClick={handleTestConnection}
                 isDisabled={!apiKey || !secretKey || isLoading}
                 width="100%"
-                size="sm"
+                size="xs"
+                fontSize="10px"
               >
-                {isLoading ? <Spinner size="xs" /> : 'Verify Access'}
+                {isLoading ? <Spinner size="2xs" /> : 'Validate Analytical Stream'}
               </Button>
-            </HStack>
+            </VStack>
           </>
         )}
 
         {isConnected && (
           <Button
+            variant="ghost"
             colorScheme="red"
             onClick={handleDisconnect}
             isDisabled={!isConnected || isLoading}
             width="100%"
-            size="sm"
+            size="xs"
+            fontSize="10px"
+            fontWeight="800"
+            letterSpacing="wider"
           >
-            {isLoading ? <Spinner size="xs" /> : t('btn.terminate')}
+            {isLoading ? <Spinner size="2xs" /> : "DETACH RESEARCH DATA"}
           </Button>
         )}
       </VStack>

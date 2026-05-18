@@ -19,6 +19,7 @@ import {
   ChevronDownIcon,
   ChevronRightIcon,
 } from '@chakra-ui/icons';
+import { demoFetch } from '../demo/demoFetch';
 
 interface GovernanceConflict {
   id: string;
@@ -31,26 +32,23 @@ interface GovernanceConflict {
 const CollaborativeGovernance: React.FC = () => {
   const { isOpen, onToggle } = useDisclosure({ defaultIsOpen: false });
   const [conflicts, setConflicts] = useState<GovernanceConflict[]>([]);
-  const trustScore = 0.92;
+  const [trustScore, setTrustScore] = useState(0.92);
+
+  const fetchGovernance = async () => {
+    try {
+      const response = await demoFetch('http://localhost:8000/api/reliability/reproducibility');
+      const data = await response.json();
+      if (data.broken_links) {
+        setConflicts(data.broken_links);
+      }
+      setTrustScore(data.status === 'trusted' ? 0.98 : 0.92);
+    } catch (error) {
+      console.error('Failed to fetch governance:', error);
+    }
+  };
 
   useEffect(() => {
-    // Simulated governance scanning of shared contexts
-    setConflicts([
-      {
-        id: 'c1',
-        type: 'Contradiction',
-        severity: 'Warning',
-        description: 'Peer interpretation "Volatility Trap" contradicts local finding "Breakout Confirmation" for Signal sig_88a2.',
-        evidence_ids: ['sig_88a2']
-      },
-      {
-        id: 'c2',
-        type: 'Provenance',
-        severity: 'Critical',
-        description: 'Imported research "Momentum Alpha" references replay states missing in local data provider.',
-        evidence_ids: ['replay_v1_0514']
-      }
-    ]);
+    fetchGovernance();
   }, []);
 
   return (

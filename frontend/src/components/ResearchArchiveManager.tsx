@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { demoFetch } from "../demo/demoFetch";
 import {
   Box,
   VStack,
@@ -49,7 +50,7 @@ const ResearchArchiveManager: React.FC = () => {
 
   const fetchArchives = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/archives');
+      const response = await demoFetch('http://localhost:8000/api/archives');
       const data = await response.json();
       setArchives(data);
     } catch (error) {
@@ -67,7 +68,7 @@ const ResearchArchiveManager: React.FC = () => {
       return;
     }
     try {
-      const response = await fetch('http://localhost:8000/api/archives/create', {
+      const response = await demoFetch('http://localhost:8000/api/archives/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newArchive)
@@ -86,7 +87,7 @@ const ResearchArchiveManager: React.FC = () => {
   const handleImport = async () => {
     if (!selectedArchive) return;
     try {
-      const response = await fetch(`http://localhost:8000/api/archives/${selectedArchive.archive_id}/import?mode=${importMode}`, {
+      const response = await demoFetch(`http://localhost:8000/api/archives/${selectedArchive.archive_id}/import?mode=${importMode}`, {
         method: 'POST'
       });
       if (response.ok) {

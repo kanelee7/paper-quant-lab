@@ -46,6 +46,7 @@ import {
   WarningIcon,
   RepeatIcon,
   } from '@chakra-ui/icons';
+  import { demoFetch } from "../demo/demoFetch";
   import ResearchCommentary from './ResearchCommentary';
 
   interface Signal {  id: string;
@@ -99,7 +100,7 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
 
   const fetchJournal = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/journal');
+      const response = await demoFetch('http://localhost:8000/api/journal');
       const data = await response.json();
       setSignals(data.reverse());
     } catch (error) {
@@ -109,7 +110,7 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
 
   const fetchFailureTaxonomy = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/taxonomy/failures');
+      const response = await demoFetch('http://localhost:8000/api/taxonomy/failures');
       const data = await response.json();
       setFailureTaxonomy(data);
     } catch (error) {
@@ -119,7 +120,7 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
 
   const fetchSessions = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/sessions');
+      const response = await demoFetch('http://localhost:8000/api/sessions');
       const data = await response.json();
       setSessions(data);
     } catch (error) {
@@ -132,7 +133,7 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
     const evals: Record<string, any> = {};
     for (const pid of personaIds) {
       try {
-        const response = await fetch(`http://localhost:8000/api/personas/evaluation/${pid}`);
+        const response = await demoFetch(`http://localhost:8000/api/personas/evaluation/${pid}`);
         evals[pid] = await response.json();
       } catch (e) {
         console.error(`Failed to fetch eval for ${pid}`, e);
@@ -143,7 +144,7 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
 
   const fetchSimilarSignals = async (signalId: string) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/journal/similar/${signalId}`);
+      const response = await demoFetch(`http://localhost:8000/api/journal/similar/${signalId}`);
       const data = await response.json();
       setSimilarSignals(data);
     } catch (error) {
@@ -185,7 +186,7 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
 
   const handleBookmark = async (signalId: string) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/journal/bookmark/${signalId}`, { method: 'POST' });
+      const response = await demoFetch(`http://localhost:8000/api/journal/bookmark/${signalId}`, { method: 'POST' });
       const data = await response.json();
       if (data.status === 'success') {
         toast({ title: 'Signal Bookmarked', status: 'success', duration: 2000 });
@@ -217,7 +218,7 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
   const handleSaveNotes = async () => {
     if (!selectedSignal) return;
     try {
-      await fetch('http://localhost:8000/api/journal/annotate', {
+      await demoFetch('http://localhost:8000/api/journal/annotate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -243,7 +244,7 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
   const handleClearJournal = async () => {
     if (window.confirm('Are you sure you want to clear the journal?')) {
       try {
-        await fetch('http://localhost:8000/api/journal/clear', { method: 'POST' });
+        await demoFetch('http://localhost:8000/api/journal/clear', { method: 'POST' });
         setSignals([]);
       } catch (error) {
         console.error('Failed to clear journal:', error);
@@ -350,59 +351,68 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
         </Select>
       </HStack>
       
-      <Box overflowY="auto" maxH="400px">
+      <Box overflowY="auto" maxH="400px" pr={1} sx={{ '&::-webkit-scrollbar': { width: '3px' }, '&::-webkit-scrollbar-thumb': { bg: 'whiteAlpha.100', borderRadius: 'full' } }}>
         <Table variant="simple" size="sm">
           <Thead>
-            <Tr>
-              <Th>Time</Th>
-              <Th>Persona</Th>
-              <Th>Action</Th>
-              <Th>Regime</Th>
-              <Th isNumeric>Price</Th>
-              <Th>Outcome(5m)</Th>
-              <Th>Actions</Th>
+            <Tr borderBottom="1px" borderColor="ui.border">
+              <Th fontSize="9px" color="ui.muted">TIMESTAMP</Th>
+              <Th fontSize="9px" color="ui.muted">PERSONA</Th>
+              <Th fontSize="9px" color="ui.muted">ACTION</Th>
+              <Th fontSize="9px" color="ui.muted">REGIME</Th>
+              <Th isNumeric fontSize="9px" color="ui.muted">PRICE</Th>
+              <Th fontSize="9px" color="ui.muted">OUTCOME</Th>
+              <Th fontSize="9px" color="ui.muted">OPS</Th>
             </Tr>
           </Thead>
           <Tbody>
-            {filteredSignals.map((signal, index) => (
+            {filteredSignals.length === 0 ? (
+                <Tr>
+                    <Td colSpan={7} py={12} textAlign="center">
+                        <VStack spacing={2} opacity={0.6}>
+                            <Icon as={SearchIcon} w={5} h={5} color="ui.muted" />
+                            <Text fontSize="xs" color="ui.muted" fontStyle="italic">No signals detected in the current analytical stream.</Text>
+                        </VStack>
+                    </Td>
+                </Tr>
+            ) : filteredSignals.map((signal, index) => (
               <Popover key={index} trigger="hover" placement="right" openDelay={500}>
                 <PopoverTrigger>
                     <Tr _hover={{ bg: "whiteAlpha.50" }} borderLeft={signal.notes ? "2px solid" : "none"} borderColor="brand.500" cursor="help">
-                        <Td fontSize="11px" color="ui.muted">{new Date(signal.timestamp).toLocaleTimeString()}</Td>
-                        <Td>
+                        <Td fontSize="11px" color="ui.muted" py={2}>{new Date(signal.timestamp).toLocaleTimeString()}</Td>
+                        <Td py={2}>
                         {signal.persona_id && (
-                            <Badge colorScheme="purple" fontSize="9px" variant="solid" bg="purple.900" color="purple.100">
+                            <Badge colorScheme="purple" fontSize="9px" variant="solid" bg="purple.900" color="purple.100" borderRadius="xs">
                             {signal.persona_id.split('_')[0]}
                             </Badge>
                         )}
                         </Td>
-                        <Td>
+                        <Td py={2}>
                         <Tooltip label={workspaceMode === 'TRAINING' ? getActionHint(signal.action) : ''}>
-                            <Badge colorScheme={signal.action === 'buy' ? 'green' : signal.action === 'sell' ? 'red' : 'gray'} fontSize="9px">
+                            <Badge colorScheme={signal.action === 'buy' ? 'green' : signal.action === 'sell' ? 'red' : 'gray'} fontSize="9px" borderRadius="xs">
                                 {signal.action.toUpperCase()}
                                 {workspaceMode === 'TRAINING' && <QuestionOutlineIcon ml={1} w={2} h={2} />}
                             </Badge>
                         </Tooltip>
                         </Td>
-                        <Td>
+                        <Td py={2}>
                         <Tooltip label={workspaceMode === 'TRAINING' ? getRegimeHint(signal.market_regime) : ''}>
-                            <Badge colorScheme={getRegimeColor(signal.market_regime)} variant="outline" fontSize="9px">
+                            <Badge colorScheme={getRegimeColor(signal.market_regime)} variant="outline" fontSize="9px" borderRadius="xs">
                                 {signal.market_regime || 'unknown'}
                                 {workspaceMode === 'TRAINING' && <InfoIcon ml={1} w={2} h={2} />}
                             </Badge>
                         </Tooltip>
                         </Td>
-                        <Td isNumeric fontSize="11px" fontWeight="500">{signal.price.toLocaleString()}</Td>
-                        <Td fontSize="11px">
+                        <Td isNumeric fontSize="11px" fontWeight="500" py={2}>{signal.price.toLocaleString()}</Td>
+                        <Td fontSize="11px" py={2}>
                         {signal.outcomes?.['5m'] ? (
                             <Text color={signal.outcomes['5m'].pct >= 0 ? "green.300" : "red.300"} fontWeight="bold">
                             {signal.outcomes['5m'].pct > 0 ? '+' : ''}{signal.outcomes['5m'].pct}%
                             </Text>
                         ) : (
-                            <Text color="ui.muted">...</Text>
+                            <Text color="ui.muted">---</Text>
                         )}
                         </Td>
-                        <Td>
+                        <Td py={2}>
                         <HStack spacing={1}>
                             {!signal.indicators_snapshot && (
                             <Tooltip label="Missing indicators snapshot (breaks replay)">
@@ -413,7 +423,7 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
                             size="xs" 
                             variant="ghost"
                             aria-label="View Detail" 
-                            icon={<ViewIcon />} 
+                            icon={<ViewIcon w={3} h={3} />} 
                             onClick={() => handleOpenDetail(signal)} 
                             />
                             <IconButton 
@@ -421,30 +431,30 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
                             variant="ghost"
                             aria-label="Bookmark" 
                             color={signal.notes ? "brand.500" : "ui.muted"}
-                            icon={<StarIcon />} 
+                            icon={<StarIcon w={3} h={3} />} 
                             onClick={() => handleBookmark(signal.id)} 
                             />
                             <IconButton 
                             size="xs" 
                             variant="ghost"
                             aria-label="Show on Chart" 
-                            icon={<SearchIcon />} 
+                            icon={<SearchIcon w={3} h={3} />} 
                             onClick={() => handleShowOnChart(signal)} 
                             />
                         </HStack>
                         </Td>
                     </Tr>
                 </PopoverTrigger>
-                <PopoverContent bg="background.surface" borderColor="ui.border" boxShadow="panel" p={3} w="280px">
+                <PopoverContent bg="background.surface" borderColor="ui.border" boxShadow="panel" p={3} w="280px" borderRadius="md">
                     <PopoverArrow bg="background.surface" />
                     <PopoverHeader border="none" p={0} mb={2}>
                         <HStack justify="space-between">
-                            <Text fontSize="10px" fontWeight="800" color="brand.500">REASONING PREVIEW</Text>
-                            <Badge fontSize="8px">{signal.strategy_name}</Badge>
+                            <Text fontSize="10px" fontWeight="800" color="brand.500" letterSpacing="widest">REASONING PREVIEW</Text>
+                            <Badge fontSize="8px" borderRadius="xs">{signal.strategy_name}</Badge>
                         </HStack>
                     </PopoverHeader>
                     <PopoverBody p={0}>
-                        <Text fontSize="11px" fontStyle="italic" color="gray.300" noOfLines={3} mb={3}>
+                        <Text fontSize="11px" fontStyle="italic" color="gray.300" noOfLines={3} mb={3} lineHeight="tall">
                             "{signal.reasoning_trace || signal.reason}"
                         </Text>
                         {signal.evaluation && (

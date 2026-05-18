@@ -4,6 +4,7 @@ import { Box, Text, VStack, HStack, Select, Button, useToast, useColorMode, useC
 import { createChart, IChartApi, ISeriesApi, Time, ColorType, CrosshairMode } from 'lightweight-charts';
 import styled from '@emotion/styled';
 import { useWebSocket } from '../hooks/useWebSocket';
+import { demoFetch } from "../demo/demoFetch";
 
 interface PriceData {
   timestamp: number;
@@ -51,7 +52,7 @@ const PriceChart: React.FC<PriceChartProps> = ({ symbol, onSymbolChange }) => {
           horzLines: { color: isDarkMode ? '#1A202C' : '#E2E8F0' },
         },
         width: chartContainerRef.current.clientWidth,
-        height: 520,
+        height: chartContainerRef.current.clientHeight || 520,
         crosshair: {
           mode: CrosshairMode.Normal,
           vertLine: { color: '#B8A35A', width: 1, style: 2 },
@@ -93,6 +94,7 @@ const PriceChart: React.FC<PriceChartProps> = ({ symbol, onSymbolChange }) => {
         if (chartRef.current && chartContainerRef.current) {
           chartRef.current.applyOptions({
             width: chartContainerRef.current.clientWidth,
+            height: chartContainerRef.current.clientHeight,
           });
         }
       };
@@ -131,7 +133,7 @@ const PriceChart: React.FC<PriceChartProps> = ({ symbol, onSymbolChange }) => {
   useEffect(() => {
     const updateMarkers = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/journal');
+        const response = await demoFetch('http://localhost:8000/api/journal');
         const journal = await response.json();
         
         if (candleSeriesRef.current && journal.length > 0) {
@@ -162,7 +164,7 @@ const PriceChart: React.FC<PriceChartProps> = ({ symbol, onSymbolChange }) => {
       try {
         setIsLoading(true);
         setError(null);
-        const response = await fetch(`http://localhost:8000/ohlcv?symbol=${symbol}&timeframe=${timeframe}&limit=150`);
+        const response = await demoFetch(`http://localhost:8000/ohlcv?symbol=${symbol}&timeframe=${timeframe}&limit=150`);
         const data = await response.json();
         
         if (candleSeriesRef.current && data && data.length > 0) {
@@ -184,7 +186,25 @@ const PriceChart: React.FC<PriceChartProps> = ({ symbol, onSymbolChange }) => {
           volumeSeriesRef.current?.setData(volumeData);
           setPriceData(data);
         } else {
-          setError('No data');
+          // Idle state data placeholder (faded ghost candles)
+          const now = Math.floor(Date.now() / 1000);
+          const idleData = Array.from({ length: 100 }).map((_, i) => ({
+            time: (now - (100 - i) * 60) as Time,
+            open: 50000 + Math.random() * 100,
+            high: 50150 + Math.random() * 100,
+            low: 49850 + Math.random() * 100,
+            close: 50000 + Math.random() * 100,
+          }));
+          candleSeriesRef.current?.setData(idleData);
+          candleSeriesRef.current?.applyOptions({
+            upColor: 'rgba(143, 154, 91, 0.1)',
+            downColor: 'rgba(168, 74, 74, 0.1)',
+            borderUpColor: 'rgba(143, 154, 91, 0.1)',
+            borderDownColor: 'rgba(168, 74, 74, 0.1)',
+            wickUpColor: 'rgba(143, 154, 91, 0.1)',
+            wickDownColor: 'rgba(168, 74, 74, 0.1)',
+          });
+          setError('Idle State');
         }
       } catch (error) {
         setError('Connection Error');
@@ -257,6 +277,14 @@ const PriceChart: React.FC<PriceChartProps> = ({ symbol, onSymbolChange }) => {
                 <VStack spacing={4}>
                     <Spinner size="sm" color="brand.500" thickness="2px" />
                     <Text fontSize="10px" color="ui.muted" letterSpacing="widest">INITIALIZING REPLAY CONTEXT</Text>
+                </VStack>
+            </Center>
+        )}
+        {!isConnected && !isLoading && (
+            <Center position="absolute" top="10%" left="50%" transform="translateX(-50%)" zIndex={5} pointerEvents="none">
+                <VStack spacing={1} bg="blackAlpha.700" p={4} borderRadius="sm" border="1px solid" borderColor="ui.border" backdropFilter="blur(4px)">
+                    <Text fontSize="xs" fontWeight="800" color="brand.500" letterSpacing="widest">IDLE ANALYTICAL SURFACE</Text>
+                    <Text fontSize="9px" color="ui.muted">INITIALIZE RESEARCH FEED TO POPULATE EVIDENCE</Text>
                 </VStack>
             </Center>
         )}

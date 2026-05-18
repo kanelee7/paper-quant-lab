@@ -12,6 +12,7 @@ import {
   Select,
   Tooltip,
 } from '@chakra-ui/react';
+import { demoFetch } from "../demo/demoFetch";
 
 interface StrategyStat {
   total: number;
@@ -37,17 +38,17 @@ const QuantInsights: React.FC = () => {
         ? 'http://localhost:8000/api/strategy/stats' 
         : `http://localhost:8000/api/strategy/stats?session_id=${selectedSessionId}`;
       
-      const response = await fetch(url);
+      const response = await demoFetch(url);
       const data = await response.json();
       setStats(data);
       
       const uniquePersonas = Array.from(new Set(Object.values(data).map((s: any) => s.persona_id).filter(Boolean)));
       const newEvals: Record<string, any> = {};
       for (const pid of uniquePersonas as string[]) {
-        const evalRes = await fetch(`http://localhost:8000/api/personas/evaluation/${pid}`);
+        const evalRes = await demoFetch(`http://localhost:8000/api/personas/evaluation/${pid}`);
         newEvals[pid] = await evalRes.json();
         
-        const evoRes = await fetch(`http://localhost:8000/api/personas/evolution/${pid}`);
+        const evoRes = await demoFetch(`http://localhost:8000/api/personas/evolution/${pid}`);
         const evoData = await evoRes.json();
         setEvolution(prev => ({ ...prev, [pid]: evoData }));
       }
@@ -59,7 +60,7 @@ const QuantInsights: React.FC = () => {
 
   const fetchSessions = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/sessions');
+      const response = await demoFetch('http://localhost:8000/api/sessions');
       const data = await response.json();
       setSessions(data);
     } catch (error) {

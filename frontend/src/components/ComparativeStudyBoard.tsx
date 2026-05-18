@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { demoFetch } from "../demo/demoFetch";
 import {
   Box,
   VStack,
@@ -55,7 +56,7 @@ const ComparativeStudyBoard: React.FC = () => {
 
   const fetchPatterns = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/patterns');
+      const response = await demoFetch('http://localhost:8000/api/patterns');
       const data = await response.json();
       setPatterns(data.reverse());
     } catch (error) {
@@ -65,7 +66,7 @@ const ComparativeStudyBoard: React.FC = () => {
 
   const fetchPresets = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/patterns/presets');
+      const response = await demoFetch('http://localhost:8000/api/patterns/presets');
       const data = await response.json();
       setPresets(data);
     } catch (error) {
@@ -85,7 +86,7 @@ const ComparativeStudyBoard: React.FC = () => {
     }
     
     try {
-      const response = await fetch('http://localhost:8000/api/patterns', {
+      const response = await demoFetch('http://localhost:8000/api/patterns', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newPattern)

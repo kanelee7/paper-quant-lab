@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { demoFetch } from "../demo/demoFetch";
 import {
   Box,
   VStack,
@@ -44,7 +45,7 @@ const PersonaSandbox: React.FC<PersonaSandboxProps> = ({ symbol, workspaceMode =
 
   const fetchPersonas = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/personas');
+      const response = await demoFetch('http://localhost:8000/api/personas');
       const data = await response.json();
       setPersonas(data);
       setSelectedPersonas(data.map((p: Persona) => p.persona_id));
@@ -76,7 +77,7 @@ const PersonaSandbox: React.FC<PersonaSandboxProps> = ({ symbol, workspaceMode =
 
     setIsAnalyzing(true);
     try {
-      const response = await fetch('http://localhost:8000/api/persona-analysis', {
+      const response = await demoFetch('http://localhost:8000/api/persona-analysis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
