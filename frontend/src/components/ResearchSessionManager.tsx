@@ -150,7 +150,7 @@ const ResearchSessionManager: React.FC = () => {
               <Badge colorScheme="green">ACTIVE</Badge>
             </HStack>
             <HStack mt={2} spacing={1}>
-              {activeSession.tags.map(tag => (
+              {(activeSession.tags || []).map(tag => (
                 <Badge key={tag} variant="outline" fontSize="2xs">{tag}</Badge>
               ))}
             </HStack>
@@ -167,11 +167,13 @@ const ResearchSessionManager: React.FC = () => {
             value={newSession.title}
             onChange={(e) => setNewSession({ ...newSession, title: e.target.value })}
           />
-          <HStack>
+          <HStack spacing={2}>
             <Select 
               size="sm" 
               value={newSession.asset_type}
               onChange={(e) => setNewSession({ ...newSession, asset_type: e.target.value })}
+              bg="background.deep"
+              borderColor="ui.border"
             >
               <option value="CRYPTO">Crypto</option>
               <option value="STOCK">Stock</option>
@@ -181,6 +183,8 @@ const ResearchSessionManager: React.FC = () => {
               size="sm" 
               value={newSession.market}
               onChange={(e) => setNewSession({ ...newSession, market: e.target.value })}
+              bg="background.deep"
+              borderColor="ui.border"
             />
           </HStack>
           <Textarea 
@@ -188,6 +192,8 @@ const ResearchSessionManager: React.FC = () => {
             size="sm" 
             value={newSession.notes}
             onChange={(e) => setNewSession({ ...newSession, notes: e.target.value })}
+            bg="background.deep"
+            borderColor="ui.border"
           />
           <HStack>
             <Input 
@@ -196,40 +202,43 @@ const ResearchSessionManager: React.FC = () => {
               value={newTag}
               onChange={(e) => setNewTag(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && addTag()}
+              bg="background.deep"
+              borderColor="ui.border"
             />
-            <Button size="sm" onClick={addTag}>Add</Button>
+            <Button size="sm" onClick={addTag} colorScheme="brand" variant="outline">Add</Button>
           </HStack>
           <HStack wrap="wrap">
-            {newSession.tags.map(tag => (
-              <Tag key={tag} size="sm" colorScheme="blue">
-                <TagLabel>{tag}</TagLabel>
+            {(newSession.tags || []).map(tag => (
+              <Tag key={tag} size="sm" colorScheme="brand" variant="subtle">
+                <TagLabel fontSize="10px">{tag}</TagLabel>
                 <TagCloseButton onClick={() => removeTag(tag)} />
               </Tag>
             ))}
           </HStack>
-          <Button size="sm" colorScheme="blue" onClick={handleStartSession}>
+          <Button size="sm" colorScheme="brand" onClick={handleStartSession} fontWeight="800">
             Start New Experiment
           </Button>
         </VStack>
       )}
 
-      <Divider my={4} borderColor="gray.700" />
+      <Divider my={4} borderColor="ui.border" />
       
-      <Text fontSize="xs" fontWeight="bold" color="gray.500" mb={2}>HISTORICAL SESSIONS</Text>
-      <Box maxH="150px" overflowY="auto">
+      <Text fontSize="10px" fontWeight="800" color="ui.muted" mb={2} letterSpacing="wider">HISTORICAL SESSIONS</Text>
+      <Box maxH="150px" overflowY="auto" pr={1} sx={{ '&::-webkit-scrollbar': { width: '2px' }, '&::-webkit-scrollbar-thumb': { bg: 'whiteAlpha.100' } }}>
         <List spacing={2}>
-          {sessions.filter(s => s.status === 'completed').map(s => (
-            <ListItem key={s.session_id} p={2} bg="gray.900" borderRadius="sm">
+          {(sessions || []).filter(s => s.status === 'completed').map(s => (
+            <ListItem key={s.session_id} p={2} bg="blackAlpha.300" borderRadius="sm" borderWidth="1px" borderColor="ui.border">
               <HStack justifyContent="space-between">
                 <VStack align="start" spacing={0} flex={1}>
-                  <Text fontSize="xs" fontWeight="bold" noOfLines={1}>{s.title}</Text>
-                  <Text fontSize="2xs" color="gray.500">{new Date(s.created_at).toLocaleDateString()}</Text>
+                  <Text fontSize="xs" fontWeight="bold" noOfLines={1} color="gray.200">{s.title}</Text>
+                  <Text fontSize="2xs" color="ui.muted">{new Date(s.created_at).toLocaleDateString()}</Text>
                 </VStack>
                 <HStack>
-                  <Badge fontSize="2xs">{s.market}</Badge>
+                  <Badge fontSize="8px" variant="outline">{s.market}</Badge>
                   <IconButton 
-                    size="xs" 
-                    icon={<InfoOutlineIcon />} 
+                    size="2xs" 
+                    variant="ghost"
+                    icon={<InfoOutlineIcon w={3} h={3} />} 
                     aria-label="View Summary" 
                     onClick={() => handleViewSummary(s.session_id)}
                   />
@@ -241,52 +250,52 @@ const ResearchSessionManager: React.FC = () => {
       </Box>
 
       <Modal isOpen={isOpen} onClose={onClose} size="lg">
-        <ModalOverlay />
-        <ModalContent bg="gray.800" color="white">
-          <ModalHeader>Experiment Synthesis & Summary</ModalHeader>
+        <ModalOverlay backdropFilter="blur(4px)" />
+        <ModalContent bg="background.surface" color="white" borderWidth="1px" borderColor="ui.border">
+          <ModalHeader fontSize="md" fontWeight="bold">Experiment Synthesis & Summary</ModalHeader>
           <ModalCloseButton />
           <ModalBody pb={6}>
             {selectedSessionSummary ? (
               <VStack align="stretch" spacing={4}>
-                <Box p={3} bg="gray.900" borderRadius="md">
-                  <Text fontWeight="bold" fontSize="xs" mb={2} color="gray.400">AUTOMATIC SUMMARY</Text>
-                  <Text fontSize="sm">{selectedSessionSummary.summary}</Text>
+                <Box p={3} bg="blackAlpha.400" borderRadius="md" borderLeft="2px solid" borderColor="brand.500">
+                  <Text fontWeight="800" fontSize="9px" mb={2} color="ui.muted" letterSpacing="widest">AUTOMATIC SUMMARY</Text>
+                  <Text fontSize="sm" lineHeight="relaxed">{selectedSessionSummary.summary}</Text>
                 </Box>
 
                 <SimpleGrid columns={2} gap={4}>
-                  <Box p={3} bg="gray.900" borderRadius="md">
-                    <Text fontWeight="bold" fontSize="xs" mb={2} color="gray.400">TOP REASONING PATTERNS</Text>
+                  <Box p={3} bg="blackAlpha.300" borderRadius="md" borderWidth="1px" borderColor="ui.border">
+                    <Text fontWeight="800" fontSize="9px" mb={2} color="ui.muted" letterSpacing="widest">TOP REASONING PATTERNS</Text>
                     <HStack wrap="wrap" spacing={1}>
-                      {selectedSessionSummary.top_patterns.map((p: string) => (
-                        <Badge key={p} colorScheme="blue" variant="outline" fontSize="2xs">{p}</Badge>
+                      {(selectedSessionSummary.top_patterns || []).map((p: string) => (
+                        <Badge key={p} colorScheme="brand" variant="outline" fontSize="9px">{p}</Badge>
                       ))}
                     </HStack>
                   </Box>
-                  <Box p={3} bg="gray.900" borderRadius="md">
-                    <Text fontWeight="bold" fontSize="xs" mb={2} color="gray.400">FREQUENT FAILURES</Text>
+                  <Box p={3} bg="blackAlpha.300" borderRadius="md" borderWidth="1px" borderColor="ui.border">
+                    <Text fontWeight="800" fontSize="9px" mb={2} color="ui.muted" letterSpacing="widest">FREQUENT FAILURES</Text>
                     <HStack wrap="wrap" spacing={1}>
-                      {selectedSessionSummary.frequent_failures.map((f: string) => (
-                        <Badge key={f} colorScheme="red" variant="solid" fontSize="2xs">{f}</Badge>
+                      {(selectedSessionSummary.frequent_failures || []).map((f: string) => (
+                        <Badge key={f} colorScheme="red" variant="solid" fontSize="9px">{f}</Badge>
                       ))}
                     </HStack>
                   </Box>
                 </SimpleGrid>
 
-                <HStack justifyContent="space-between" p={3} bg="blue.900" borderRadius="md">
+                <HStack justifyContent="space-between" p={3} bg="brand.900" borderRadius="md" color="brand.100">
                   <Text fontSize="xs" fontWeight="bold">Strongest Regime:</Text>
-                  <Badge colorScheme="green">{selectedSessionSummary.strongest_regime.toUpperCase()}</Badge>
+                  <Badge colorScheme="brand" variant="solid" fontSize="10px">{(selectedSessionSummary.strongest_regime || 'UNKNOWN').toUpperCase()}</Badge>
                 </HStack>
 
                 <Box>
-                  <Text fontSize="xs" color="gray.500">Generated from {selectedSessionSummary.signal_count} decisions at {new Date(selectedSessionSummary.generated_at).toLocaleString()}</Text>
+                  <Text fontSize="10px" color="ui.muted">Generated from {selectedSessionSummary.signal_count} decisions at {new Date(selectedSessionSummary.generated_at).toLocaleString()}</Text>
                 </Box>
               </VStack>
             ) : (
-              <Text>Loading summary...</Text>
+              <Text fontSize="xs" color="ui.muted">Loading summary...</Text>
             )}
           </ModalBody>
           <ModalFooter>
-            <Button size="sm" colorScheme="blue" onClick={onClose}>Close</Button>
+            <Button size="sm" variant="ghost" onClick={onClose}>Close</Button>
           </ModalFooter>
         </ModalContent>
       </Modal>

@@ -114,7 +114,7 @@ const ResearchArchiveManager: React.FC = () => {
         {archives.length === 0 ? (
           <Text fontSize="10px" color="ui.muted" fontStyle="italic">No archived states found.</Text>
         ) : (
-          archives.map(archive => (
+          (archives || []).map(archive => (
             <ListItem 
                 key={archive.archive_id} 
                 p={3} 
@@ -196,7 +196,7 @@ const ResearchArchiveManager: React.FC = () => {
                 <Box>
                   <Text fontSize="9px" color="ui.muted" fontWeight="bold" mb={2}>BUNDLED COMPONENTS</Text>
                   <HStack spacing={2}>
-                    {selectedArchive.included_components.map(c => (
+                    {(selectedArchive.included_components || []).map(c => (
                       <Badge key={c} colorScheme="green" variant="subtle" fontSize="9px">{c}</Badge>
                     ))}
                   </HStack>

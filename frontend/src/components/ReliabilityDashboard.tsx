@@ -94,7 +94,7 @@ const ReliabilityDashboard: React.FC = () => {
               <LinkIcon mr={1} w={2} h={2} /> {report.broken_links.length} BROKEN LINKS
             </Text>
             <List spacing={1} maxH="80px" overflowY="auto">
-              {report.broken_links.map((link, idx) => (
+              {(report.broken_links || []).map((link, idx) => (
                 <ListItem key={idx} fontSize="9px" color="red.200" fontFamily="mono">
                   • {link.issue}
                 </ListItem>
@@ -106,7 +106,7 @@ const ReliabilityDashboard: React.FC = () => {
         <Box p={3} bg="blackAlpha.200" borderRadius="md">
           <Text fontSize="10px" fontWeight="bold" color="ui.muted" mb={2}>MAINTENANCE</Text>
           <VStack align="start" spacing={1.5}>
-            {report.recommendations.slice(0, 2).map((rec, idx) => (
+            {(report.recommendations.slice(0, 2) || []).map((rec, idx) => (
               <Text key={idx} fontSize="9px" color="gray.400" lineHeight="short">• {rec}</Text>
             ))}
           </VStack>

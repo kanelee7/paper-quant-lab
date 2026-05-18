@@ -126,7 +126,7 @@ const ResearchCommentary: React.FC<ResearchCommentaryProps> = ({ signal_id, repl
                     <Text fontSize="11px" color="ui.muted">No collaborative interpretations yet.</Text>
                 </Box>
             ) : (
-                comments.map(c => (
+                (comments || []).map(c => (
                     <Box key={c.id} p={3} bg="blackAlpha.300" borderRadius="md" borderLeft="2px solid" borderColor="brand.500">
                         <VStack align="stretch" spacing={2}>
                             <HStack justifyContent="space-between">

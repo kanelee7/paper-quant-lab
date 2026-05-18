@@ -36,7 +36,7 @@ const TradeHistory: React.FC<TradeHistoryProps> = ({ trades }) => {
         <Text fontSize="10px" fontWeight="800" letterSpacing="widest" color="ui.muted" textTransform="uppercase">{t('label.activity_log')}</Text>
       </HStack>
 
-      {trades.length === 0 ? (
+      {(!trades || trades.length === 0) ? (
         <Center h="100%" flex={1} bg="blackAlpha.200" borderRadius="sm" border="1px dashed" borderColor="ui.border">
             <VStack spacing={1} opacity={0.6}>
                 <Text fontSize="9px" color="ui.muted" letterSpacing="widest" fontWeight="bold">ACTIVITY QUIET</Text>
@@ -54,7 +54,7 @@ const TradeHistory: React.FC<TradeHistoryProps> = ({ trades }) => {
                     </Tr>
                 </Thead>
                 <Tbody>
-                    {trades.map((trade, index) => (
+                    {(trades || []).map((trade, index) => (
                     <Tr key={index} height="18px" _hover={{ bg: 'whiteAlpha.50' }}>
                         <Td py={0.5} fontSize="9px" color="ui.muted">{trade.time}</Td>
                         <Td 

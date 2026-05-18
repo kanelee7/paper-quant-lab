@@ -137,7 +137,7 @@ const PriceChart: React.FC<PriceChartProps> = ({ symbol, onSymbolChange }) => {
         const journal = await response.json();
         
         if (candleSeriesRef.current && journal.length > 0) {
-          const markers = journal.map((signal: any) => ({
+          const markers = (journal || []).map((signal: any) => ({
             time: new Date(signal.timestamp).getTime() / 1000 as Time,
             position: signal.action === 'buy' ? 'belowBar' : 'aboveBar',
             color: signal.action === 'buy' ? '#8F9A5B' : '#A84A4A',
@@ -168,7 +168,7 @@ const PriceChart: React.FC<PriceChartProps> = ({ symbol, onSymbolChange }) => {
         const data = await response.json();
         
         if (candleSeriesRef.current && data && data.length > 0) {
-          const candleData = data.map((item: any) => ({
+          const candleData = (data || []).map((item: any) => ({
             time: item.timestamp / 1000 as Time,
             open: item.open,
             high: item.high,
@@ -176,7 +176,7 @@ const PriceChart: React.FC<PriceChartProps> = ({ symbol, onSymbolChange }) => {
             close: item.close,
           }));
           
-          const volumeData = data.map((item: any) => ({
+          const volumeData = (data || []).map((item: any) => ({
             time: item.timestamp / 1000 as Time,
             value: item.volume,
             color: item.close >= item.open ? '#2D3748' : '#2D3748',

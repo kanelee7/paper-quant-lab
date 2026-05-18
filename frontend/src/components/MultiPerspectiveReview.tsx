@@ -64,7 +64,7 @@ const MultiPerspectiveReview: React.FC = () => {
         <HStack spacing={2}>
             <Heading size="xs" color="brand.500" letterSpacing="widest" textTransform="uppercase">Multi-Perspective Review</Heading>
             <AvatarGroup size="2xs" max={3}>
-                {perspectives.map(p => <Avatar key={p.author} name={p.author} />)}
+                {(perspectives || []).map(p => <Avatar key={p.author} name={p.author} />)}
             </AvatarGroup>
         </HStack>
         <IconButton 
@@ -88,7 +88,7 @@ const MultiPerspectiveReview: React.FC = () => {
           </Box>
 
           <SimpleGrid columns={1} spacing={3}>
-            {perspectives.map(p => (
+            {(perspectives || []).map(p => (
                 <Box key={p.author} p={3} bg="blackAlpha.200" borderRadius="md" borderLeft="3px solid" borderColor="blue.500">
                     <VStack align="stretch" spacing={2}>
                         <HStack justifyContent="space-between">

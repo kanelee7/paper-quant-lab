@@ -138,7 +138,7 @@ const ResearchReviewBoard: React.FC = () => {
         body: JSON.stringify({
           ...newReview,
           summary: newReview.summary || synthData.summary,
-          key_findings: Object.entries(synthData.persona_stats).map(([pid, stats]: any) => 
+          key_findings: (Object.entries(synthData.persona_stats || {}) || []).map(([pid, stats]: any) => 
             `${pid}: Win Rate ${stats.win_rate}%, Avg Return ${stats.avg_return}%`
           ),
           failure_patterns: synthData.frequent_failures
@@ -214,7 +214,7 @@ const ResearchReviewBoard: React.FC = () => {
         {reviews.length === 0 ? (
           <Text fontSize="11px" color="ui.muted" fontStyle="italic">No narratives synthesized yet.</Text>
         ) : (
-          reviews.map(review => (
+          (reviews || []).map(review => (
             <Box 
               key={review.review_id} 
               p={3} 
@@ -292,7 +292,7 @@ const ResearchReviewBoard: React.FC = () => {
                     <Box>
                       <Text fontSize="10px" color="ui.muted" fontWeight="bold" mb={3} textTransform="uppercase">Longitudinal Performance</Text>
                       <SimpleGrid columns={2} spacing={4}>
-                        {Object.entries(synthesisData.persona_stats).map(([pid, stats]: any) => (
+                        {(Object.entries(synthesisData.persona_stats || {}) || []).map(([pid, stats]: any) => (
                           <Box key={pid} p={3} bg="blackAlpha.300" borderRadius="md" borderTop="2px solid" borderTopColor="blue.500" borderWidth="1px" borderColor="ui.border">
                             <Text fontWeight="bold" fontSize="xs" mb={2} color="gray.100">{pid}</Text>
                             <HStack spacing={6}>
@@ -315,10 +315,10 @@ const ResearchReviewBoard: React.FC = () => {
                 <Box>
                   <Text fontSize="10px" color="ui.muted" fontWeight="bold" mb={2} textTransform="uppercase">Evidence Traceability</Text>
                   <HStack wrap="wrap" spacing={2}>
-                    {selectedReview.linked_sessions.map(sid => (
+                    {(selectedReview.linked_sessions || []).map(sid => (
                       <Badge key={sid} colorScheme="blue" variant="outline" fontSize="9px">Session: {sid.slice(-8)}</Badge>
                     ))}
-                    {selectedReview.linked_insights.map(iid => (
+                    {(selectedReview.linked_insights || []).map(iid => (
                       <Badge key={iid} colorScheme="purple" variant="outline" fontSize="9px">Insight: {iid.slice(-8)}</Badge>
                     ))}
                   </HStack>
@@ -354,7 +354,7 @@ const ResearchReviewBoard: React.FC = () => {
                 <Text fontSize="10px" fontWeight="bold" mb={2} color="ui.muted" textTransform="uppercase">Select Sessions</Text>
                 <Box maxH="150px" overflowY="auto" bg="blackAlpha.400" p={2} borderRadius="md" borderWidth="1px" borderColor="ui.border">
                   <List spacing={2}>
-                    {sessions.map(s => (
+                    {(sessions || []).map(s => (
                       <ListItem key={s.session_id}>
                         <Checkbox 
                           colorScheme="brand" 

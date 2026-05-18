@@ -48,7 +48,7 @@ const PersonaSandbox: React.FC<PersonaSandboxProps> = ({ symbol, workspaceMode =
       const response = await demoFetch('http://localhost:8000/api/personas');
       const data = await response.json();
       setPersonas(data);
-      setSelectedPersonas(data.map((p: Persona) => p.persona_id));
+      setSelectedPersonas((data || []).map((p: Persona) => p.persona_id));
     } catch (error) {
       console.error('Failed to fetch personas:', error);
     }
@@ -134,7 +134,7 @@ const PersonaSandbox: React.FC<PersonaSandboxProps> = ({ symbol, workspaceMode =
           onChange={(values) => setSelectedPersonas(values as string[])}
         >
           <VStack align="stretch" spacing={2}>
-            {personas.map((persona) => (
+            {(personas || []).map((persona) => (
               <Box 
                 key={persona.persona_id} 
                 p={2} 

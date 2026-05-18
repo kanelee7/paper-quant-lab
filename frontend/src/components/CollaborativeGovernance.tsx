@@ -81,7 +81,7 @@ const CollaborativeGovernance: React.FC = () => {
           </Box>
 
           <VStack align="stretch" spacing={2}>
-            {conflicts.map(c => (
+            {(conflicts || []).map(c => (
                 <Box key={c.id} p={3} bg="blackAlpha.200" borderRadius="md" borderLeft="3px solid" borderColor={c.severity === 'Critical' ? 'red.500' : 'orange.400'}>
                     <VStack align="stretch" spacing={1}>
                         <HStack justifyContent="space-between">

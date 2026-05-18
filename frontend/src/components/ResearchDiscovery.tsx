@@ -90,7 +90,7 @@ const ResearchDiscovery: React.FC = () => {
           <Box>
             <Text fontSize="10px" fontWeight="800" color="ui.muted" mb={2} letterSpacing="wider">SUGGESTED FOR YOU</Text>
             <VStack align="stretch" spacing={2}>
-              {suggestions.map(item => (
+              {(suggestions || []).map(item => (
                 <Box key={item.id} p={2} bg="blackAlpha.200" borderRadius="sm" borderWidth="1px" borderColor="ui.border" cursor="pointer" _hover={{ bg: "whiteAlpha.100" }}>
                   <VStack align="stretch" spacing={1}>
                     <HStack justifyContent="space-between">

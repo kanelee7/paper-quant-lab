@@ -161,7 +161,7 @@ const ResearchKnowledgeBase: React.FC = () => {
         {insights.length === 0 ? (
           <Text fontSize="11px" color="ui.muted" fontStyle="italic">No synthesized insights yet.</Text>
         ) : (
-          insights.map(insight => {
+          (insights || []).map(insight => {
             const broken = getBrokenLinksForInsight(insight.insight_id);
             return (
               <Box 
@@ -195,7 +195,7 @@ const ResearchKnowledgeBase: React.FC = () => {
       
       <Heading size="10px" color="ui.muted" mb={3} letterSpacing="wider" textTransform="uppercase">Failure Taxonomy</Heading>
       <SimpleGrid columns={2} gap={2}>
-        {failures.slice(0, 4).map(f => (
+        {(failures || []).slice(0, 4).map(f => (
           <Box key={f.id} p={2} bg="blackAlpha.200" borderRadius="sm" borderWidth="1px" borderColor="ui.border">
             <Text fontSize="9px" fontWeight="bold" color="red.300" letterSpacing="tight">{f.label.toUpperCase()}</Text>
           </Box>
@@ -223,7 +223,7 @@ const ResearchKnowledgeBase: React.FC = () => {
                   <Box>
                     <Text fontSize="10px" color="ui.muted" fontWeight="bold" mb={2}>FAILURE TYPES</Text>
                     <HStack wrap="wrap">
-                      {selectedInsight.failure_tags.map(tag => (
+                      {(selectedInsight.failure_tags || []).map(tag => (
                         <Badge key={tag} colorScheme="red" variant="subtle" fontSize="9px">{tag}</Badge>
                       ))}
                     </HStack>
@@ -231,7 +231,7 @@ const ResearchKnowledgeBase: React.FC = () => {
                   <Box>
                     <Text fontSize="10px" color="ui.muted" fontWeight="bold" mb={2}>REGIMES</Text>
                     <HStack wrap="wrap">
-                      {selectedInsight.market_regimes.map(regime => (
+                      {(selectedInsight.market_regimes || []).map(regime => (
                         <Badge key={regime} colorScheme="blue" variant="outline" fontSize="9px">{regime}</Badge>
                       ))}
                     </HStack>
@@ -250,7 +250,7 @@ const ResearchKnowledgeBase: React.FC = () => {
                   <Collapse in={showEvidence}>
                     <VStack align="stretch" spacing={2}>
                         {selectedInsight.supporting_signals.length > 0 ? (
-                        selectedInsight.supporting_signals.map(sid => (
+                        (selectedInsight.supporting_signals || []).map(sid => (
                             <HStack key={sid} bg="blackAlpha.300" p={2} borderRadius="sm" justifyContent="space-between" borderWidth="1px" borderColor="ui.border">
                             <Text fontSize="xs" color="brand.200" fontFamily="mono">Signal: {sid.slice(-8)}</Text>
                             <Button size="2xs" variant="outline" onClick={() => handleShowSignalOnChart(sid)}>

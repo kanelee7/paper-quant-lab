@@ -110,9 +110,9 @@ const GuidedWalkthrough: React.FC<{ workspaceMode: string }> = ({ workspaceMode 
 
       <Collapse in={isOpen}>
         {!activeWalkthrough ? (
-          <VStack align="stretch" spacing={3} mt={2}>
-            <Text fontSize="11px" color="ui.muted">Guided narratives through historical research evidence.</Text>
-            {walkthroughs.map(w => (
+          <VStack align="stretch" spacing={3} mt={4}>
+            <Text fontSize="11px" color="ui.muted">Select a guided analytical story to begin.</Text>
+            {(walkthroughs || []).map(w => (
               <Box 
                 key={w.walkthrough_id} 
                 p={2} 
@@ -121,7 +121,7 @@ const GuidedWalkthrough: React.FC<{ workspaceMode: string }> = ({ workspaceMode 
                 borderWidth="1px"
                 borderColor="ui.border"
                 cursor="pointer" 
-                _hover={{ borderColor: 'green.500', bg: 'whiteAlpha.50' }}
+                _hover={{ borderColor: 'brand.500', bg: 'whiteAlpha.50' }}
                 onClick={() => handleStartWalkthrough(w)}
               >
                 <HStack justifyContent="space-between" mb={1}>

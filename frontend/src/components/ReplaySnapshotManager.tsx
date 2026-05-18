@@ -124,7 +124,7 @@ const ReplaySnapshotManager: React.FC<{ symbol: string }> = ({ symbol }) => {
         {snapshots.length === 0 ? (
           <Text fontSize="10px" color="ui.muted" fontStyle="italic">No saved moments yet.</Text>
         ) : (
-          snapshots.map(s => (
+          (snapshots || []).map(s => (
             <Box 
               key={s.snapshot_id} 
               p={2} 

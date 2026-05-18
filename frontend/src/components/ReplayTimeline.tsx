@@ -170,7 +170,7 @@ const ReplayTimeline: React.FC<ReplayTimelineProps> = ({ symbol, onFocusSignal }
                 <SliderTrack bg="blackAlpha.400" h="4px">
                     <SliderFilledTrack bg="brand.500" />
                 </SliderTrack>
-                {signals.map((s, idx) => (
+                {(signals || []).map((s, idx) => (
                     <SliderMark
                         key={s.id}
                         value={idx}

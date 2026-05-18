@@ -174,6 +174,72 @@ export const demoTaxonomy = [
   { id: "vol", label: "Volatility Blindness", description: "Trading high-leverage strategies during news-driven spikes." }
 ];
 
+export const demoWorkflowPresets = [
+  {
+    preset_id: "vol-study",
+    title: "High Volatility Regime Study",
+    description: "Systematic review of persona adaptation during 2%+ ATR expansion events.",
+    recommended_mode: "RESEARCH",
+    workflow_steps: [
+      { id: "s1", label: "Initialize Feed", guidance: "Select a volatile asset and establish L2 connectivity." },
+      { id: "s2", label: "Monitor Divergence", guidance: "Observe RSI/Price divergence markers on the chart." },
+      { id: "s3", label: "Annotate Signals", guidance: "Bookmark signals that exhibit reasoning drift." }
+    ]
+  },
+  {
+    preset_id: "post-mortem",
+    title: "Post-Mortem Failure Analysis",
+    description: "Deep-dive into local invalidated hypotheses and reasoning loops.",
+    recommended_mode: "REVIEW",
+    workflow_steps: [
+      { id: "p1", label: "Load Archive", guidance: "Import a historical research package." },
+      { id: "p2", label: "Conflict Scan", guidance: "Run governance check for peer contradictions." }
+    ]
+  }
+];
+
+export const demoWalkthroughPresets = [
+  {
+    id: "intro-obs",
+    title: "The Art of Reasoning Observability",
+    description: "Learning to distinguish between technical signals and logical traces.",
+    steps: [
+      { target: "chart", content: "Focus on the orange markers; these represent AI analytical thoughts, not just price points." },
+      { target: "journal", content: "Review how the Risk Manager overrides momentum when volatility is non-Gaussian." }
+    ]
+  }
+];
+
+export const demoPersonas = [
+  { id: "conservative_analyst", name: "Conservative Analyst", profile: "Capital preservation focused. High threshold for entry." },
+  { id: "momentum_trader", name: "Momentum Trader", profile: "Aggressive trend chaser. Optimized for high-velocity moves." },
+  { id: "risk_manager", name: "Risk Manager", profile: "Constraint-driven. Operates only within strict volatility bands." }
+];
+
+export const demoComments = [
+  { id: "com-1", timestamp: new Date().toISOString(), author: "Senior Researcher", content: "Signal sig-1 shows classic overconfidence. Note the absence of RSI confirmation in the reasoning trace.", signal_id: "demo-sig-1" }
+];
+
+export const demoReplaySnapshots = [
+  { id: "snap-vol-spike", title: "BTC Flash Crash (May 14)", timestamp: new Date().toISOString(), symbol: "BTC/USDT", note: "Preserved for volatility training." }
+];
+
+export const demoArchives = [
+  { archive_id: "arch-2026-q1", title: "Q1 2026 Research Synthesis", created_at: new Date().toISOString(), session_count: 24, signal_count: 850 }
+];
+
+export const demoPerformance = {
+  total_signals: 1240,
+  win_rate: 62.4,
+  sharpe_ratio: 2.1,
+  max_drawdown: 12.5,
+  daily_stats: Array.from({ length: 30 }).map((_, i) => ({
+    date: new Date(Date.now() - (30 - i) * 86400000).toLocaleDateString(),
+    pnl: (Math.random() - 0.4) * 100
+  }))
+};
+
+
 
 export const demoStrategyStats = {
   "Mean Reversion": {

@@ -107,7 +107,7 @@ const ResearchWorkflowGuide: React.FC<ResearchWorkflowGuideProps> = ({ onModeCha
         {!activePreset ? (
           <VStack align="stretch" spacing={3} mt={2}>
             <Text fontSize="11px" color="ui.muted">Execute a structured research pipeline.</Text>
-            {presets.map(preset => (
+            {(presets || []).map(preset => (
               <Box 
                 key={preset.preset_id} 
                 p={2} 

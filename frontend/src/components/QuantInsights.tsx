@@ -42,7 +42,7 @@ const QuantInsights: React.FC = () => {
       const data = await response.json();
       setStats(data);
       
-      const uniquePersonas = Array.from(new Set(Object.values(data).map((s: any) => s.persona_id).filter(Boolean)));
+      const uniquePersonas = Array.from(new Set((Object.values(data) || []).map((s: any) => s.persona_id).filter(Boolean)));
       const newEvals: Record<string, any> = {};
       for (const pid of uniquePersonas as string[]) {
         const evalRes = await demoFetch(`http://localhost:8000/api/personas/evaluation/${pid}`);
@@ -84,7 +84,7 @@ const QuantInsights: React.FC = () => {
         <Text fontSize="lg" fontWeight="bold">Persona Evolution & Reasoning Drift</Text>
         <Select size="xs" w="150px" bg="gray.700" value={selectedSessionId} onChange={(e) => setSelectedSessionId(e.target.value)}>
           <option value="all">All Experiments</option>
-          {sessions.map(s => (
+          {(sessions || []).map(s => (
             <option key={s.session_id} value={s.session_id}>{s.title}</option>
           ))}
         </Select>
@@ -93,7 +93,7 @@ const QuantInsights: React.FC = () => {
         {Object.entries(stats).length === 0 ? (
           <Text fontSize="sm" color="gray.500">No strategy data yet.</Text>
         ) : (
-          Object.entries(stats).map(([name, stat]) => (
+          (Object.entries(stats) || []).map(([name, stat]) => (
             <Box key={name} p={3} bg="gray.900" borderRadius="md">
               <HStack justifyContent="space-between" mb={2}>
                 <VStack align="start" spacing={0}>
@@ -140,7 +140,7 @@ const QuantInsights: React.FC = () => {
                   <Text fontSize="xs" fontWeight="bold" color="gray.500" mb={2}>SESSION EVOLUTION (WIN RATE)</Text>
                   <HStack spacing={1} h="30px" align="end" pb={1}>
                     {/* Simplified bar chart for cross-session win rates */}
-                    {sessions.slice(-8).map((s: any) => {
+                    {(sessions.slice(-8) || []).map((s: any) => {
                         // In a real implementation, we would filter stats by this session
                         const mockSessionWinRate = 40 + Math.random() * 30; 
                         return (
@@ -164,7 +164,7 @@ const QuantInsights: React.FC = () => {
                 <Box mt={3} pt={2} borderTop="1px" borderColor="gray.700">
                   <Text fontSize="xs" fontWeight="bold" color="gray.500" mb={1}>REASONING DRIFT HISTORY</Text>
                   <HStack spacing={1} overflowX="auto" py={1}>
-                    {evolution[stat.persona_id].drift_history.slice(-20).map((d: any, idx: number) => (
+                    {(evolution[stat.persona_id].drift_history.slice(-20) || []).map((d: any, idx: number) => (
                       <Box 
                         key={idx} 
                         w="8px" 
@@ -182,7 +182,7 @@ const QuantInsights: React.FC = () => {
                 <Box mt={2} pt={2} borderTop="1px" borderColor="gray.700">
                   <Text fontSize="xs" fontWeight="bold" color="gray.500" mb={1}>REGIME CORRELATION</Text>
                   <HStack spacing={2} wrap="wrap">
-                    {evals[stat.persona_id].outcome_correlations.map((corr: any) => (
+                    {(evals[stat.persona_id].outcome_correlations || []).map((corr: any) => (
                       <Box key={corr.regime} p={1} bg="gray.800" borderRadius="sm" fontSize="2xs">
                         <Text color="gray.400" as="span">{corr.regime}: </Text>
                         <Text color={corr.avg_return_5m >= 0 ? "green.300" : "red.300"} as="span" fontWeight="bold">

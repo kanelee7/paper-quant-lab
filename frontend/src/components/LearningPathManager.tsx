@@ -84,7 +84,7 @@ const LearningPathManager: React.FC = () => {
         <VStack align="stretch" spacing={3} mt={2}>
           <Text fontSize="11px" color="ui.muted">Structured journeys for internalizing AI analytical styles.</Text>
           
-          {paths.map(path => (
+          {(paths || []).map(path => (
             <Box 
               key={path.id} 
               p={3} 

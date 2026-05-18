@@ -345,7 +345,7 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
         </Select>
         <Select size="xs" w="120px" bg="background.deep" borderColor="ui.border" value={filterSession} onChange={(e) => setFilterSession(e.target.value)}>
           <option value="all">All Sessions</option>
-          {sessions.map(s => (
+          {(sessions || []).map(s => (
             <option key={s.session_id} value={s.session_id}>{s.title}</option>
           ))}
         </Select>
@@ -374,7 +374,7 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
                         </VStack>
                     </Td>
                 </Tr>
-            ) : filteredSignals.map((signal, index) => (
+            ) : (filteredSignals || []).map((signal, index) => (
               <Popover key={index} trigger="hover" placement="right" openDelay={500}>
                 <PopoverTrigger>
                     <Tr _hover={{ bg: "whiteAlpha.50" }} borderLeft={signal.notes ? "2px solid" : "none"} borderColor="brand.500" cursor="help">
@@ -518,7 +518,7 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
                             </Badge>
                         </HStack>
                         <HStack wrap="wrap">
-                            {selectedSignal.evaluation.flags.map(flag => (
+                            {(selectedSignal.evaluation?.flags || []).map(flag => (
                             <Badge key={flag} colorScheme="red" variant="outline" fontSize="9px">{flag}</Badge>
                             ))}
                         </HStack>
@@ -561,7 +561,7 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
                   <Box>
                     <Text fontSize="xs" fontWeight="bold" color="ui.muted" mb={2} textTransform="uppercase">Similar Historical Cases</Text>
                     <VStack align="stretch" spacing={2}>
-                      {similarSignals.map((s: any) => (
+                      {(similarSignals || []).map((s: any) => (
                         <Box key={s.id} bg="blackAlpha.200" p={2} borderRadius="md" borderLeft="3px solid" borderColor="brand.500">
                           <HStack justifyContent="space-between">
                             <Text fontSize="10px" color="ui.muted">{new Date(s.timestamp).toLocaleDateString()} ({s.persona_id})</Text>
@@ -577,7 +577,7 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
                 <Box>
                   <Text fontSize="xs" fontWeight="bold" color="ui.muted" mb={2} textTransform="uppercase">Human Audit & Tags</Text>
                   <HStack wrap="wrap" spacing={2} mb={3}>
-                    {failureTaxonomy.map(f => (
+                    {(failureTaxonomy || []).map(f => (
                       <Badge 
                         key={f.id} 
                         cursor="pointer"

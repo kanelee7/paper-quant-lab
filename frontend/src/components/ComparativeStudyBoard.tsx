@@ -135,7 +135,7 @@ const ComparativeStudyBoard: React.FC = () => {
             </Text>
           </Box>
         ) : (
-          patterns.map(pattern => (
+          (patterns || []).map(pattern => (
             <Box 
               key={pattern.pattern_id} 
               p={3} 
@@ -153,8 +153,8 @@ const ComparativeStudyBoard: React.FC = () => {
               </HStack>
               <Text fontSize="2xs" color="gray.400" noOfLines={2}>{pattern.description}</Text>
               <HStack mt={2} spacing={1}>
-                <Badge variant="outline" colorScheme="orange" fontSize="2xs">{pattern.linked_replay_ids.length} Cases</Badge>
-                <Badge variant="outline" colorScheme="purple" fontSize="2xs">{pattern.linked_personas.length} Personas</Badge>
+                <Badge variant="outline" colorScheme="orange" fontSize="2xs">{(pattern.linked_replay_ids || []).length} Cases</Badge>
+                <Badge variant="outline" colorScheme="purple" fontSize="2xs">{(pattern.linked_personas || []).length} Personas</Badge>
               </HStack>
             </Box>
           ))
