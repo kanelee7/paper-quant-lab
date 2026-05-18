@@ -14,9 +14,15 @@ import {
 import { InfoOutlineIcon } from '@chakra-ui/icons';
 
 interface Metrics {
-  total_trades: number;
-  total_pnl: number;
-  mode: string;
+  total_trades?: number;
+  total_decisions?: number;
+  decision_count?: number;
+  total_pnl?: number;
+  totalPnL?: number;
+  unrealized_pnl?: number;
+  win_rate?: number;
+  balance?: number;
+  mode?: string;
 }
 
 const PerformanceMetrics: React.FC = () => {
@@ -40,6 +46,9 @@ const PerformanceMetrics: React.FC = () => {
 
   if (!metrics) return null;
 
+  const displayDecisions = metrics.total_trades ?? metrics.total_decisions ?? metrics.decision_count ?? 0;
+  const displayPnL = metrics.total_pnl ?? metrics.totalPnL ?? metrics.unrealized_pnl ?? 0;
+
   return (
     <Box bg="background.surface" borderRadius="lg" p={4} borderWidth="1px" borderColor="ui.border" shadow="sm">
       <HStack justify="space-between" mb={4}>
@@ -50,13 +59,15 @@ const PerformanceMetrics: React.FC = () => {
       <SimpleGrid columns={2} gap={4}>
         <Stat>
           <StatLabel fontSize="10px" color="ui.muted" textTransform="uppercase">Decisions</StatLabel>
-          <StatNumber fontSize="md" fontWeight="800" color="gray.200">{metrics.total_trades}</StatNumber>
+          <StatNumber fontSize="md" fontWeight="800" color="gray.200">
+            {Number(displayDecisions).toLocaleString()}
+          </StatNumber>
           <StatHelpText fontSize="9px" color="ui.muted" m={0}>{(metrics.mode || 'UNKNOWN').toUpperCase()}</StatHelpText>
         </Stat>
         <Stat>
           <StatLabel fontSize="10px" color="ui.muted" textTransform="uppercase">Simulated PnL</StatLabel>
-          <StatNumber fontSize="md" fontWeight="800" color={metrics.total_pnl >= 0 ? "status.success" : "status.error"}>
-            ${metrics.total_pnl.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+          <StatNumber fontSize="md" fontWeight="800" color={displayPnL >= 0 ? "status.success" : "status.error"}>
+            ${Number(displayPnL).toLocaleString(undefined, { minimumFractionDigits: 2 })}
           </StatNumber>
           <StatHelpText fontSize="9px" color="ui.muted" m={0}>UNREALIZED</StatHelpText>
         </Stat>
