@@ -195,9 +195,9 @@ const ResearchKnowledgeBase: React.FC = () => {
       
       <Heading size="10px" color="ui.muted" mb={3} letterSpacing="wider" textTransform="uppercase">Failure Taxonomy</Heading>
       <SimpleGrid columns={2} gap={2}>
-        {(failures || []).slice(0, 4).map(f => (
+        {(failures.slice(0, 4) || []).map(f => (
           <Box key={f.id} p={2} bg="blackAlpha.200" borderRadius="sm" borderWidth="1px" borderColor="ui.border">
-            <Text fontSize="9px" fontWeight="bold" color="red.300" letterSpacing="tight">{f.label.toUpperCase()}</Text>
+            <Text fontSize="9px" fontWeight="bold" color="red.300" letterSpacing="tight">{(f.label || 'UNKNOWN').toUpperCase()}</Text>
           </Box>
         ))}
       </SimpleGrid>

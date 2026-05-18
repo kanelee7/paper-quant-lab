@@ -86,7 +86,7 @@ const CollaborativeGovernance: React.FC = () => {
                     <VStack align="stretch" spacing={1}>
                         <HStack justifyContent="space-between">
                             <Badge fontSize="8px" colorScheme={c.type === 'Contradiction' ? 'purple' : 'blue'}>{c.type}</Badge>
-                            <Text fontSize="9px" fontWeight="bold" color={c.severity === 'Critical' ? 'red.400' : 'orange.300'}>{c.severity.toUpperCase()}</Text>
+                            <Text fontSize="9px" fontWeight="bold" color={c.severity === 'Critical' ? 'red.400' : 'orange.300'}>{(c.severity || 'UNKNOWN').toUpperCase()}</Text>
                         </HStack>
                         <Text fontSize="xs" color="gray.300" lineHeight="tall">{c.description}</Text>
                         <HStack mt={1}>

@@ -97,7 +97,7 @@ const QuantInsights: React.FC = () => {
             <Box key={name} p={3} bg="gray.900" borderRadius="md">
               <HStack justifyContent="space-between" mb={2}>
                 <VStack align="start" spacing={0}>
-                  <Badge colorScheme="blue">{name.toUpperCase()}</Badge>
+                  <Badge colorScheme="blue">{(name || 'STRATEGY').toUpperCase()}</Badge>
                   {stat.persona_id && evolution[stat.persona_id] && (
                     <Text fontSize="2xs" color="gray.600">
                       Ver: {evolution[stat.persona_id].drift_history.slice(-1)[0]?.version || 'v1.0'}

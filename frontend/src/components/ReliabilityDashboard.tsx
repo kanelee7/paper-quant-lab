@@ -83,7 +83,7 @@ const ReliabilityDashboard: React.FC = () => {
           <HStack justifyContent="space-between">
             <Text fontSize="10px" color="ui.muted" fontWeight="bold">DATASET HEALTH</Text>
             <Badge colorScheme={report.status === 'healthy' ? 'green' : 'orange'} fontSize="9px">
-              {report.status.toUpperCase()}
+              {(report.status || 'UNKNOWN').toUpperCase()}
             </Badge>
           </HStack>
         </Box>

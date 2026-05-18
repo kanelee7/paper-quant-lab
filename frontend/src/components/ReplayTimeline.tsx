@@ -138,7 +138,7 @@ const ReplayTimeline: React.FC<ReplayTimelineProps> = ({ symbol, onFocusSignal }
             {currentSignal && (
                 <HStack spacing={3}>
                     <Badge colorScheme={currentSignal.action === 'buy' ? 'green' : 'red'} variant="subtle" fontSize="9px">
-                        {currentSignal.action.toUpperCase()} @ {currentSignal.price.toLocaleString()}
+                        {(currentSignal.action || 'SIGNAL').toUpperCase()} @ {currentSignal.price.toLocaleString()}
                     </Badge>
                     <Badge variant="outline" fontSize="9px" color="ui.muted">
                         {new Date(currentSignal.timestamp).toLocaleTimeString()}

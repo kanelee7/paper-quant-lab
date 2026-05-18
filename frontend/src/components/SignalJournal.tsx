@@ -382,14 +382,14 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
                         <Td py={2}>
                         {signal.persona_id && (
                             <Badge colorScheme="purple" fontSize="9px" variant="solid" bg="purple.900" color="purple.100" borderRadius="xs">
-                            {signal.persona_id.split('_')[0]}
+                            {(signal.persona_id || 'unknown').split('_')[0]}
                             </Badge>
                         )}
                         </Td>
                         <Td py={2}>
                         <Tooltip label={workspaceMode === 'TRAINING' ? getActionHint(signal.action) : ''}>
                             <Badge colorScheme={signal.action === 'buy' ? 'green' : signal.action === 'sell' ? 'red' : 'gray'} fontSize="9px" borderRadius="xs">
-                                {signal.action.toUpperCase()}
+                                {(signal.action || 'unknown').toUpperCase()}
                                 {workspaceMode === 'TRAINING' && <QuestionOutlineIcon ml={1} w={2} h={2} />}
                             </Badge>
                         </Tooltip>
@@ -402,7 +402,7 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
                             </Badge>
                         </Tooltip>
                         </Td>
-                        <Td isNumeric fontSize="11px" fontWeight="500" py={2}>{signal.price.toLocaleString()}</Td>
+                        <Td isNumeric fontSize="11px" fontWeight="500" py={2}>{(signal.price || 0).toLocaleString()}</Td>
                         <Td fontSize="11px" py={2}>
                         {signal.outcomes?.['5m'] ? (
                             <Text color={signal.outcomes['5m'].pct >= 0 ? "green.300" : "red.300"} fontWeight="bold">
@@ -501,7 +501,7 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
                     <Badge colorScheme="blue" variant="subtle">{selectedSignal.strategy_name}</Badge>
                     <Badge colorScheme={getRegimeColor(selectedSignal.market_regime)} variant="outline">{selectedSignal.market_regime}</Badge>
                     <Badge colorScheme={selectedSignal.action === 'buy' ? 'green' : 'red'} variant="solid">
-                      {selectedSignal.action.toUpperCase()}
+                      {(selectedSignal.action || 'unknown').toUpperCase()}
                     </Badge>
                   </HStack>
                 </HStack>

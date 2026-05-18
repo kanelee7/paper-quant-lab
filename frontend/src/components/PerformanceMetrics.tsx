@@ -51,7 +51,7 @@ const PerformanceMetrics: React.FC = () => {
         <Stat>
           <StatLabel fontSize="10px" color="ui.muted" textTransform="uppercase">Decisions</StatLabel>
           <StatNumber fontSize="md" fontWeight="800" color="gray.200">{metrics.total_trades}</StatNumber>
-          <StatHelpText fontSize="9px" color="ui.muted" m={0}>{metrics.mode.toUpperCase()}</StatHelpText>
+          <StatHelpText fontSize="9px" color="ui.muted" m={0}>{(metrics.mode || 'UNKNOWN').toUpperCase()}</StatHelpText>
         </Stat>
         <Stat>
           <StatLabel fontSize="10px" color="ui.muted" textTransform="uppercase">Simulated PnL</StatLabel>

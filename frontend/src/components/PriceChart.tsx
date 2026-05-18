@@ -138,12 +138,12 @@ const PriceChart: React.FC<PriceChartProps> = ({ symbol, onSymbolChange }) => {
         
         if (candleSeriesRef.current && journal.length > 0) {
           const markers = (journal || []).map((signal: any) => ({
-            time: new Date(signal.timestamp).getTime() / 1000 as Time,
+            time: signal.timestamp / 1000 as Time,
             position: signal.action === 'buy' ? 'belowBar' : 'aboveBar',
             color: signal.action === 'buy' ? '#8F9A5B' : '#A84A4A',
             shape: signal.action === 'buy' ? 'arrowUp' : 'arrowDown',
-            text: signal.action.toUpperCase(),
-          }));
+            text: (signal.action || 'SIGNAL').toUpperCase(),
+            }));
           candleSeriesRef.current.setMarkers(markers);
         }
       } catch (error) {
