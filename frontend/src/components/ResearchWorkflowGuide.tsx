@@ -91,7 +91,7 @@ const ResearchWorkflowGuide: React.FC<ResearchWorkflowGuideProps> = ({ onModeCha
     <Box bg="background.surface" borderRadius="lg" p={4} borderWidth="1px" borderColor="ui.border" borderLeft="4px solid" borderLeftColor="brand.500">
       <HStack justifyContent="space-between" mb={2}>
         <HStack spacing={2}>
-            <Heading size="xs" color="brand.500" letterSpacing="widest" textTransform="uppercase">Guidance</Heading>
+            <Heading size="xs" color="brand.500" letterSpacing="widest" textTransform="uppercase">Research Protocols</Heading>
             {activePreset && <Badge colorScheme="brand" variant="solid" fontSize="9px">ACTIVE</Badge>}
         </HStack>
         <IconButton 
@@ -106,7 +106,7 @@ const ResearchWorkflowGuide: React.FC<ResearchWorkflowGuideProps> = ({ onModeCha
       <Collapse in={isOpen}>
         {!activePreset ? (
           <VStack align="stretch" spacing={3} mt={2}>
-            <Text fontSize="11px" color="ui.muted">Execute a structured research pipeline.</Text>
+            <Text fontSize="11px" color="ui.muted">Initialize a structured analytical protocol.</Text>
             {(presets || []).map(preset => (
               <Box 
                 key={preset.preset_id} 
@@ -120,7 +120,7 @@ const ResearchWorkflowGuide: React.FC<ResearchWorkflowGuideProps> = ({ onModeCha
                 onClick={() => handleStartWorkflow(preset)}
               >
                 <HStack justifyContent="space-between" mb={1}>
-                  <Text fontSize="xs" fontWeight="bold" color="gray.200">{preset.title}</Text>
+                  <Text fontSize="xs" fontWeight="bold" color="gray.200" textTransform="uppercase" letterSpacing="wider">{preset.title}</Text>
                   <Icon as={ArrowForwardIcon} w={3} h={3} color="brand.500" />
                 </HStack>
                 <Text fontSize="10px" color="ui.muted" noOfLines={1}>{preset.description}</Text>
@@ -131,7 +131,7 @@ const ResearchWorkflowGuide: React.FC<ResearchWorkflowGuideProps> = ({ onModeCha
           <VStack align="stretch" spacing={4} mt={2}>
             <Box>
                 <HStack justifyContent="space-between" mb={2}>
-                    <Text fontSize="xs" fontWeight="bold" color="brand.200">{activePreset.title}</Text>
+                    <Text fontSize="xs" fontWeight="bold" color="brand.200">{activePreset.title.toUpperCase()}</Text>
                     <IconButton size="2xs" variant="ghost" icon={<RepeatIcon />} aria-label="Reset" onClick={handleReset} />
                 </HStack>
                 <Progress 
@@ -145,7 +145,7 @@ const ResearchWorkflowGuide: React.FC<ResearchWorkflowGuideProps> = ({ onModeCha
 
             <Box p={3} bg="blackAlpha.300" borderRadius="md" borderLeft="2px solid" borderColor="brand.500">
                 <HStack mb={1}>
-                    <Badge colorScheme="brand" variant="subtle" fontSize="9px">STEP {currentStepIndex + 1}</Badge>
+                    <Badge colorScheme="brand" variant="subtle" fontSize="9px">PHASE {currentStepIndex + 1}</Badge>
                     <Text fontSize="xs" fontWeight="bold" color="gray.100">{activePreset.workflow_steps[currentStepIndex].label}</Text>
                 </HStack>
                 <Text fontSize="11px" color="gray.400" fontStyle="italic" lineHeight="short">
@@ -160,7 +160,7 @@ const ResearchWorkflowGuide: React.FC<ResearchWorkflowGuideProps> = ({ onModeCha
                 onClick={handleNextStep}
                 borderRadius="sm"
             >
-                {currentStepIndex === activePreset.workflow_steps.length - 1 ? 'Complete Pipeline' : 'Next Stage'}
+                {currentStepIndex === activePreset.workflow_steps.length - 1 ? 'Complete Protocol' : 'Next Phase'}
             </Button>
           </VStack>
         )}

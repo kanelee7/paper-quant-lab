@@ -10,6 +10,8 @@ import {
   Text,
   HStack,
   Icon,
+  Divider,
+  Progress,
 } from '@chakra-ui/react';
 import { InfoOutlineIcon } from '@chakra-ui/icons';
 
@@ -23,6 +25,8 @@ interface Metrics {
   win_rate?: number;
   balance?: number;
   mode?: string;
+  research_drift?: number;
+  last_audit?: string;
 }
 
 const PerformanceMetrics: React.FC = () => {
@@ -62,7 +66,7 @@ const PerformanceMetrics: React.FC = () => {
           <StatNumber fontSize="md" fontWeight="800" color="gray.200">
             {Number(displayDecisions).toLocaleString()}
           </StatNumber>
-          <StatHelpText fontSize="9px" color="ui.muted" m={0}>{(metrics.mode || 'UNKNOWN').toUpperCase()}</StatHelpText>
+          <StatHelpText fontSize="9px" color="ui.muted" m={0}>{(metrics.mode || 'UNKNOWN').toUpperCase()} MODE</StatHelpText>
         </Stat>
         <Stat>
           <StatLabel fontSize="10px" color="ui.muted" textTransform="uppercase">Simulated PnL</StatLabel>
@@ -71,6 +75,24 @@ const PerformanceMetrics: React.FC = () => {
           </StatNumber>
           <StatHelpText fontSize="9px" color="ui.muted" m={0}>UNREALIZED</StatHelpText>
         </Stat>
+      </SimpleGrid>
+
+      <Divider my={4} borderColor="ui.border" />
+
+      <SimpleGrid columns={2} gap={4}>
+        <Box>
+            <Text fontSize="9px" color="ui.muted" textTransform="uppercase" mb={1}>Research Drift</Text>
+            <HStack spacing={2}>
+                <Progress value={(metrics.research_drift || 0) * 100} size="2xs" colorScheme="orange" flex={1} bg="whiteAlpha.100" borderRadius="full" />
+                <Text fontSize="10px" fontWeight="bold" color="orange.300">{Math.round((metrics.research_drift || 0) * 100)}%</Text>
+            </HStack>
+        </Box>
+        <Box>
+            <Text fontSize="9px" color="ui.muted" textTransform="uppercase" mb={1}>Last Audit</Text>
+            <Text fontSize="10px" fontWeight="bold" color="brand.200">
+                {metrics.last_audit ? `${Math.floor((Date.now() - new Date(metrics.last_audit).getTime()) / 3600000)}h ago` : 'NEVER'}
+            </Text>
+        </Box>
       </SimpleGrid>
     </Box>
   );

@@ -65,6 +65,8 @@ import {
   order_id?: string;
   notes?: string;
   tags?: string[];
+  verified?: boolean;
+  last_audit?: string;
   evaluation?: {
     quality_score: number;
     drift_score: number;
@@ -102,7 +104,7 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
     try {
       const response = await demoFetch('http://localhost:8000/api/journal');
       const data = await response.json();
-      setSignals(data.reverse());
+      setSignals(data);
     } catch (error) {
       console.error('Failed to fetch journal:', error);
     }
@@ -295,7 +297,7 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
     <Box bg="background.surface" borderRadius="lg" p={4} borderWidth="1px" borderColor="ui.border" shadow="sm">
       <HStack justifyContent="space-between" mb={4}>
         <HStack spacing={3}>
-            <Text fontSize="md" fontWeight="bold" letterSpacing="tight">Decision Journal</Text>
+            <Text fontSize="md" fontWeight="bold" letterSpacing="tight">Research Trace Archive</Text>
             <Badge colorScheme={workspaceMode === 'RESEARCH' ? 'brand' : workspaceMode === 'REVIEW' ? 'pink' : 'green'} fontSize="10px" variant="outline">
                 {workspaceMode} MODE
             </Badge>
@@ -311,8 +313,8 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
                 </Button>
             )}
         </HStack>
-        <Button size="xs" colorScheme="red" variant="ghost" onClick={handleClearJournal}>
-          Clear
+        <Button size="xs" colorScheme="red" variant="ghost" onClick={handleClearJournal} fontSize="9px">
+          Purge Active Stream
         </Button>
       </HStack>
 
@@ -374,10 +376,12 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
                         </VStack>
                     </Td>
                 </Tr>
-            ) : (filteredSignals || []).map((signal, index) => (
+            ) : (filteredSignals || []).map((signal, index) => {
+              const isStale = (Date.now() - new Date(signal.timestamp).getTime()) > 86400000; // > 24h
+              return (
               <Popover key={index} trigger="hover" placement="right" openDelay={500}>
                 <PopoverTrigger>
-                    <Tr _hover={{ bg: "whiteAlpha.50" }} borderLeft={signal.notes ? "2px solid" : "none"} borderColor="brand.500" cursor="help">
+                    <Tr _hover={{ bg: "whiteAlpha.50" }} borderLeft={signal.notes ? "2px solid" : "none"} borderColor="brand.500" cursor="help" opacity={isStale ? 0.6 : 1}>
                         <Td fontSize="11px" color="ui.muted" py={2}>{new Date(signal.timestamp).toLocaleTimeString()}</Td>
                         <Td py={2}>
                         {signal.persona_id && (
@@ -414,10 +418,10 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
                         </Td>
                         <Td py={2}>
                         <HStack spacing={1}>
-                            {!signal.indicators_snapshot && (
-                            <Tooltip label="Missing indicators snapshot (breaks replay)">
-                                <Icon as={WarningIcon} color="orange.400" w={3} h={3} />
-                            </Tooltip>
+                            {!signal.verified && (
+                                <Tooltip label="Needs human verification">
+                                    <Icon as={WarningIcon} color="orange.400" w={3} h={3} />
+                                </Tooltip>
                             )}
                             <IconButton 
                             size="xs" 
@@ -467,7 +471,7 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
                     </PopoverBody>
                 </PopoverContent>
               </Popover>
-            ))}
+            )})}
           </Tbody>
         </Table>
       </Box>
@@ -476,19 +480,21 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
         <ModalOverlay backdropFilter="blur(4px)" />
         <ModalContent bg="background.surface" color="white" borderWidth="1px" borderColor="ui.border" borderRadius="xl">
           <ModalHeader fontSize="md" fontWeight="bold" letterSpacing="tight" borderBottomWidth="1px" borderColor="ui.border">
-            {workspaceMode === 'TRAINING' ? 'Guided Reasoning Review' : 'Outcome Intelligence Report'}
+            {workspaceMode === 'REVIEW' ? 'Layered Evidence Analysis' : 'Operational Research Report'}
           </ModalHeader>
           <ModalCloseButton />
           <ModalBody py={6}>
             {selectedSignal && (
               <VStack align="stretch" spacing={6}>
-                {workspaceMode === 'TRAINING' && (
-                    <Box p={3} bg="brand.900" borderRadius="md" borderLeft="4px solid" borderColor="brand.500">
-                        <Text fontSize="xs" fontWeight="bold" color="brand.200" mb={1}>TRAINING HINT</Text>
-                        <Text fontSize="xs" color="brand.50">
-                            This persona is acting in a <b>{selectedSignal.market_regime}</b> regime. 
-                            {getRegimeHint(selectedSignal.market_regime)}
-                        </Text>
+                {selectedSignal.verified === false && (
+                    <Box p={3} bg="orange.900" borderRadius="md" borderLeft="4px solid" borderColor="orange.500">
+                        <HStack justifyContent="space-between">
+                            <VStack align="start" spacing={0}>
+                                <Text fontSize="xs" fontWeight="bold" color="orange.200">VERIFICATION PENDING</Text>
+                                <Text fontSize="10px" color="orange.100">This trace requires qualitative human audit before knowledge synthesis.</Text>
+                            </VStack>
+                            <Badge colorScheme="orange" variant="solid">AWAITING</Badge>
+                        </HStack>
                     </Box>
                 )}
 
@@ -575,7 +581,7 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
                 )}
 
                 <Box>
-                  <Text fontSize="xs" fontWeight="bold" color="ui.muted" mb={2} textTransform="uppercase">Human Audit & Tags</Text>
+                  <Text fontSize="xs" fontWeight="bold" color="ui.muted" mb={2} textTransform="uppercase">Researcher Audit & Stale Annotations</Text>
                   <HStack wrap="wrap" spacing={2} mb={3}>
                     {(failureTaxonomy || []).map(f => (
                       <Badge 
@@ -593,39 +599,34 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
                   <Textarea 
                     value={tempNotes} 
                     onChange={(e) => setTempNotes(e.target.value)}
-                    placeholder="Record post-mortem observations here..."
+                    placeholder="Record post-mortem observations or verify logical traces..."
                     size="sm"
                     fontSize="xs"
                     bg="blackAlpha.300"
                     borderColor="ui.border"
                     _focus={{ borderColor: brandColor }}
                   />
-                  <Button size="xs" mt={3} colorScheme="brand" onClick={handleSaveNotes} w="100%">
-                    Save Qualitative Audit
-                  </Button>
+                  <HStack mt={3} spacing={3}>
+                    <Button size="xs" colorScheme="brand" onClick={handleSaveNotes} flex={1} fontSize="10px">
+                        Commit Audit Entry
+                    </Button>
+                    {!selectedSignal.verified && (
+                        <Button size="xs" colorScheme="green" variant="outline" flex={1} fontSize="10px">
+                            Mark as Verified
+                        </Button>
+                    )}
+                  </HStack>
                 </Box>
 
-                {/* Collaborative Research Commentary Layer */}
                 <ResearchCommentary signal_id={selectedSignal.id} />
 
-                {/* Research Reflections / Critique Layer */}
                 <Box p={3} bg="blue.900" borderRadius="md" borderLeft="4px solid" borderColor="blue.400">
-                    <Text fontSize="10px" fontWeight="800" color="blue.100" mb={1}>RESEARCH REFLECTION PROMPTS</Text>
+                    <Text fontSize="10px" fontWeight="800" color="blue.100" mb={1}>CRITIQUE REFLECTION PROMPTS</Text>
                     <VStack align="stretch" spacing={1}>
-                        <Text fontSize="xs" color="blue.50">• How does this reasoning differ from previous {selectedSignal.market_regime} cases?</Text>
-                        <Text fontSize="xs" color="blue.50">• Did the indicators show early divergence before the {selectedSignal.action} signal?</Text>
-                        <Text fontSize="xs" color="blue.50">• Is the confidence justified by the historical win-rate for {selectedSignal.persona_id}?</Text>
+                        <Text fontSize="xs" color="blue.50">• Is the reasoning trace consistent with the recorded {selectedSignal.market_regime} indicators?</Text>
+                        <Text fontSize="xs" color="blue.50">• Did the {selectedSignal.persona_id} exhibit analytical drift compared to v1.1 sessions?</Text>
                     </VStack>
                 </Box>
-
-                {workspaceMode === 'RESEARCH' && (
-                    <Box>
-                        <Text fontSize="xs" fontWeight="bold" color="ui.muted" mb={2} textTransform="uppercase">Raw Indicators Snapshot</Text>
-                        <Code p={3} borderRadius="md" w="100%" bg="blackAlpha.500" color="brand.200" fontSize="10px">
-                            <pre style={{ overflow: 'auto', maxHeight: '100px' }}>{JSON.stringify(selectedSignal.indicators_snapshot, null, 2)}</pre>
-                        </Code>
-                    </Box>
-                )}
               </VStack>
             )}
           </ModalBody>

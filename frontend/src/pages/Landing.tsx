@@ -38,26 +38,15 @@ const FeatureCard: React.FC<FeatureProps> = ({ title, description, icon }) => (
     bg="background.surface" 
     borderWidth="1px" 
     borderColor="ui.border" 
-    borderRadius="xl"
-    transition="all 0.3s"
-    _hover={{ borderColor: 'brand.500', transform: 'translateY(-4px)' }}
+    borderRadius="sm"
+    transition="all 0.2s"
+    _hover={{ borderColor: 'brand.500' }}
   >
-    <Icon as={icon} w={6} h={6} color="brand.500" mb={4} />
-    <Heading size="sm" mb={2}>{title}</Heading>
+    <Icon as={icon} w={5} h={5} color="brand.500" mb={4} />
+    <Heading size="xs" mb={2} textTransform="uppercase" letterSpacing="widest">{title}</Heading>
     <Text fontSize="xs" color="ui.muted" lineHeight="tall">{description}</Text>
   </Box>
 );
-
-const drift = keyframes`
-  from { transform: translate(0, 0); }
-  to { transform: translate(-20px, -20px); }
-`;
-
-const glowPulse = keyframes`
-  0% { opacity: 0.1; }
-  50% { opacity: 0.25; }
-  100% { opacity: 0.1; }
-`;
 
 const Landing: React.FC<{ 
   onLaunch: () => void;
@@ -72,15 +61,15 @@ const Landing: React.FC<{
         position="relative" 
         overflow="hidden"
     >
-      {/* Subtle Background Drift Foundation */}
+      {/* Restrained Background Foundation */}
       <Box 
         position="absolute" 
-        top="-10%" 
-        left="-10%" 
-        w="120%" 
-        h="120%" 
-        bgGradient="radial(circle at 20% 30%, brand.900 0%, transparent 40%), radial(circle at 80% 70%, blue.900 0%, transparent 40%)"
-        animation={`${glowPulse} 10s ease-in-out infinite`}
+        top="0" 
+        left="0" 
+        w="100%" 
+        h="100%" 
+        bgGradient="radial(circle at 20% 0%, brand.900 0%, transparent 50%)"
+        opacity="0.15"
         zIndex={0}
         pointerEvents="none"
       />
@@ -92,9 +81,8 @@ const Landing: React.FC<{
         w="100%" 
         h="100%" 
         bgImage="radial-gradient(whiteAlpha.100 1px, transparent 1px)"
-        bgSize="40px 40px"
-        opacity="0.1"
-        animation={`${drift} 60s linear infinite`}
+        bgSize="60px 60px"
+        opacity="0.05"
         zIndex={0}
       />
 
@@ -102,9 +90,8 @@ const Landing: React.FC<{
       <Box 
         borderBottom="1px" 
         borderColor="ui.border" 
-        py={4} 
-        bg="blackAlpha.400" 
-        backdropFilter="blur(10px)" 
+        py={3} 
+        bg="background.deep" 
         position="sticky" 
         top={0} 
         zIndex={10}
@@ -112,13 +99,13 @@ const Landing: React.FC<{
         <Container maxW="container.xl">
           <HStack justifyContent="space-between">
             <HStack spacing={2}>
-              <Box w={3} h={3} bg={brandColor} borderRadius="full" boxShadow="glow" />
-              <Heading size="md" letterSpacing="tight">PaperQuantLab</Heading>
+              <Box w={2} h={2} bg={brandColor} borderRadius="full" />
+              <Heading size="sm" letterSpacing="tight" fontWeight="800">PaperQuantLab</Heading>
             </HStack>
             <HStack spacing={8}>
-              <Link fontSize="xs" fontWeight="700" color="ui.muted" _hover={{ color: brandColor }} onClick={() => onNavigate('VISION')}>Vision</Link>
-              <Link fontSize="xs" fontWeight="700" color="ui.muted" _hover={{ color: brandColor }} onClick={() => onNavigate('PHILOSOPHY')}>Philosophy</Link>
-              <Button size="sm" colorScheme="brand" variant="solid" onClick={onLaunch}>Launch Workstation</Button>
+              <Link fontSize="10px" fontWeight="700" color="ui.muted" textTransform="uppercase" letterSpacing="widest" _hover={{ color: brandColor }} onClick={() => onNavigate('VISION')}>Vision</Link>
+              <Link fontSize="10px" fontWeight="700" color="ui.muted" textTransform="uppercase" letterSpacing="widest" _hover={{ color: brandColor }} onClick={() => onNavigate('PHILOSOPHY')}>Philosophy</Link>
+              <Button size="xs" colorScheme="brand" variant="solid" onClick={onLaunch} px={4} borderRadius="sm">Launch Workstation</Button>
             </HStack>
           </HStack>
         </Container>
@@ -130,37 +117,38 @@ const Landing: React.FC<{
           <Badge 
             colorScheme="brand" 
             variant="subtle" 
-            px={4} 
-            py={1.5} 
-            borderRadius="full" 
-            fontSize="10px"
+            px={3} 
+            py={1} 
+            borderRadius="xs" 
+            fontSize="9px"
             letterSpacing="widest"
             borderWidth="1px"
             borderColor="brand.500"
+            bg="brand.900"
+            color="brand.100"
           >
-            RESEARCH-CENTRIC & LOCAL-FIRST
+            RESEARCH REPOSITORY & REPLAY LAYER
           </Badge>
           <Heading 
-            size="4xl" 
-            maxW="1100px" 
-            lineHeight="1.1" 
+            size="2xl" 
+            maxW="900px" 
+            lineHeight="1.2" 
             letterSpacing="tighter"
             textAlign="center"
+            fontWeight="800"
           >
-            <Box as="span" display="block">PaperQuantLab</Box>
-            <Box as="span" display="block">AI Reasoning</Box>
-            <Box as="span" display="block" color={brandColor}>Research Workstation</Box>
+            <Box as="span" display="block">Analytical Continuity</Box>
+            <Box as="span" display="block" color={brandColor}>Evidence-Based Observation</Box>
           </Heading>
-          <Text fontSize="xl" color="ui.muted" maxW="700px" lineHeight="tall">
-            Study AI analytical styles, validate reasoning patterns, and accumulate 
-            evidence-backed market insights through deterministic replay and 
-            structured synthesis.
+          <Text fontSize="md" color="ui.muted" maxW="600px" lineHeight="tall">
+            Study AI analytical styles and persona evolution through deterministic replay, 
+            structured synthesis, and longitudinal research archives.
           </Text>
           <HStack spacing={4} pt={6}>
-            <Button size="lg" px={10} height="56px" colorScheme="brand" onClick={onLaunch} rightIcon={<ArrowForwardIcon />}>
+            <Button size="md" px={8} height="48px" colorScheme="brand" onClick={onLaunch} rightIcon={<ArrowForwardIcon />} borderRadius="sm">
               Open Workstation
             </Button>
-            <Button size="lg" px={10} height="56px" variant="outline" onClick={() => onNavigate('PHILOSOPHY')}>
+            <Button size="md" px={8} height="48px" variant="outline" onClick={() => onNavigate('PHILOSOPHY')} borderRadius="sm">
               Read Philosophy
             </Button>
           </HStack>
@@ -169,26 +157,26 @@ const Landing: React.FC<{
 
       {/* Bento Feature Grid */}
       <Container maxW="container.xl" pb={32}>
-        <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6}>
+        <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={5}>
           <FeatureCard 
-            title="Explainable Signals" 
+            title="Reasoning Trace" 
             icon={SearchIcon}
-            description="Every strategy decision produces a detailed reasoning trace and technical indicator snapshot."
+            description="Every analytical decision produces a detailed reasoning trace and technical indicator snapshot for verification."
           />
           <FeatureCard 
-            title="Replay Intelligence" 
+            title="Deterministic Replay" 
             icon={RepeatIcon}
-            description="Step back into any historical market context with deterministic replay for deep post-mortem analysis."
+            description="Step back into historical market contexts with cycle-accurate replay for deep post-mortem analysis."
           />
           <FeatureCard 
-            title="Evidence Governance" 
+            title="Evidence Provenance" 
             icon={CheckCircleIcon}
-            description="Audit synthesized findings with automated evidence coverage scoring and provenance tracking."
+            description="Audit synthesized findings with automated evidence coverage scoring and strict provenance tracking."
           />
           <FeatureCard 
-            title="Reproducible Archives" 
+            title="Portable Archives" 
             icon={LockIcon}
-            description="Bundle entire experiments into portable, versioned archives for long-term preservation and accumulation."
+            description="Bundle experiments into versioned repositories for long-term preservation and knowledge accumulation."
           />
         </SimpleGrid>
       </Container>
@@ -198,35 +186,35 @@ const Landing: React.FC<{
         <Container maxW="container.lg">
           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={16}>
             <VStack align="start" spacing={6}>
-              <Heading size="lg">Designed for <Text as="span" color={brandColor}>Understanding</Text></Heading>
-              <VStack align="start" spacing={4}>
-                <HStack align="start">
-                  <Icon as={ViewIcon} color={brandColor} mt={1} />
+              <Heading size="md" textTransform="uppercase" letterSpacing="widest">Operational <Text as="span" color={brandColor}>Focus</Text></Heading>
+              <VStack align="start" spacing={5}>
+                <HStack align="start" spacing={4}>
+                  <Icon as={ViewIcon} color={brandColor} mt={1} w={4} h={4} />
                   <Box>
-                    <Text fontWeight="bold" fontSize="sm">Reasoning Observability</Text>
-                    <Text fontSize="xs" color="ui.muted">See exactly how AI personas interpret conflicting market indicators.</Text>
+                    <Text fontWeight="800" fontSize="xs" textTransform="uppercase" letterSpacing="wider">Reasoning Observability</Text>
+                    <Text fontSize="xs" color="ui.muted">Analyze how different AI personas interpret conflicting market indicators without autonomous authority.</Text>
                   </Box>
                 </HStack>
-                <HStack align="start">
-                  <Icon as={InfoOutlineIcon} color={brandColor} mt={1} />
+                <HStack align="start" spacing={4}>
+                  <Icon as={InfoOutlineIcon} color={brandColor} mt={1} w={4} h={4} />
                   <Box>
-                    <Text fontWeight="bold" fontSize="sm">Longitudinal Learning</Text>
-                    <Text fontSize="xs" color="ui.muted">Track analytical drift and persona evolution across different market cycles.</Text>
+                    <Text fontWeight="800" fontSize="xs" textTransform="uppercase" letterSpacing="wider">Longitudinal Continuity</Text>
+                    <Text fontSize="xs" color="ui.muted">Track analytical drift and persona behavioral evolution across varied market regimes.</Text>
                   </Box>
                 </HStack>
               </VStack>
             </VStack>
 
-            <VStack align="start" spacing={6} p={8} bg="blackAlpha.400" borderRadius="xl" border="1px dashed" borderColor="ui.border">
-              <Heading size="md" color="red.300">Integrity Mandates</Heading>
-              <VStack align="start" spacing={3}>
-                <Text fontSize="xs" color="gray.400">PaperQuantLab is NOT an autonomous trading bot.</Text>
+            <VStack align="start" spacing={6} p={8} bg="blackAlpha.400" borderRadius="sm" border="1px solid" borderColor="ui.border">
+              <Heading size="xs" color="brand.500" textTransform="uppercase" letterSpacing="widest">Simulation Disclosures</Heading>
+              <VStack align="start" spacing={3} w="100%">
+                <Text fontSize="11px" color="gray.400">PaperQuantLab is a simulation-only research environment.</Text>
                 <Divider borderColor="whiteAlpha.100" />
-                <Text fontSize="xs" color="gray.400">We do NOT promise market-beating profit or "alpha."</Text>
+                <Text fontSize="11px" color="gray.400">No brokerage execution or live trading is supported.</Text>
                 <Divider borderColor="whiteAlpha.100" />
-                <Text fontSize="xs" color="gray.400">No brokerage execution is ever implemented.</Text>
+                <Text fontSize="11px" color="gray.400">All findings are for educational and research purposes.</Text>
                 <Divider borderColor="whiteAlpha.100" />
-                <Text fontSize="xs" color="gray.400">Human judgment remains the final authority.</Text>
+                <Text fontSize="11px" color="gray.400">Local-first architecture ensures data privacy and integrity.</Text>
               </VStack>
             </VStack>
           </SimpleGrid>
@@ -234,19 +222,23 @@ const Landing: React.FC<{
       </Box>
 
       {/* Footer */}
-      <Box py={16}>
+      <Box py={12} bg="background.deep">
         <Container maxW="container.xl">
-          <HStack justifyContent="space-between">
-            <VStack align="start" spacing={1}>
-              <Heading size="xs">PaperQuantLab</Heading>
-              <Text fontSize="2xs" color="ui.muted">Local-First Research Foundation &copy; 2026</Text>
+          <Flex direction={{ base: "column", md: "row" }} justifyContent="space-between" align={{ base: "start", md: "center" }} gap={8}>
+            <VStack align="start" spacing={2}>
+              <Heading size="xs" letterSpacing="widest" textTransform="uppercase">PaperQuantLab</Heading>
+              <Text fontSize="10px" color="ui.muted" maxW="400px">
+                Experimental reasoning observability platform for longitudinal market research. 
+                Local-first. Simulation-only. Deterministic.
+              </Text>
+              <Text fontSize="10px" color="ui.muted" mt={2}>&copy; 2026 Analytical Research Foundation</Text>
             </VStack>
             <HStack spacing={8}>
-              <Link fontSize="2xs" color="ui.muted">Documentation</Link>
-              <Link fontSize="2xs" color="ui.muted">GitHub</Link>
-              <Link fontSize="2xs" color="ui.muted">Archival Policy</Link>
+              <Link fontSize="10px" fontWeight="700" color="ui.muted" textTransform="uppercase" letterSpacing="widest">Documentation</Link>
+              <Link fontSize="10px" fontWeight="700" color="ui.muted" textTransform="uppercase" letterSpacing="widest">Repository</Link>
+              <Link fontSize="10px" fontWeight="700" color="ui.muted" textTransform="uppercase" letterSpacing="widest">Policy</Link>
             </HStack>
-          </HStack>
+          </Flex>
         </Container>
       </Box>
     </Box>

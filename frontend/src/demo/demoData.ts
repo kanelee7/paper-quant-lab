@@ -17,8 +17,10 @@ export const demoSignals = [
       "1h": { pct: -2.10, price_delta: -1349.26 }
     },
     indicators_snapshot: { rsi: 78, macd: "bearish_div", volume_delta: -15 },
-    notes: "Classic exhaustion pattern successfully identified.",
-    tags: ["exhaustion", "divergence"]
+    notes: "Classic exhaustion pattern successfully identified. Verification needed on L2 liquidity depth at the moment of entry.",
+    tags: ["exhaustion", "divergence", "needs_verification"],
+    verified: false,
+    last_audit: new Date(Date.now() - 86400000).toISOString()
   },
   {
     id: "demo-sig-2",
@@ -38,8 +40,10 @@ export const demoSignals = [
       "1h": { pct: 0.45, price_delta: 287.10 }
     },
     indicators_snapshot: { vwap: "above", adx: 32, spread: 2.5 },
-    notes: "Minor drawdown before trend resumption. Persona showed slight overconfidence.",
-    tags: ["vwap_reclaim", "momentum"]
+    notes: "Minor drawdown before trend resumption. Persona showed slight overconfidence. Audit suggested adjusting momentum weights.",
+    tags: ["vwap_reclaim", "momentum", "audited"],
+    verified: true,
+    last_audit: new Date(Date.now() - 172800000).toISOString()
   },
   {
     id: "demo-sig-3",
@@ -54,8 +58,32 @@ export const demoSignals = [
     reasoning_trace: "Market is exhibiting 'fat tail' characteristics. Typical mean reversion models will fail here. Risk Manager persona mandates standing aside until volatility stabilizes within the 2-sigma band. High uncertainty in directional bias.",
     market_regime: "sideways",
     indicators_snapshot: { kurtosis: 4.2, atr: 85, vol_std: 2.1 },
-    notes: "Avoided a whipsaw move that liquidated momentum followers.",
-    tags: ["risk_avoidance", "kurtosis_filter"]
+    notes: "Avoided a whipsaw move that liquidated momentum followers. Reflection: risk-off was the correct stance despite peer pressure.",
+    tags: ["risk_avoidance", "kurtosis_filter", "verified"],
+    verified: true,
+    last_audit: new Date(Date.now() - 259200000).toISOString()
+  },
+  {
+    id: "demo-sig-4",
+    timestamp: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
+    symbol: "SOL/USDT",
+    action: "buy",
+    price: 145.20,
+    strategy_name: "Breakout",
+    persona_id: "momentum_trader",
+    session_id: "demo-session-old",
+    reason: "Resistance breach with volume spike.",
+    reasoning_trace: "Incomplete trace due to local buffer overflow. Signal recorded but logic needs reconstruction from replay.",
+    market_regime: "trending",
+    outcomes: {
+      "5m": { pct: 0.85, price_delta: 1.23 },
+      "15m": { pct: 1.45, price_delta: 2.10 },
+      "1h": { pct: -0.15, price_delta: -0.22 }
+    },
+    indicators_snapshot: null,
+    notes: "Stale annotation: breakout was valid but exit logic was delayed. Need to re-examine the lag in v1.2 execution.",
+    tags: ["stale", "metadata_missing", "unresolved"],
+    verified: false
   }
 ];
 
@@ -69,10 +97,11 @@ export const demoSessions = [
     end_time: new Date().toISOString(),
     signal_count: 42,
     metrics: {
-      avg_confidence: 0.82,
-      drift_score: 0.12,
-      success_rate: 0.64
-    }
+      avg_confidence: 0.824,
+      drift_score: 0.121,
+      success_rate: 0.642
+    },
+    last_reviewed: new Date(Date.now() - 3600000).toISOString()
   },
   {
     session_id: "demo-session-sideways",
@@ -82,10 +111,26 @@ export const demoSessions = [
     start_time: new Date(Date.now() - 43200000).toISOString(),
     signal_count: 15,
     metrics: {
-      avg_confidence: 0.65,
-      drift_score: 0.28,
-      success_rate: 0.45
-    }
+      avg_confidence: 0.658,
+      drift_score: 0.284,
+      success_rate: 0.451
+    },
+    last_reviewed: new Date(Date.now() - 7200000).toISOString()
+  },
+  {
+    session_id: "demo-session-old",
+    title: "Archived: Alpha Decay Investigation (April)",
+    description: "Investigation into why the Breakout strategy exhibited significant alpha decay after the April patch. Partially completed before team pivot.",
+    status: "completed",
+    start_time: new Date(Date.now() - 2592000000).toISOString(), // 30 days ago
+    end_time: new Date(Date.now() - 2505600000).toISOString(),
+    signal_count: 128,
+    metrics: {
+      avg_confidence: 0.54,
+      drift_score: 0.45,
+      success_rate: 0.38
+    },
+    last_reviewed: new Date(Date.now() - 1296000000).toISOString() // 15 days ago
   }
 ];
 
@@ -96,15 +141,26 @@ export const demoReflections = [
     title: "Identifying Momentum Exhaustion",
     content: "Through repeated observation of the Conservative Analyst, I've noted that it consistently outperforms in identifying the 'last breath' of a move. The key indicator was not just the RSI level, but the decreasing order book depth on the bid side while price made new local highs.",
     type: "Learning",
-    linked_session_id: "demo-session-volatility"
+    linked_session_id: "demo-session-volatility",
+    author: "Researcher_A"
   },
   {
     id: "demo-ref-2",
     timestamp: new Date(Date.now() - 3600000).toISOString(),
     title: "Hypothesis: Whipsaw Protection",
-    content: "The Risk Manager's stand-aside logic seems to correlate with ATR spikes that precede major whipsaws. Hypothesis: integrating ATR-normalized volatility bands into the Momentum Trader could reduce its drawdown by 15%.",
+    content: "The Risk Manager's stand-aside logic seems to correlate with ATR spikes that precede major whipsaws. Hypothesis: integrating ATR-normalized volatility bands into the Momentum Trader could reduce its drawdown by 15%. (Awaiting verification from session data).",
     type: "Hypothesis",
-    linked_session_id: "demo-session-volatility"
+    linked_session_id: "demo-session-volatility",
+    author: "Researcher_B"
+  },
+  {
+    id: "demo-ref-3",
+    timestamp: new Date(Date.now() - 604800000).toISOString(), // 7 days ago
+    title: "Abandoned: Regime Switching Lag",
+    content: "Attempted to quantify the lag between regime detection and persona adaptation. Findings were inconclusive due to high noise in the 1m timeframe. Archiving for now.",
+    type: "Abandoned",
+    linked_session_id: "demo-session-old",
+    author: "Researcher_A"
   }
 ];
 
@@ -114,14 +170,24 @@ export const demoPatterns = [
     label: "Volatility Blindness",
     description: "Failure to adjust position sizing or entry logic during rapid ATR expansion.",
     examples: 12,
-    severity: "high"
+    severity: "high",
+    last_seen: new Date(Date.now() - 3600000).toISOString()
   },
   {
     id: "pattern-trend-chase",
     label: "Trend Chasing Spiral",
     description: "Repeated entries at local tops due to momentum-bias over-weighting in the reasoning engine.",
     examples: 8,
-    severity: "medium"
+    severity: "medium",
+    last_seen: new Date(Date.now() - 172800000).toISOString()
+  },
+  {
+    id: "pattern-stale-reasoning",
+    label: "Stale Logic Persistence",
+    description: "Persona continues to reference invalidated support/resistance levels from >4h ago.",
+    examples: 5,
+    severity: "low",
+    last_seen: new Date(Date.now() - 604800000).toISOString()
   }
 ];
 
@@ -135,19 +201,33 @@ export const demoGovernance = {
       type: "Contradiction",
       severity: "Warning",
       description: "Peer interpretation 'Volatility Trap' contradicts local finding 'Breakout Confirmation' for Signal sig_88a2.",
-      evidence_ids: ["sig_88a2"]
+      evidence_ids: ["sig_88a2"],
+      age_hours: 11,
+      status: "unresolved"
     },
     {
       id: "c2",
       type: "Provenance",
       severity: "Critical",
       description: "Imported research 'Momentum Alpha' references replay states missing in local data provider.",
-      evidence_ids: ["replay_v1_0514"]
+      evidence_ids: ["replay_v1_0514"],
+      age_hours: 48,
+      status: "unresolved"
+    },
+    {
+      id: "c3",
+      type: "Disagreement",
+      severity: "Info",
+      description: "Researcher_B disagreed with Researcher_A's manual annotation on sig-1.",
+      evidence_ids: ["demo-sig-1"],
+      age_hours: 2,
+      status: "awaiting_review"
     }
   ],
   recommendations: [
     "Resync replay data for session 'Volatility Study'",
-    "Validate persona reasoning drift in 'Momentum Trader'"
+    "Validate persona reasoning drift in 'Momentum Trader'",
+    "Resolve contradiction c1 before finalizing Q2 synthesis"
   ]
 };
 
@@ -157,21 +237,24 @@ export const demoInsights = [
     title: "Volatility Drift Correlation",
     description: "Identified a strong correlation between increasing ATR and reasoning drift in the Momentum Trader persona. Confidence scores remain high (0.85+) despite a 40% drop in prediction accuracy.",
     type: "Observation",
-    evidence_count: 12
+    evidence_count: 12,
+    status: "verified"
   },
   {
     id: "insight-2",
     title: "Recursive Reasoning Loop",
     description: "Detected a failure pattern where the Conservative Analyst justifies holding losing positions by referencing 'long-term support' that was already invalidated.",
     type: "Failure",
-    evidence_count: 5
+    evidence_count: 5,
+    status: "needs_verification"
   }
 ];
 
 export const demoTaxonomy = [
   { id: "exhaustion", label: "Exhaustion Failure", description: "Entering at the absolute peak of a parabolic move." },
   { id: "bias", label: "Confirmation Bias", description: "Ignoring contradictory indicators to justify a pre-planned entry." },
-  { id: "vol", label: "Volatility Blindness", description: "Trading high-leverage strategies during news-driven spikes." }
+  { id: "vol", label: "Volatility Blindness", description: "Trading high-leverage strategies during news-driven spikes." },
+  { id: "stale", label: "Stale Logic", description: "Referencing outdated market levels or regime definitions." }
 ];
 
 export const demoWorkflowPresets = [
@@ -213,19 +296,24 @@ export const demoWalkthroughPresets = [
 export const demoPersonas = [
   { id: "conservative_analyst", name: "Conservative Analyst", profile: "Capital preservation focused. High threshold for entry." },
   { id: "momentum_trader", name: "Momentum Trader", profile: "Aggressive trend chaser. Optimized for high-velocity moves." },
-  { id: "risk_manager", name: "Risk Manager", profile: "Constraint-driven. Operates only within strict volatility bands." }
+  { id: "risk_manager", name: "Risk Manager", profile: "Constraint-driven. Operates only within strict volatility bands." },
+  { id: "contrarian_trader", name: "Contrarian Trader", profile: "Reversion biased. Seeks early exhaustion markers." }
 ];
 
 export const demoComments = [
-  { id: "com-1", timestamp: new Date().toISOString(), author: "Senior Researcher", content: "Signal sig-1 shows classic overconfidence. Note the absence of RSI confirmation in the reasoning trace.", signal_id: "demo-sig-1" }
+  { id: "com-1", timestamp: new Date(Date.now() - 3600000).toISOString(), author: "Senior Researcher", content: "Signal sig-1 shows classic overconfidence. Note the absence of RSI confirmation in the reasoning trace.", signal_id: "demo-sig-1" },
+  { id: "com-2", timestamp: new Date(Date.now() - 1800000).toISOString(), author: "Junior_Analyst", content: "Disagree. RSI divergence was evident on the 1m chart, which Conservative Analyst might be over-weighting.", signal_id: "demo-sig-1" },
+  { id: "com-3", timestamp: new Date(Date.now() - 7200000).toISOString(), author: "Researcher_B", content: "VWAP bounce confirmed by L2 order flow. Path is clear.", signal_id: "demo-sig-2" }
 ];
 
 export const demoReplaySnapshots = [
-  { id: "snap-vol-spike", title: "BTC Flash Crash (May 14)", timestamp: new Date().toISOString(), symbol: "BTC/USDT", note: "Preserved for volatility training." }
+  { id: "snap-vol-spike", title: "BTC Flash Crash (May 14)", timestamp: new Date(Date.now() - 432000000).toISOString(), symbol: "BTC/USDT", note: "Preserved for volatility training. Observed massive reasoning drift in v1.2.", last_replayed: new Date(Date.now() - 172800000).toISOString() },
+  { id: "snap-sideways-grind", title: "ETH Sideways Consolidation", timestamp: new Date(Date.now() - 864000000).toISOString(), symbol: "ETH/USDT", note: "Studying Risk Manager's avoidance of fake-outs.", last_replayed: new Date(Date.now() - 604800000).toISOString() }
 ];
 
 export const demoArchives = [
-  { archive_id: "arch-2026-q1", title: "Q1 2026 Research Synthesis", created_at: new Date().toISOString(), session_count: 24, signal_count: 850 }
+  { archive_id: "arch-2026-q1", title: "Q1 2026 Research Synthesis", created_at: new Date(Date.now() - 2592000000).toISOString(), session_count: 24, signal_count: 850 },
+  { archive_id: "arch-2026-beta", title: "Initial Persona Alpha Tests", created_at: new Date(Date.now() - 7776000000).toISOString(), session_count: 12, signal_count: 310 }
 ];
 
 export const demoPerformance = {
@@ -233,6 +321,8 @@ export const demoPerformance = {
   win_rate: 62.4,
   sharpe_ratio: 2.1,
   max_drawdown: 12.5,
+  research_drift: 0.18,
+  last_audit: new Date(Date.now() - 86400000).toISOString(),
   daily_stats: Array.from({ length: 30 }).map((_, i) => ({
     date: new Date(Date.now() - (30 - i) * 86400000).toLocaleDateString(),
     pnl: (Math.random() - 0.4) * 100
@@ -301,4 +391,3 @@ export const demoPersonaEvaluation = {
     ]
   }
 };
-

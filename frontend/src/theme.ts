@@ -43,9 +43,8 @@ const theme = extendTheme({
     }
   },
   shadows: {
-    panel: '0 4px 24px -1px rgba(0, 0, 0, 0.4)',
-    glow: '0 0 15px -2px rgba(184, 163, 90, 0.15)',
-  },
+    panel: '0 4px 20px -8px rgba(0, 0, 0, 0.5)',
+    },
   fonts: {
     heading: '"Inter", -apple-system, system-ui, sans-serif',
     body: '"Inter", -apple-system, system-ui, sans-serif',

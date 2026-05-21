@@ -35,12 +35,16 @@ interface Session {
   session_id: string;
   title: string;
   created_at: string;
+  start_time?: string;
+  end_time?: string;
   status: 'active' | 'completed';
   asset_type: string;
   market: string;
   personas: string[];
   notes: string;
   tags: string[];
+  last_reviewed?: string;
+  signal_count?: number;
 }
 
 const ResearchSessionManager: React.FC = () => {
@@ -63,7 +67,7 @@ const ResearchSessionManager: React.FC = () => {
     try {
       const response = await demoFetch('http://localhost:8000/api/sessions');
       const data = await response.json();
-      setSessions(data.reverse());
+      setSessions(data);
       
       const active = data.find((s: Session) => s.status === 'active');
       setActiveSession(active || null);
@@ -104,7 +108,6 @@ const ResearchSessionManager: React.FC = () => {
       fetchSessions();
       toast({ title: 'Research Session Completed', status: 'info' });
       
-      // 세션 요약 자동 조회 및 표시
       if (stopped && stopped.session_id) {
         handleViewSummary(stopped.session_id);
       }
@@ -136,105 +139,111 @@ const ResearchSessionManager: React.FC = () => {
   };
 
   return (
-    <Box bg="gray.800" borderRadius="lg" p={4} shadow="md">
-      <Heading size="sm" mb={4}>Research Session Manager</Heading>
+    <Box bg="background.surface" borderRadius="lg" p={4} borderWidth="1px" borderColor="ui.border" shadow="sm">
+      <Heading size="xs" color="brand.500" letterSpacing="widest" textTransform="uppercase" mb={4}>Research Operations</Heading>
       
       {activeSession ? (
         <VStack align="stretch" spacing={3}>
-          <Box p={3} bg="blue.900" borderRadius="md" borderLeft="4px solid" borderColor="blue.400">
+          <Box p={3} bg="brand.900" borderRadius="md" borderLeft="4px solid" borderColor="brand.500">
             <HStack justifyContent="space-between">
               <VStack align="start" spacing={0}>
                 <Text fontWeight="bold" fontSize="sm">{activeSession.title}</Text>
-                <Text fontSize="xs" color="gray.400">Started: {new Date(activeSession.created_at).toLocaleString()}</Text>
+                <Text fontSize="xs" color="brand.200">Established: {new Date(activeSession.start_time || activeSession.created_at).toLocaleString()}</Text>
               </VStack>
-              <Badge colorScheme="green">ACTIVE</Badge>
+              <Badge colorScheme="brand" variant="solid" fontSize="9px">ACTIVE REPOSITORY</Badge>
             </HStack>
             <HStack mt={2} spacing={1}>
               {(activeSession.tags || []).map(tag => (
-                <Badge key={tag} variant="outline" fontSize="2xs">{tag}</Badge>
+                <Badge key={tag} variant="outline" fontSize="8px" colorScheme="brand">{tag}</Badge>
               ))}
             </HStack>
-            <Button size="xs" colorScheme="red" mt={3} w="100%" onClick={handleStopSession}>
-              Stop & Complete Session
+            <Button size="xs" colorScheme="red" mt={3} w="100%" onClick={handleStopSession} fontSize="9px" borderRadius="sm">
+              Finalize Research State & Archive
             </Button>
           </Box>
         </VStack>
       ) : (
         <VStack align="stretch" spacing={3}>
           <Input 
-            placeholder="Session Title (e.g., Volatility Study v1)" 
-            size="sm" 
+            placeholder="Analytical Hypothesis Title" 
+            size="xs" 
             value={newSession.title}
             onChange={(e) => setNewSession({ ...newSession, title: e.target.value })}
+            bg="background.deep"
+            borderColor="ui.border"
+            borderRadius="sm"
           />
           <HStack spacing={2}>
             <Select 
-              size="sm" 
+              size="xs" 
               value={newSession.asset_type}
               onChange={(e) => setNewSession({ ...newSession, asset_type: e.target.value })}
               bg="background.deep"
               borderColor="ui.border"
+              borderRadius="sm"
             >
-              <option value="CRYPTO">Crypto</option>
-              <option value="STOCK">Stock</option>
+              <option value="CRYPTO">Crypto Feed</option>
+              <option value="STOCK">Equity Feed</option>
             </Select>
             <Input 
-              placeholder="Market" 
-              size="sm" 
+              placeholder="Market Focus" 
+              size="xs" 
               value={newSession.market}
               onChange={(e) => setNewSession({ ...newSession, market: e.target.value })}
               bg="background.deep"
               borderColor="ui.border"
+              borderRadius="sm"
             />
           </HStack>
           <Textarea 
-            placeholder="Hypothesis / Notes" 
-            size="sm" 
+            placeholder="Core research question or constraint parameters..." 
+            size="xs" 
             value={newSession.notes}
             onChange={(e) => setNewSession({ ...newSession, notes: e.target.value })}
             bg="background.deep"
             borderColor="ui.border"
+            borderRadius="sm"
           />
           <HStack>
             <Input 
-              placeholder="Add Tag" 
-              size="sm" 
+              placeholder="Tag (e.g., #drift)" 
+              size="xs" 
               value={newTag}
               onChange={(e) => setNewTag(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && addTag()}
               bg="background.deep"
               borderColor="ui.border"
+              borderRadius="sm"
             />
-            <Button size="sm" onClick={addTag} colorScheme="brand" variant="outline">Add</Button>
+            <Button size="xs" onClick={addTag} colorScheme="brand" variant="outline" fontSize="9px" borderRadius="sm">Add</Button>
           </HStack>
           <HStack wrap="wrap">
             {(newSession.tags || []).map(tag => (
-              <Tag key={tag} size="sm" colorScheme="brand" variant="subtle">
-                <TagLabel fontSize="10px">{tag}</TagLabel>
+              <Tag key={tag} size="sm" colorScheme="brand" variant="subtle" borderRadius="xs">
+                <TagLabel fontSize="9px">{tag}</TagLabel>
                 <TagCloseButton onClick={() => removeTag(tag)} />
               </Tag>
             ))}
           </HStack>
-          <Button size="sm" colorScheme="brand" onClick={handleStartSession} fontWeight="800">
-            Start New Experiment
+          <Button size="xs" colorScheme="brand" onClick={handleStartSession} fontWeight="800" fontSize="10px" borderRadius="sm">
+            Establish Research Repository Stream
           </Button>
         </VStack>
       )}
 
       <Divider my={4} borderColor="ui.border" />
       
-      <Text fontSize="10px" fontWeight="800" color="ui.muted" mb={2} letterSpacing="wider">HISTORICAL SESSIONS</Text>
-      <Box maxH="150px" overflowY="auto" pr={1} sx={{ '&::-webkit-scrollbar': { width: '2px' }, '&::-webkit-scrollbar-thumb': { bg: 'whiteAlpha.100' } }}>
+      <Text fontSize="10px" fontWeight="800" color="ui.muted" mb={2} letterSpacing="widest">HISTORICAL ARCHIVE</Text>
+      <Box maxH="220px" overflowY="auto" pr={1} sx={{ '&::-webkit-scrollbar': { width: '2px' }, '&::-webkit-scrollbar-thumb': { bg: 'whiteAlpha.100' } }}>
         <List spacing={2}>
           {(sessions || []).filter(s => s.status === 'completed').map(s => (
-            <ListItem key={s.session_id} p={2} bg="blackAlpha.300" borderRadius="sm" borderWidth="1px" borderColor="ui.border">
-              <HStack justifyContent="space-between">
-                <VStack align="start" spacing={0} flex={1}>
-                  <Text fontSize="xs" fontWeight="bold" noOfLines={1} color="gray.200">{s.title}</Text>
-                  <Text fontSize="2xs" color="ui.muted">{new Date(s.created_at).toLocaleDateString()}</Text>
-                </VStack>
-                <HStack>
-                  <Badge fontSize="8px" variant="outline">{s.market}</Badge>
+            <ListItem key={s.session_id} p={2} bg="blackAlpha.300" borderRadius="md" borderWidth="1px" borderColor="ui.border" _hover={{ borderColor: 'brand.500' }}>
+              <VStack align="stretch" spacing={1}>
+                <HStack justifyContent="space-between">
+                  <VStack align="start" spacing={0} flex={1}>
+                    <Text fontSize="xs" fontWeight="bold" noOfLines={1} color="gray.200">{s.title}</Text>
+                    <Text fontSize="9px" color="ui.muted">Archive Date: {new Date(s.end_time || s.created_at).toLocaleDateString()}</Text>
+                  </VStack>
                   <IconButton 
                     size="2xs" 
                     variant="ghost"
@@ -243,7 +252,16 @@ const ResearchSessionManager: React.FC = () => {
                     onClick={() => handleViewSummary(s.session_id)}
                   />
                 </HStack>
-              </HStack>
+                <HStack justifyContent="space-between" mt={1}>
+                  <HStack spacing={1}>
+                    <Badge fontSize="8px" variant="outline" colorScheme="gray">{s.market}</Badge>
+                    <Badge fontSize="8px" variant="outline" colorScheme="blue">{s.signal_count || 0} signals</Badge>
+                  </HStack>
+                  {s.last_reviewed && (
+                    <Text fontSize="8px" color="brand.200" fontStyle="italic">Last reviewed {Math.floor((Date.now() - new Date(s.last_reviewed).getTime()) / 3600000)}h ago</Text>
+                  )}
+                </HStack>
+              </VStack>
             </ListItem>
           ))}
         </List>

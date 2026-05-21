@@ -326,7 +326,7 @@ const App: React.FC = () => {
                         px={3}
                         borderRadius="sm"
                     >
-                        {isDemoMode ? "IDLE: DEMO ACTIVE" : "SEED DEMO ENVIRONMENT"}
+                        {isDemoMode ? "STATE: DEMO REPOSITORY" : "IMPORT HISTORICAL SEED"}
                     </Button>
                     <HStack bg="blackAlpha.300" p={1} borderRadius="md" borderWidth="1px" borderColor="ui.border" spacing={0}>
                         <Button 

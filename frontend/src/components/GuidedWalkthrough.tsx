@@ -97,7 +97,7 @@ const GuidedWalkthrough: React.FC<{ workspaceMode: string }> = ({ workspaceMode 
       <HStack justifyContent="space-between" mb={2}>
         <HStack spacing={2}>
             <Heading size="xs" color="green.400" letterSpacing="widest" textTransform="uppercase">Walkthroughs</Heading>
-            {activeWalkthrough && <Badge colorScheme="green" variant="solid" fontSize="9px">LIVE</Badge>}
+            {activeWalkthrough && <Badge colorScheme="brand" variant="subtle" fontSize="8px" borderRadius="xs">ACTIVE</Badge>}
         </HStack>
         <IconButton 
           size="xs" 

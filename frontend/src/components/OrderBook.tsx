@@ -102,7 +102,7 @@ const OrderBook: React.FC<OrderBookProps> = ({ symbol }) => {
     <Box height="100%" display="flex" flexDirection="column">
       <HStack justify="space-between" mb={2} px={1}>
         <Text fontSize="10px" fontWeight="800" letterSpacing="widest" color="ui.muted" textTransform="uppercase">{t('label.market_depth')}</Text>
-        <Badge variant="subtle" fontSize="8px" colorScheme={isConnected ? 'green' : 'gray'} borderRadius="xs">
+        <Badge variant="subtle" fontSize="8px" colorScheme={isConnected ? 'brand' : 'gray'} borderRadius="xs">
             {isConnected ? t('status.live') : t('status.idle')}
         </Badge>
       </HStack>

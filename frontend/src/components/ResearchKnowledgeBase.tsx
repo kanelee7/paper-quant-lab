@@ -32,6 +32,7 @@ import { AddIcon, InfoOutlineIcon, ViewIcon } from '@chakra-ui/icons';
 
 interface Insight {
   insight_id: string;
+  id?: string;
   title: string;
   summary: string;
   linked_sessions: string[];
@@ -41,6 +42,7 @@ interface Insight {
   failure_tags: string[];
   created_at: string;
   confidence: string;
+  status?: string;
   reproducibility?: {
     replay_version: string;
     schema_version: string;
@@ -68,7 +70,7 @@ const ResearchKnowledgeBase: React.FC = () => {
     try {
       const response = await demoFetch('http://localhost:8000/api/insights');
       const data = await response.json();
-      setInsights(data.reverse());
+      setInsights(data);
     } catch (error) {
       console.error('Failed to fetch insights:', error);
     }
@@ -146,7 +148,7 @@ const ResearchKnowledgeBase: React.FC = () => {
   return (
     <Box bg="background.surface" borderRadius="lg" p={4} borderWidth="1px" borderColor="ui.border" shadow="sm">
       <HStack justifyContent="space-between" mb={4}>
-        <Heading size="xs" color="gray.400" letterSpacing="widest" textTransform="uppercase">Knowledge Base</Heading>
+        <Heading size="xs" color="gray.400" letterSpacing="widest" textTransform="uppercase">Analytical Insights</Heading>
         <IconButton 
           size="xs" 
           variant="ghost"
@@ -157,34 +159,37 @@ const ResearchKnowledgeBase: React.FC = () => {
         />
       </HStack>
 
-      <VStack align="stretch" spacing={3}>
+      <VStack align="stretch" spacing={2}>
         {insights.length === 0 ? (
           <Text fontSize="11px" color="ui.muted" fontStyle="italic">No synthesized insights yet.</Text>
         ) : (
           (insights || []).map(insight => {
-            const broken = getBrokenLinksForInsight(insight.insight_id);
+            const broken = getBrokenLinksForInsight(insight.insight_id || insight.id || '');
             return (
               <Box 
-                key={insight.insight_id} 
-                p={3} 
+                key={insight.insight_id || insight.id} 
+                p={2} 
                 bg="blackAlpha.300" 
                 borderRadius="md" 
                 borderWidth="1px"
                 borderColor="ui.border"
                 borderLeft="3px solid" 
-                borderLeftColor={broken.length > 0 ? "orange.400" : "purple.500"}
-                cursor="pointer"
+                borderLeftColor={broken.length > 0 ? "orange.400" : insight.status === 'verified' ? "green.500" : "purple.500"}
+                cursor="help"
                 _hover={{ borderColor: 'brand.500', bg: 'whiteAlpha.50' }}
                 onClick={() => handleOpenInsight(insight)}
               >
                 <HStack justifyContent="space-between" mb={1}>
                   <HStack spacing={1}>
                     <Text fontWeight="bold" fontSize="xs" color="gray.200" noOfLines={1}>{insight.title}</Text>
-                    {broken.length > 0 && <Icon as={InfoOutlineIcon} color="orange.400" w={2} h={2} />}
+                    {insight.status === 'needs_verification' && <Icon as={InfoOutlineIcon} color="orange.300" w={2} h={2} />}
                   </HStack>
-                  <Badge fontSize="9px" colorScheme="purple" variant="subtle">{insight.confidence}</Badge>
+                  <Badge fontSize="8px" colorScheme={insight.status === 'verified' ? 'green' : 'purple'} variant="ghost">{insight.confidence}</Badge>
                 </HStack>
-                <Text fontSize="10px" color="ui.muted" noOfLines={2}>{insight.summary}</Text>
+                <HStack justifyContent="space-between">
+                    <Text fontSize="9px" color="ui.muted" noOfLines={1} flex={1}>{insight.summary}</Text>
+                    <Text fontSize="8px" color="gray.600" ml={2}>{new Date(insight.created_at || Date.now()).toLocaleDateString()}</Text>
+                </HStack>
               </Box>
             );
           })
@@ -193,11 +198,11 @@ const ResearchKnowledgeBase: React.FC = () => {
 
       <Divider my={4} borderColor="ui.border" />
       
-      <Heading size="10px" color="ui.muted" mb={3} letterSpacing="wider" textTransform="uppercase">Failure Taxonomy</Heading>
+      <Heading size="10px" color="ui.muted" mb={3} letterSpacing="widest" textTransform="uppercase">Failure Taxonomy</Heading>
       <SimpleGrid columns={2} gap={2}>
         {(failures.slice(0, 4) || []).map(f => (
-          <Box key={f.id} p={2} bg="blackAlpha.200" borderRadius="sm" borderWidth="1px" borderColor="ui.border">
-            <Text fontSize="9px" fontWeight="bold" color="red.300" letterSpacing="tight">{(f.label || 'UNKNOWN').toUpperCase()}</Text>
+          <Box key={f.id} p={1} bg="blackAlpha.200" borderRadius="sm" borderWidth="1px" borderColor="ui.border">
+            <Text fontSize="8px" fontWeight="bold" color="red.300" letterSpacing="tighter" textAlign="center">{(f.label || 'UNKNOWN').toUpperCase()}</Text>
           </Box>
         ))}
       </SimpleGrid>

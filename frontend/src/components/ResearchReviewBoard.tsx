@@ -42,6 +42,7 @@ interface Review {
   failure_patterns: string[];
   created_at: string;
   review_scope: string;
+  last_synthesis?: string;
   governance?: {
     evidence_coverage_score: number;
     reliability_flags: string[];
@@ -78,7 +79,7 @@ const ResearchReviewBoard: React.FC = () => {
     try {
       const response = await demoFetch('http://localhost:8000/api/reviews');
       const data = await response.json();
-      setReviews(data.reverse());
+      setReviews(data);
     } catch (error) {
       console.error('Failed to fetch reviews:', error);
     }
@@ -188,7 +189,7 @@ const ResearchReviewBoard: React.FC = () => {
   return (
     <Box bg="background.surface" borderRadius="lg" p={4} borderWidth="1px" borderColor="ui.border" shadow="sm">
       <HStack justifyContent="space-between" mb={4}>
-        <Heading size="xs" color="gray.400" letterSpacing="widest" textTransform="uppercase">Narratives</Heading>
+        <Heading size="xs" color="gray.400" letterSpacing="widest" textTransform="uppercase">Research Narratives</Heading>
         <IconButton 
           size="xs" 
           variant="ghost"
@@ -203,9 +204,12 @@ const ResearchReviewBoard: React.FC = () => {
         <Box mb={4} p={2} bg="orange.900" borderRadius="md" border="1px solid" borderColor="orange.500">
             <HStack spacing={2}>
                 <WarningIcon color="orange.300" w={3} h={3} />
-                <Text fontSize="10px" fontWeight="bold" color="orange.100">
-                    {contradictions.length} Contradictions Detected
-                </Text>
+                <VStack align="start" spacing={0}>
+                    <Text fontSize="10px" fontWeight="bold" color="orange.100">
+                        {contradictions.length} Analytical Contradictions
+                    </Text>
+                    <Text fontSize="8px" color="orange.200">Continuous governance scan active.</Text>
+                </VStack>
             </HStack>
         </Box>
       )}
@@ -230,19 +234,24 @@ const ResearchReviewBoard: React.FC = () => {
             >
               <HStack justifyContent="space-between" mb={1}>
                 <Text fontWeight="bold" fontSize="xs" color="gray.200" noOfLines={1}>{review.title}</Text>
-                <Badge fontSize="9px" colorScheme="brand" variant="subtle">{review.review_scope}</Badge>
+                <Badge fontSize="8px" colorScheme="brand" variant="outline">{review.review_scope}</Badge>
               </HStack>
               <Text fontSize="10px" color="ui.muted" mb={2} noOfLines={2}>{review.summary}</Text>
               <HStack justifyContent="space-between">
                 <HStack spacing={2}>
-                    <Text fontSize="9px" color="gray.600">{new Date(review.created_at).toLocaleDateString()}</Text>
+                    <Text fontSize="9px" color="gray.600">Audit: {new Date(review.created_at).toLocaleDateString()}</Text>
                     {review.governance && (
-                        <Badge variant="outline" colorScheme={review.governance.evidence_coverage_score > 0.7 ? "green" : "orange"} fontSize="9px">
+                        <Badge variant="ghost" colorScheme={review.governance.evidence_coverage_score > 0.7 ? "green" : "orange"} fontSize="8px">
                             Reliability: {Math.round(review.governance.evidence_coverage_score * 100)}%
                         </Badge>
                     )}
                 </HStack>
-                <Text fontSize="9px" color="blue.400" fontWeight="bold">{review.linked_sessions.length} Sessions</Text>
+                <HStack spacing={1}>
+                    {review.last_synthesis && (
+                        <Text fontSize="8px" color="brand.200" fontStyle="italic">Re-synth {Math.floor((Date.now() - new Date(review.last_synthesis).getTime()) / 3600000)}h ago</Text>
+                    )}
+                    <Badge fontSize="8px" variant="solid" colorScheme="blue" borderRadius="full">{review.linked_sessions.length}</Badge>
+                </HStack>
               </HStack>
             </Box>
           ))

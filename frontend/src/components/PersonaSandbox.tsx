@@ -108,28 +108,28 @@ const PersonaSandbox: React.FC<PersonaSandboxProps> = ({ symbol, workspaceMode =
   };
 
   return (
-    <Box p={4} borderRadius="lg" bg="gray.800" color="white" borderWidth="1px" borderColor="gray.700">
+    <Box p={4} borderRadius="sm" bg="background.surface" color="white" borderWidth="1px" borderColor="ui.border">
       <VStack align="stretch" spacing={4}>
         <HStack justifyContent="space-between">
-          <HStack>
-            <Heading size="sm">{workspaceMode === 'TRAINING' ? 'Learn Analytical Styles' : 'Persona Sandbox'}</Heading>
-            {workspaceMode === 'TRAINING' && <Badge colorScheme="green" fontSize="2xs">TRAINING</Badge>}
+          <HStack spacing={2}>
+            <Heading size="xs" color="brand.500" letterSpacing="widest" textTransform="uppercase">{workspaceMode === 'TRAINING' ? 'Comparative Observation' : 'Analytical Personas'}</Heading>
+            {workspaceMode === 'TRAINING' && <Badge colorScheme="green" variant="subtle" fontSize="9px">TRAINING MODE</Badge>}
           </HStack>
-          <Tooltip label="다양한 페르소나가 현재 시장 상황을 어떻게 해석하는지 실험합니다.">
-            <InfoOutlineIcon color="gray.400" />
+          <Tooltip label="Evaluate how different analytical profiles interpret current market conditions.">
+            <InfoOutlineIcon color="ui.muted" w={3} h={3} />
           </Tooltip>
         </HStack>
         
-        <Text fontSize="xs" color="gray.400">
+        <Text fontSize="11px" color="ui.muted">
           {workspaceMode === 'TRAINING' 
-            ? 'Select personas to see how different "brains" interpret current market data.' 
-            : `Run independent analysis for ${symbol} using selected AI personas.`}
+            ? 'Select profiles to observe diverse reasoning patterns for current market data.' 
+            : `Initialize reasoning comparison for ${symbol} across selected profiles.`}
         </Text>
 
-        <Divider borderColor="gray.600" />
+        <Divider borderColor="ui.border" />
 
         <CheckboxGroup 
-          colorScheme="blue" 
+          colorScheme="brand" 
           value={selectedPersonas} 
           onChange={(values) => setSelectedPersonas(values as string[])}
         >
@@ -139,17 +139,17 @@ const PersonaSandbox: React.FC<PersonaSandboxProps> = ({ symbol, workspaceMode =
                 key={persona.persona_id} 
                 p={2} 
                 borderWidth="1px" 
-                borderRadius="md" 
-                borderColor={selectedPersonas.includes(persona.persona_id) ? 'blue.400' : 'gray.700'}
-                bg={selectedPersonas.includes(persona.persona_id) ? 'gray.900' : 'transparent'}
+                borderRadius="sm" 
+                borderColor={selectedPersonas.includes(persona.persona_id) ? 'brand.500' : 'ui.border'}
+                bg={selectedPersonas.includes(persona.persona_id) ? 'blackAlpha.300' : 'transparent'}
               >
                 <Checkbox value={persona.persona_id} size="sm">
                   <VStack align="start" spacing={0}>
-                    <Text fontWeight="bold" fontSize="xs">{persona.name}</Text>
+                    <Text fontWeight="800" fontSize="10px" color={selectedPersonas.includes(persona.persona_id) ? 'brand.200' : 'gray.400'} textTransform="uppercase">{persona.name}</Text>
                     {workspaceMode === 'TRAINING' ? (
-                        <Text fontSize="2xs" color="green.300" fontStyle="italic">{getPersonaHint(persona.persona_id)}</Text>
+                        <Text fontSize="10px" color="brand.500" fontStyle="italic">{getPersonaHint(persona.persona_id)}</Text>
                     ) : (
-                        <Text fontSize="2xs" noOfLines={1} color="gray.400">{persona.description}</Text>
+                        <Text fontSize="10px" noOfLines={1} color="ui.muted">{persona.description}</Text>
                     )}
                   </VStack>
                 </Checkbox>
@@ -159,13 +159,17 @@ const PersonaSandbox: React.FC<PersonaSandboxProps> = ({ symbol, workspaceMode =
         </CheckboxGroup>
 
         <Button 
-          colorScheme={workspaceMode === 'TRAINING' ? 'green' : 'blue'} 
-          size="sm" 
+          colorScheme="brand" 
+          size="xs" 
           onClick={handleRunAnalysis} 
           isLoading={isAnalyzing}
-          loadingText="Generating analysis..."
+          loadingText="Generating..."
+          borderRadius="sm"
+          fontWeight="800"
+          fontSize="10px"
+          letterSpacing="wider"
         >
-          {workspaceMode === 'TRAINING' ? 'Run Comparative Review' : 'Execute Persona Analysis'}
+          {workspaceMode === 'TRAINING' ? 'INITIATE COMPARATIVE REVIEW' : 'INITIALIZE REASONING COMPARISON'}
         </Button>
       </VStack>
     </Box>

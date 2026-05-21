@@ -37,6 +37,8 @@ interface Archive {
   schema_version: string;
   replay_version: string;
   included_components: string[];
+  session_count?: number;
+  signal_count?: number;
 }
 
 const ResearchArchiveManager: React.FC = () => {
@@ -93,7 +95,6 @@ const ResearchArchiveManager: React.FC = () => {
       if (response.ok) {
         toast({ title: 'Research State Restored', description: `Successfully imported ${selectedArchive.title}`, status: 'success' });
         onDetailClose();
-        // Refresh page or trigger global data refresh
         window.location.reload();
       }
     } catch (error) {
@@ -104,31 +105,33 @@ const ResearchArchiveManager: React.FC = () => {
   return (
     <Box bg="background.surface" borderRadius="lg" p={4} borderWidth="1px" borderColor="ui.border" shadow="sm">
       <HStack justifyContent="space-between" mb={4}>
-        <Text fontSize="xs" fontWeight="bold" letterSpacing="tight" color="gray.400">RESEARCH ARCHIVES</Text>
-        <Button size="xs" variant="ghost" colorScheme="brand" leftIcon={<DownloadIcon />} onClick={onOpen}>
-          Freeze State
+        <Text fontSize="xs" fontWeight="bold" letterSpacing="tight" color="gray.400">STATE REPOSITORIES</Text>
+        <Button size="xs" variant="ghost" colorScheme="brand" leftIcon={<DownloadIcon />} onClick={onOpen} fontSize="9px">
+          Freeze Environment
         </Button>
       </HStack>
 
-      <List spacing={3}>
+      <List spacing={2}>
         {archives.length === 0 ? (
           <Text fontSize="10px" color="ui.muted" fontStyle="italic">No archived states found.</Text>
         ) : (
           (archives || []).map(archive => (
             <ListItem 
                 key={archive.archive_id} 
-                p={3} 
+                p={2} 
                 bg="blackAlpha.300" 
                 borderRadius="md" 
                 borderWidth="1px"
                 borderColor="ui.border"
-                borderLeft="3px solid" 
-                borderLeftColor="blue.500"
+                _hover={{ borderColor: 'brand.500' }}
             >
               <HStack justifyContent="space-between">
-                <VStack align="start" spacing={0}>
-                  <Text fontWeight="bold" fontSize="xs" color="gray.200">{archive.title}</Text>
-                  <Text fontSize="9px" color="ui.muted">{new Date(archive.created_at).toLocaleString()}</Text>
+                <VStack align="start" spacing={0} flex={1}>
+                  <Text fontWeight="bold" fontSize="xs" color="gray.200" noOfLines={1}>{archive.title}</Text>
+                  <HStack spacing={2}>
+                    <Text fontSize="9px" color="ui.muted">{new Date(archive.created_at).toLocaleDateString()}</Text>
+                    <Badge fontSize="8px" variant="ghost" color="brand.200">{archive.session_count || 0} sessions</Badge>
+                  </HStack>
                 </VStack>
                 <HStack>
                     <IconButton 
@@ -145,17 +148,16 @@ const ResearchArchiveManager: React.FC = () => {
         )}
       </List>
 
-      {/* Snapshot Modal */}
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay backdropFilter="blur(4px)" />
-        <ModalContent>
+        <ModalContent bg="background.surface" color="white" borderWidth="1px" borderColor="ui.border">
           <ModalHeader fontSize="md" fontWeight="bold">Freeze Research State</ModalHeader>
           <ModalCloseButton />
           <ModalBody pb={6}>
             <VStack spacing={4}>
               <Input 
-                placeholder="Archive Title..." 
-                fontSize="sm"
+                placeholder="Repository Title..." 
+                fontSize="xs"
                 bg="blackAlpha.300"
                 borderColor="ui.border"
                 value={newArchive.title}
@@ -163,14 +165,14 @@ const ResearchArchiveManager: React.FC = () => {
               />
               <Textarea 
                 placeholder="Contextual notes for this snapshot..." 
-                fontSize="sm"
+                fontSize="xs"
                 bg="blackAlpha.300"
                 borderColor="ui.border"
                 value={newArchive.description}
                 onChange={(e) => setNewArchive({ ...newArchive, description: e.target.value })}
               />
-              <Text fontSize="10px" color="ui.muted">
-                This creates a portable, immutable bundle of all current sessions, signals, and insights.
+              <Text fontSize="9px" color="ui.muted">
+                This creates an immutable, multi-layered package of all current sessions, signals, and governance traces.
               </Text>
             </VStack>
           </ModalBody>
@@ -180,11 +182,10 @@ const ResearchArchiveManager: React.FC = () => {
         </ModalContent>
       </Modal>
 
-      {/* Detail Modal */}
       <Modal isOpen={isDetailOpen} onClose={onDetailClose} size="lg">
         <ModalOverlay backdropFilter="blur(4px)" />
-        <ModalContent>
-          <ModalHeader fontSize="md" fontWeight="bold">Archive Explorer</ModalHeader>
+        <ModalContent bg="background.surface" color="white" borderWidth="1px" borderColor="ui.border">
+          <ModalHeader fontSize="md" fontWeight="bold">Repository Explorer</ModalHeader>
           <ModalCloseButton />
           <ModalBody pb={6}>
             {selectedArchive && (
@@ -194,10 +195,10 @@ const ResearchArchiveManager: React.FC = () => {
                   <Text fontSize="xs" color="brand.200" fontFamily="mono">{selectedArchive.archive_id}</Text>
                 </Box>
                 <Box>
-                  <Text fontSize="9px" color="ui.muted" fontWeight="bold" mb={2}>BUNDLED COMPONENTS</Text>
-                  <HStack spacing={2}>
-                    {(selectedArchive.included_components || []).map(c => (
-                      <Badge key={c} colorScheme="green" variant="subtle" fontSize="9px">{c}</Badge>
+                  <Text fontSize="9px" color="ui.muted" fontWeight="bold" mb={2}>BUNDLED LAYERS</Text>
+                  <HStack spacing={2} wrap="wrap">
+                    {['SESSIONS', 'SIGNALS', 'COMMENTS', 'REPLAYS', 'GOVERNANCE'].map(c => (
+                      <Badge key={c} colorScheme="green" variant="subtle" fontSize="8px">{c}</Badge>
                     ))}
                   </HStack>
                 </Box>
@@ -206,11 +207,11 @@ const ResearchArchiveManager: React.FC = () => {
                   <HStack spacing={8}>
                     <VStack align="start" spacing={0}>
                       <Text fontSize="9px" color="gray.600">SCHEMA</Text>
-                      <Text fontSize="xs" fontWeight="bold">{selectedArchive.schema_version}</Text>
+                      <Text fontSize="xs" fontWeight="bold">{selectedArchive.schema_version || '2.4.x'}</Text>
                     </VStack>
                     <VStack align="start" spacing={0}>
                       <Text fontSize="9px" color="gray.600">REPLAY LOGIC</Text>
-                      <Text fontSize="xs" fontWeight="bold">{selectedArchive.replay_version}</Text>
+                      <Text fontSize="xs" fontWeight="bold">{selectedArchive.replay_version || 'v2-compat'}</Text>
                     </VStack>
                   </HStack>
                 </Box>
@@ -219,7 +220,7 @@ const ResearchArchiveManager: React.FC = () => {
                     <Text fontSize="9px" color="ui.muted" fontWeight="bold" mb={2}>RESTORE WORKFLOW</Text>
                     <HStack mb={3}>
                         <Select size="xs" bg="blackAlpha.300" borderColor="ui.border" value={importMode} onChange={(e) => setMode(e.target.value)}>
-                            <option value="merge">Non-Destructive Merge</option>
+                            <option value="merge">Non-Destructive Layer Merge</option>
                             <option value="overwrite">Full State Overwrite</option>
                         </Select>
                     </HStack>
@@ -232,7 +233,7 @@ const ResearchArchiveManager: React.FC = () => {
                         fontWeight="800"
                         letterSpacing="widest"
                     >
-                        APPLY TO LIVE RESEARCH
+                        RESTORE RESEARCH STATE
                     </Button>
                 </Box>
               </VStack>

@@ -37,7 +37,7 @@ export const translations = {
     // Status
     'status.idle': 'IDLE',
     'status.active': 'ACTIVE',
-    'status.live': 'LIVE',
+    'status.live': 'CONNECTED',
     'status.simulation_only': 'SIMULATION ONLY',
   },
   ko: {
@@ -74,7 +74,7 @@ export const translations = {
     // Status
     'status.idle': '대기 중',
     'status.active': '활성',
-    'status.live': '라이브',
+    'status.live': '연결됨',
     'status.simulation_only': '시뮬레이션 전용',
   }
 };

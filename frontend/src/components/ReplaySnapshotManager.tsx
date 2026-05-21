@@ -28,12 +28,14 @@ import { demoFetch } from "../demo/demoFetch";
 
 interface ReplaySnapshot {
   snapshot_id: string;
+  id?: string;
   title: string;
   symbol: string;
   timestamp: string;
   signal_ids: string[];
   notes: string;
   created_at: string;
+  last_replayed?: string;
 }
 
 const ReplaySnapshotManager: React.FC<{ symbol: string }> = ({ symbol }) => {
@@ -46,7 +48,7 @@ const ReplaySnapshotManager: React.FC<{ symbol: string }> = ({ symbol }) => {
     try {
       const response = await demoFetch('http://localhost:8000/api/replays/snapshots');
       const data = await response.json();
-      setSnapshots(data.reverse());
+      setSnapshots(data);
     } catch (error) {
       console.error('Failed to fetch snapshots:', error);
     }
@@ -69,7 +71,7 @@ const ReplaySnapshotManager: React.FC<{ symbol: string }> = ({ symbol }) => {
         body: JSON.stringify({
           title: newSnapshot.title,
           symbol: symbol,
-          timestamp: new Date().toISOString(), // In a real scenario, this would be the current chart time
+          timestamp: new Date().toISOString(),
           notes: newSnapshot.notes,
           signal_ids: []
         })
@@ -109,7 +111,7 @@ const ReplaySnapshotManager: React.FC<{ symbol: string }> = ({ symbol }) => {
   return (
     <Box bg="background.surface" borderRadius="lg" p={4} borderWidth="1px" borderColor="ui.border" shadow="sm">
       <HStack justifyContent="space-between" mb={4}>
-        <Text fontSize="xs" fontWeight="bold" letterSpacing="tight" color="gray.400">REPLAY MOMENTS</Text>
+        <Text fontSize="xs" fontWeight="bold" letterSpacing="tight" color="gray.400">REPLAY ARCHIVE</Text>
         <IconButton 
           size="xs" 
           variant="ghost"
@@ -126,7 +128,7 @@ const ReplaySnapshotManager: React.FC<{ symbol: string }> = ({ symbol }) => {
         ) : (
           (snapshots || []).map(s => (
             <Box 
-              key={s.snapshot_id} 
+              key={s.snapshot_id || s.id} 
               p={2} 
               bg="blackAlpha.300" 
               borderRadius="md" 
@@ -134,20 +136,30 @@ const ReplaySnapshotManager: React.FC<{ symbol: string }> = ({ symbol }) => {
               borderColor="ui.border"
               _hover={{ borderColor: 'brand.500' }}
             >
-              <HStack justifyContent="space-between">
-                <VStack align="start" spacing={0} cursor="pointer" onClick={() => handleApplySnapshot(s)}>
-                  <Text fontWeight="bold" fontSize="xs" color="gray.200">{s.title}</Text>
-                  <Text fontSize="9px" color="ui.muted">{new Date(s.created_at).toLocaleDateString()}</Text>
-                </VStack>
-                <IconButton 
-                    size="2xs" 
-                    variant="ghost"
-                    colorScheme="red"
-                    icon={<DeleteIcon w={2} h={2} />} 
-                    aria-label="Delete" 
-                    onClick={() => handleDeleteSnapshot(s.snapshot_id)}
-                />
-              </HStack>
+              <VStack align="stretch" spacing={1}>
+                <HStack justifyContent="space-between">
+                    <VStack align="start" spacing={0} cursor="pointer" onClick={() => handleApplySnapshot(s)} flex={1}>
+                    <Text fontWeight="bold" fontSize="xs" color="gray.200" noOfLines={1}>{s.title}</Text>
+                    <Text fontSize="9px" color="ui.muted">Created {new Date(s.created_at || s.timestamp).toLocaleDateString()}</Text>
+                    </VStack>
+                    <IconButton 
+                        size="2xs" 
+                        variant="ghost"
+                        colorScheme="red"
+                        icon={<DeleteIcon w={2} h={2} />} 
+                        aria-label="Delete" 
+                        onClick={() => handleDeleteSnapshot(s.snapshot_id || s.id || '')}
+                    />
+                </HStack>
+                <HStack justifyContent="space-between" mt={1}>
+                    <Badge fontSize="8px" variant="outline" colorScheme="gray">{s.symbol}</Badge>
+                    {s.last_replayed && (
+                        <Text fontSize="8px" color="brand.200" fontStyle="italic">
+                            Last replayed {Math.floor((Date.now() - new Date(s.last_replayed).getTime()) / 3600000)}h ago
+                        </Text>
+                    )}
+                </HStack>
+              </VStack>
             </Box>
           ))
         )}

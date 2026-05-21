@@ -266,7 +266,7 @@ const PriceChart: React.FC<PriceChartProps> = ({ symbol, onSymbolChange }) => {
         </HStack>
         <HStack>
             <Badge colorScheme={isConnected ? 'green' : 'red'} variant="subtle" fontSize="8px">
-                {isConnected ? 'LIVE FEED' : 'DISCONNECTED'}
+                {isConnected ? 'ACTIVE REPOSITORY STREAM' : 'STREAM DISCONNECTED'}
             </Badge>
         </HStack>
       </HStack>
