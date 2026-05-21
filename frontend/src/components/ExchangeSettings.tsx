@@ -216,6 +216,7 @@ const ExchangeSettings: React.FC<ExchangeSettingsProps> = ({
             fontSize="10px"
             letterSpacing="wider"
             fontWeight="800"
+            borderRadius="xs"
           >
             CONFIGURE DATA ACCESS
           </Button>
@@ -224,11 +225,11 @@ const ExchangeSettings: React.FC<ExchangeSettingsProps> = ({
         {showApiInput && (
           <>
             <FormControl>
-              <FormLabel fontSize="10px" color="ui.muted" fontWeight="800" textTransform="uppercase" letterSpacing="widest">Provider API Key</FormLabel>
+              <FormLabel fontSize="10px" color="ui.muted" fontWeight="800" textTransform="uppercase" letterSpacing="widest">READ-ONLY ACCESS KEY</FormLabel>
               <Input
                 type="password"
                 value={apiKey}
-                placeholder="Required for direct feed access"
+                placeholder="Optional for public feeds"
                 onChange={(e) => setApiKey(e.target.value)}
                 isDisabled={isConnected}
                 bg="background.deep"
@@ -240,7 +241,7 @@ const ExchangeSettings: React.FC<ExchangeSettingsProps> = ({
             </FormControl>
 
             <FormControl>
-              <FormLabel fontSize="10px" color="ui.muted" fontWeight="800" textTransform="uppercase" letterSpacing="widest">Provider Secret</FormLabel>
+              <FormLabel fontSize="10px" color="ui.muted" fontWeight="800" textTransform="uppercase" letterSpacing="widest">READ-ONLY TOKEN</FormLabel>
               <Input
                 type="password"
                 value={secretKey}
@@ -255,9 +256,12 @@ const ExchangeSettings: React.FC<ExchangeSettingsProps> = ({
               />
             </FormControl>
 
-            <Text fontSize="9px" color="ui.muted" fontStyle="italic">
-              * Research integrity: All orders remain in simulation mode.
-            </Text>
+            <VStack align="start" spacing={1} p={2} bg="blackAlpha.400" borderRadius="xs" border="1px solid" borderColor="ui.border">
+              <Text fontSize="9px" color="brand.500" fontWeight="800">SIMULATION MANDATE</Text>
+              <Text fontSize="9px" color="ui.muted" fontStyle="italic" lineHeight="short">
+                PaperQuantLab does not execute live trades. Market data access is for research and replay only.
+              </Text>
+            </VStack>
 
             <Divider borderColor="whiteAlpha.100" />
 
@@ -270,8 +274,9 @@ const ExchangeSettings: React.FC<ExchangeSettingsProps> = ({
                 size="xs"
                 fontWeight="800"
                 letterSpacing="wider"
+                borderRadius="xs"
               >
-                {isLoading ? <Spinner size="2xs" /> : "INITIALIZE RESEARCH FEED"}
+                {isLoading ? <Spinner size="2xs" /> : "ATTACH READ-ONLY DATA SOURCE"}
               </Button>
 
               <Button
@@ -282,8 +287,9 @@ const ExchangeSettings: React.FC<ExchangeSettingsProps> = ({
                 width="100%"
                 size="xs"
                 fontSize="10px"
+                borderRadius="xs"
               >
-                {isLoading ? <Spinner size="2xs" /> : 'Validate Analytical Stream'}
+                {isLoading ? <Spinner size="2xs" /> : 'Validate Analytical Feed'}
               </Button>
             </VStack>
           </>
@@ -300,8 +306,9 @@ const ExchangeSettings: React.FC<ExchangeSettingsProps> = ({
             fontSize="10px"
             fontWeight="800"
             letterSpacing="wider"
+            borderRadius="xs"
           >
-            {isLoading ? <Spinner size="2xs" /> : "DETACH RESEARCH DATA"}
+            {isLoading ? <Spinner size="2xs" /> : "DETACH DATA SOURCE"}
           </Button>
         )}
       </VStack>

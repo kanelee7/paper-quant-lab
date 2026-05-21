@@ -14,10 +14,10 @@ export const translations = {
     'nav.vision': 'Vision',
     
     // Sidebar Sections
-    'sidebar.guidance': 'RESEARCH GUIDANCE',
-    'sidebar.experimentation': 'ACTIVE EXPERIMENTATION',
-    'sidebar.knowledge': 'RESEARCH KNOWLEDGE',
-    'sidebar.reliability': 'REPLAY & RELIABILITY',
+    'sidebar.guidance': 'ANALYTICAL PROTOCOLS',
+    'sidebar.experimentation': 'SIMULATION CONTROL',
+    'sidebar.knowledge': 'SYNTHESIS ARCHIVE',
+    'sidebar.reliability': 'DETERMINISTIC REPLAY',
     
     // Common Actions
     'btn.initialize': 'Initialize Environment',
@@ -30,9 +30,9 @@ export const translations = {
     // Labels
     'label.market_depth': 'MARKET DEPTH (L2)',
     'label.activity_log': 'MARKET ACTIVITY LOG',
-    'label.run_control': 'RESEARCH RUN CONTROL',
-    'label.data_source': 'RESEARCH DATA SOURCE',
-    'label.asset_type': 'RESEARCH ASSET TYPE',
+    'label.run_control': 'SIMULATION CONTROL',
+    'label.data_source': 'READ-ONLY DATA SOURCE',
+    'label.asset_type': 'ASSET CATEGORY',
     
     // Status
     'status.idle': 'IDLE',
@@ -51,10 +51,10 @@ export const translations = {
     'nav.vision': '비전',
     
     // Sidebar Sections
-    'sidebar.guidance': '연구 가이드',
-    'sidebar.experimentation': '활성 실험실',
-    'sidebar.knowledge': '연구 지식베이스',
-    'sidebar.reliability': '리플레이 및 안정성',
+    'sidebar.guidance': '분석 프로토콜',
+    'sidebar.experimentation': '시뮬레이션 제어',
+    'sidebar.knowledge': '종합 아카이브',
+    'sidebar.reliability': '결정론적 리플레이',
     
     // Common Actions
     'btn.initialize': '연구 환경 초기화',
@@ -67,9 +67,9 @@ export const translations = {
     // Labels
     'label.market_depth': '시장 호가 (L2)',
     'label.activity_log': '시장 활동 로그',
-    'label.run_control': '연구 실행 제어',
-    'label.data_source': '연구 데이터 소스',
-    'label.asset_type': '연구 자산 유형',
+    'label.run_control': '시뮬레이션 제어',
+    'label.data_source': '읽기 전용 데이터 소스',
+    'label.asset_type': '자산 카테고리',
     
     // Status
     'status.idle': '대기 중',
