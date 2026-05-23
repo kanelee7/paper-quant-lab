@@ -171,20 +171,7 @@ const Landing: React.FC<{
   const brandColor = 'brand.500';
 
   return (
-    <Box bg="background.deep" minH="100vh" position="relative" overflow="hidden">
-      {/* Single atmospheric layer */}
-      <Box
-        position="absolute"
-        top="0"
-        left="0"
-        w="100%"
-        h="100%"
-        bgGradient="radial(circle at 50% -20%, brand.900 0%, transparent 70%)"
-        opacity="0.2"
-        zIndex={0}
-        pointerEvents="none"
-      />
-
+    <Box bg="transparent" minH="100vh" position="relative" overflow="hidden">
       {/* Navigation */}
       <Box
         borderBottom="1px"

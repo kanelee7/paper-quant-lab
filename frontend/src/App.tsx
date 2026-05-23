@@ -70,6 +70,7 @@ import Philosophy from './pages/Philosophy';
 import { useI18n } from './i18n';
 import { usePreferences } from './hooks/usePreferences';
 import CommandPalette from './components/CommandPalette';
+import AmbientBackground from './components/AmbientBackground';
 import { isDemoModeActive, setDemoMode as setDemoModeInService } from './demo/demoService';
 import { demoFetch } from './demo/demoFetch';
 
@@ -131,7 +132,7 @@ const App: React.FC = () => {
   
   const toast = useToast();
   const { colorMode, toggleColorMode } = useColorMode();
-  const bgColor = useColorModeValue('gray.50', 'background.deep');
+  const bgColor = useColorModeValue('transparent', 'transparent'); // Let AmbientBackground handle base bg
   const cardBg = useColorModeValue('white', 'background.surface');
   const borderColor = useColorModeValue('gray.200', 'ui.border');
 
@@ -249,6 +250,7 @@ const App: React.FC = () => {
   if (currentPage === 'LANDING') {
     return (
       <ChakraProvider theme={theme}>
+        <AmbientBackground />
         <Landing onLaunch={handleLaunchWorkstation} onNavigate={handleNavigate} />
       </ChakraProvider>
     );
@@ -257,6 +259,7 @@ const App: React.FC = () => {
   if (currentPage === 'VISION') {
     return (
       <ChakraProvider theme={theme}>
+        <AmbientBackground />
         <Vision onBack={handleBackToLanding} />
       </ChakraProvider>
     );
@@ -265,6 +268,7 @@ const App: React.FC = () => {
   if (currentPage === 'PHILOSOPHY') {
     return (
       <ChakraProvider theme={theme}>
+        <AmbientBackground />
         <Philosophy onBack={handleBackToLanding} />
       </ChakraProvider>
     );
@@ -272,6 +276,7 @@ const App: React.FC = () => {
 
   return (
     <ChakraProvider theme={theme}>
+      <AmbientBackground />
       <WorkspaceOnboarding />
       <CommandPalette onModeChange={setWorkspaceMode} onFocusModeToggle={toggleFocusMode} />
       

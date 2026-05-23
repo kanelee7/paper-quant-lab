@@ -18,7 +18,7 @@ const Philosophy: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const brandColor = 'brand.500';
 
   return (
-    <Box bg="background.deep" minH="100vh" color="white">
+    <Box bg="transparent" minH="100vh" color="white">
       <Box borderBottom="1px" borderColor="ui.border" py={4} bg="blackAlpha.300">
         <Container maxW="container.xl">
           <HStack justifyContent="space-between">
