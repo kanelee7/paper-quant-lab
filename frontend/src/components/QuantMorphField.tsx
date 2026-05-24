@@ -28,22 +28,24 @@ const vertex = `
   void main() {
     vType = pointType;
     
-    // Smooth interpolation with ease-in-out feel via smoothstep
+    // Smooth interpolation with ease-in-out
     float t = smoothstep(0.0, 1.0, uMix);
     vec3 pos = mix(position, target, t);
     
-    // Subtle drift
-    pos.x += sin(uTime * 0.2 + position.z) * 0.05;
-    pos.y += cos(uTime * 0.2 + position.x) * 0.05;
+    // Subtle analytical drift - reduced frequency, more "heavy"
+    pos.x += sin(uTime * 0.15 + position.z * 0.5) * 0.08;
+    pos.y += cos(uTime * 0.15 + position.x * 0.5) * 0.08;
 
     vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
     gl_Position = projectionMatrix * mvPosition;
     
-    // Size attenuation
-    float size = (vType > 0.5) ? 2.6 : 1.3; // 35% smaller (approx)
+    // Size: smaller individual points but with higher contrast
+    // Anchor points (vType > 0.5) are slightly more prominent
+    float size = (vType > 0.5) ? 2.8 : 1.4;
     gl_PointSize = size * uPixelRatio * (300.0 / -mvPosition.z);
     
-    vAlpha = 1.0;
+    // Depth-based alpha
+    vAlpha = smoothstep(-15.0, -2.0, mvPosition.z);
   }
 `;
 
@@ -57,29 +59,30 @@ const fragment = `
   uniform float uOpacity;
 
   void main() {
-    // Circle shape
+    // Sharp circle shape - no blur to keep it "data-like"
     float d = distance(gl_PointCoord, vec2(0.5));
     if (d > 0.5) discard;
 
     vec3 color = mix(uColorWhite, uColorGold, vType);
     
-    // Soft edges + Thinner alpha
-    float alpha = smoothstep(0.5, 0.4, d) * uOpacity * 0.6; // Thinned further
-    
+    // High contrast alpha - sharp edges
+    float alpha = uOpacity * vAlpha;
+    if (vType > 0.5) alpha *= 1.5; // Gold points slightly stronger
+
     gl_FragColor = vec4(color, alpha);
   }
 `;
 
-const PARTICLE_COUNT = 1200; // 20% lower density
+const PARTICLE_COUNT = 1400; // Balanced density
 
 export const QuantMorphField: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [whiteColor, goldColor] = useToken('colors', ['gray.100', 'brand.500']);
+  const [whiteColor, goldColor] = useToken('colors', ['gray.50', 'brand.400']); // Higher contrast tokens
 
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // Check for reduced motion
+    const container = containerRef.current;
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     const renderer = new Renderer({
@@ -88,17 +91,15 @@ export const QuantMorphField: React.FC = () => {
       dpr: window.devicePixelRatio,
     });
     const gl = renderer.gl;
-    const container = containerRef.current;
     container.appendChild(gl.canvas);
 
-    const camera = new Camera(gl, { fov: 45 });
-    // Offset camera for asymmetry: Move right and up
-    camera.position.set(1.5, 1.0, 8); 
-    camera.lookAt([1.0, 0.5, 0]);
+    const camera = new Camera(gl, { fov: 35 }); // Narrower FOV for more cinematic depth
+    // Cinematic Asymmetry: Positioned right-heavy but looking slightly left
+    camera.position.set(2.5, 0.5, 10); 
+    camera.lookAt([0, 0, 0]);
 
     const scene = new Transform();
 
-    // Utility to parse hex to vec3
     const hexToVec3 = (hex: string) => {
       const r = parseInt(hex.slice(1, 3), 16) / 255;
       const g = parseInt(hex.slice(3, 5), 16) / 255;
@@ -109,91 +110,92 @@ export const QuantMorphField: React.FC = () => {
     const colorWhite = hexToVec3(whiteColor || '#f7fafc');
     const colorGold = hexToVec3(goldColor || '#d4af37');
 
-    const random = createRandom(42);
+    const random = createRandom(1337);
 
-    // Geometry Generation with Incompleteness
-    const generateLattice = (count: number) => {
-      const size = Math.ceil(Math.pow(count, 1 / 3));
+    // Analytical Geometry States
+    
+    // 1. Orderbook Walls / Fragmented Grid
+    const generateWalls = (count: number) => {
       const pos = new Float32Array(count * 3);
       for (let i = 0; i < count; i++) {
-        // Shape incompleteness: only fill 70% of the lattice structure randomly
-        if (random() > 0.7) {
-            pos[i * 3] = (random() - 0.5) * 15; // scattered fallback
-            pos[i * 3 + 1] = (random() - 0.5) * 15;
-            pos[i * 3 + 2] = (random() - 0.5) * 15;
+        if (random() > 0.8) { // Noise/scatter
+            pos[i * 3] = (random() - 0.5) * 12;
+            pos[i * 3 + 1] = (random() - 0.5) * 12;
+            pos[i * 3 + 2] = (random() - 0.5) * 12;
             continue;
         }
-        const x = (i % size) - size / 2;
-        const y = (Math.floor(i / size) % size) - size / 2;
-        const z = Math.floor(i / (size * size)) - size / 2;
-        pos[i * 3] = x * 0.6;
-        pos[i * 3 + 1] = y * 0.6;
-        pos[i * 3 + 2] = z * 0.6;
+        const side = random() > 0.5 ? 1 : -1;
+        pos[i * 3] = side * (1.5 + random() * 2.0); // Side walls
+        pos[i * 3 + 1] = (random() - 0.5) * 6.0;
+        pos[i * 3 + 2] = (random() - 0.5) * 4.0;
       }
       return pos;
     };
 
-    const generateSphere = (count: number) => {
+    // 2. Volatility Spike / Fragmented Wave
+    const generateSpike = (count: number) => {
       const pos = new Float32Array(count * 3);
       for (let i = 0; i < count; i++) {
-        // Incompleteness: Gaps in the sphere
-        if (random() > 0.75) {
-            pos[i * 3] = (random() - 0.5) * 15;
-            pos[i * 3 + 1] = (random() - 0.5) * 15;
-            pos[i * 3 + 2] = (random() - 0.5) * 15;
-            continue;
-        }
-        const phi = Math.acos(-1 + (2 * i) / count);
-        const theta = Math.sqrt(count * Math.PI) * phi;
-        pos[i * 3] = 2.5 * Math.cos(theta) * Math.sin(phi);
-        pos[i * 3 + 1] = 2.5 * Math.sin(theta) * Math.sin(phi);
-        pos[i * 3 + 2] = 2.5 * Math.cos(phi);
-      }
-      return pos;
-    };
-
-    const generateSurface = (count: number) => {
-      const size = Math.sqrt(count);
-      const pos = new Float32Array(count * 3);
-      for (let i = 0; i < count; i++) {
-        const x = (i % size) - size / 2;
-        const z = Math.floor(i / size) - size / 2;
+        const x = (random() - 0.5) * 8.0;
+        const z = (random() - 0.5) * 4.0;
+        // Incompleteness: Only keep points in central "spike" region
+        const dist = Math.abs(x);
+        const y = Math.exp(-dist * dist) * (random() > 0.8 ? 4.0 : 1.5) * (random() > 0.5 ? 1 : -1);
         
-        // Incompleteness: Fragmented surface
-        if (Math.abs(x) > size * 0.35 && Math.abs(z) > size * 0.35 && random() > 0.5) {
-             pos[i * 3] = (random() - 0.5) * 15;
-             pos[i * 3 + 1] = (random() - 0.5) * 15;
-             pos[i * 3 + 2] = (random() - 0.5) * 15;
-             continue;
-        }
-
-        pos[i * 3] = x * 0.4;
-        pos[i * 3 + 1] = Math.sin(x * 0.5) * Math.cos(z * 0.5) * 0.5;
-        pos[i * 3 + 2] = z * 0.4;
+        pos[i * 3] = x;
+        pos[i * 3 + 1] = y + (random() - 0.5) * 0.5;
+        pos[i * 3 + 2] = z;
       }
       return pos;
     };
 
-    const generateScattered = (count: number) => {
+    // 3. Incomplete Cube Lattice
+    const generateLattice = (count: number) => {
+      const size = 10;
       const pos = new Float32Array(count * 3);
       for (let i = 0; i < count; i++) {
-        pos[i * 3] = (random() - 0.5) * 10;
-        pos[i * 3 + 1] = (random() - 0.5) * 10;
-        pos[i * 3 + 2] = (random() - 0.5) * 10;
+        if (random() > 0.4) { // Highly fragmented
+            pos[i * 3] = (random() - 0.5) * 12;
+            pos[i * 3 + 1] = (random() - 0.5) * 12;
+            pos[i * 3 + 2] = (random() - 0.5) * 12;
+            continue;
+        }
+        const x = Math.floor(random() * size) - size / 2;
+        const y = Math.floor(random() * size) - size / 2;
+        const z = Math.floor(random() * size) - size / 2;
+        pos[i * 3] = x * 0.8;
+        pos[i * 3 + 1] = y * 0.8;
+        pos[i * 3 + 2] = z * 0.8;
+      }
+      return pos;
+    };
+
+    // 4. Ellipsoid Cluster (Not a perfect sphere)
+    const generateCluster = (count: number) => {
+      const pos = new Float32Array(count * 3);
+      for (let i = 0; i < count; i++) {
+        const u = random();
+        const v = random();
+        const theta = 2 * Math.PI * u;
+        const phi = Math.acos(2 * v - 1);
+        const r = 2.5 + random() * 0.5;
+        pos[i * 3] = r * Math.sin(phi) * Math.cos(theta) * 1.5; // X-stretched
+        pos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta) * 0.8; // Y-squashed
+        pos[i * 3 + 2] = r * Math.cos(phi);
       }
       return pos;
     };
 
     const states = [
+      generateWalls(PARTICLE_COUNT),
+      generateSpike(PARTICLE_COUNT),
       generateLattice(PARTICLE_COUNT),
-      generateSphere(PARTICLE_COUNT),
-      generateSurface(PARTICLE_COUNT),
-      generateScattered(PARTICLE_COUNT),
+      generateCluster(PARTICLE_COUNT),
     ];
 
     const pointTypes = new Float32Array(PARTICLE_COUNT);
     for (let i = 0; i < PARTICLE_COUNT; i++) {
-      pointTypes[i] = random() > 0.95 ? 1.0 : 0.0; // 5% gold anchors
+      pointTypes[i] = random() > 0.96 ? 1.0 : 0.0; // 4% gold anchors
     }
 
     const geometry = new Geometry(gl, {
@@ -211,7 +213,7 @@ export const QuantMorphField: React.FC = () => {
         uPixelRatio: { value: renderer.dpr },
         uColorWhite: { value: colorWhite },
         uColorGold: { value: colorGold },
-        uOpacity: { value: 0.25 },
+        uOpacity: { value: 0.45 }, // Increased visibility
       },
       transparent: true,
       depthTest: false,
@@ -223,8 +225,8 @@ export const QuantMorphField: React.FC = () => {
     let currentState = 0;
     let nextState = 1;
     let transitionTime = 0;
-    const transitionDuration = prefersReducedMotion ? 1000000 : 5.0; // Effectively static if reduced motion
-    const waitDuration = 3.0;
+    const transitionDuration = prefersReducedMotion ? 1000000 : 7.0; // Slower transitions
+    const waitDuration = 5.0; // Longer pauses
     let waitTime = 0;
 
     let requestID: number;
@@ -234,7 +236,7 @@ export const QuantMorphField: React.FC = () => {
 
       if (!prefersReducedMotion) {
         if (waitTime < waitDuration) {
-          waitTime += 0.016; // approx 60fps
+          waitTime += 0.016;
         } else {
           transitionTime += 0.016;
           program.uniforms.uMix.value = Math.min(transitionTime / transitionDuration, 1.0);
@@ -255,8 +257,8 @@ export const QuantMorphField: React.FC = () => {
       }
 
       program.uniforms.uTime.value = time;
-      particles.rotation.y = time * 0.05;
-      particles.rotation.x = Math.sin(time * 0.1) * 0.1;
+      particles.rotation.y = time * 0.03; // Even slower rotation
+      particles.rotation.z = Math.sin(time * 0.05) * 0.05;
 
       renderer.render({ scene, camera });
     };
@@ -264,8 +266,8 @@ export const QuantMorphField: React.FC = () => {
     requestID = requestAnimationFrame(update);
 
     const handleResize = () => {
-      const width = containerRef.current?.clientWidth || window.innerWidth;
-      const height = containerRef.current?.clientHeight || window.innerHeight;
+      const width = container.clientWidth || window.innerWidth;
+      const height = container.clientHeight || window.innerHeight;
       renderer.setSize(width, height);
       camera.perspective({ aspect: gl.canvas.width / gl.canvas.height });
     };
@@ -293,7 +295,7 @@ export const QuantMorphField: React.FC = () => {
       h="100%"
       zIndex={0}
       pointerEvents="none"
-      opacity={0.6}
+      opacity={0.8}
       bg="background.deep"
     />
   );
