@@ -21,10 +21,17 @@ import {
   ArrowForwardIcon,
   TimeIcon,
 } from '@chakra-ui/icons';
+import { keyframes } from '@emotion/react';
 import { QuantMorphField } from '../components/QuantMorphField';
+import { QuantGlyphLayer } from '../components/QuantGlyphLayer';
 
 // Deterministic heights – no Math.random() on render
 const TIMELINE_HEIGHTS = [38, 55, 28, 65, 42, 50, 35, 72, 45, 30, 58, 40, 68, 25, 52, 44, 60, 32, 47, 56, 29, 64, 39, 48, 33, 70, 43, 27, 61, 46, 36, 53, 31, 67, 41, 49, 26, 57, 38, 54];
+
+const sweep = keyframes`
+  0% { transform: translateX(-100%) skewX(-15deg); }
+  100% { transform: translateX(200%) skewX(-15deg); }
+`;
 
 const WorkstationPreview: React.FC = () => (
 
@@ -174,6 +181,7 @@ const Landing: React.FC<{
 
   return (
     <Box bg="transparent" minH="100vh" position="relative" overflow="hidden">
+      <QuantGlyphLayer />
       {/* Navigation */}
       <Box
         borderBottom="1px"
@@ -201,12 +209,19 @@ const Landing: React.FC<{
       </Box>
 
       {/* Ambient Background & Hero */}
-      <Box position="relative" overflow="hidden">
+      <Flex 
+        position="relative" 
+        overflow="hidden" 
+        minH="calc(100vh - 64px)" // Adjusting for approx nav height
+        flexDirection="column"
+        justifyContent="center"
+        bg="background.deep"
+      >
         <QuantMorphField />
         
         {/* Hero */}
-        <Container maxW="container.lg" pt={28} pb={16} position="relative" zIndex={10}>
-          <VStack spacing={6} textAlign="center">
+        <Container maxW="container.lg" position="relative" zIndex={10} py={20}>
+          <VStack spacing={10} textAlign="center">
             <Text
               fontSize="11px"
               fontWeight="700"
@@ -225,44 +240,62 @@ const Landing: React.FC<{
             >
               AI Reasoning Research Workstation
             </Heading>
-            <Text fontSize="lg" color="ui.muted" maxW="640px" lineHeight="tall">
-              Run, replay, and audit AI-assisted market analysis. A local-first research environment
-              for studying how AI models reason through market data — with full evidence tracing
-              and longitudinal archiving.
+            <Text fontSize="lg" color="gray.200" maxW="640px" lineHeight="tall" opacity={0.9}>
+              Study AI market reasoning through replay, evidence traces, and research archives.
             </Text>
-            <HStack spacing={4} pt={4}>
-              <Button size="md" px={10} height="52px" colorScheme="brand" onClick={onLaunch} rightIcon={<ArrowForwardIcon />} borderRadius="sm" fontWeight="700" letterSpacing="wider">
+            <HStack spacing={4} pt={2}>
+              <Button 
+                size="md" 
+                px={10} 
+                height="52px" 
+                colorScheme="brand" 
+                onClick={onLaunch} 
+                rightIcon={<ArrowForwardIcon />} 
+                borderRadius="sm" 
+                fontWeight="700" 
+                letterSpacing="wider"
+                position="relative"
+                overflow="hidden"
+                transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+                _hover={{
+                  transform: 'translateY(-1px)',
+                  boxShadow: '0 4px 20px rgba(184, 134, 11, 0.4)',
+                  _after: {
+                    content: '""',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '30%',
+                    height: '100%',
+                    background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.1), transparent)',
+                    animation: `${sweep} 1.2s ease-in-out`,
+                  }
+                }}
+              >
                 OPEN WORKSTATION
               </Button>
               <Button size="md" px={10} height="52px" variant="outline" onClick={() => onNavigate('PHILOSOPHY')} borderRadius="sm" fontWeight="700" letterSpacing="wider">
                 Research Method
               </Button>
             </HStack>
-            <HStack spacing={3} pt={1}>
-              <Text fontSize="11px" color="ui.muted">Local-first</Text>
-              <Text fontSize="11px" color="ui.border">·</Text>
-              <Text fontSize="11px" color="ui.muted">Simulation-only</Text>
-              <Text fontSize="11px" color="ui.border">·</Text>
-              <Text fontSize="11px" color="ui.muted">No brokerage execution</Text>
-            </HStack>
           </VStack>
         </Container>
-
-        {/* Workstation Preview */}
-        <Box position="relative" zIndex={10}>
-          <WorkstationPreview />
-        </Box>
         
-        {/* Gradient fade to deep background */}
+        {/* Gradient fade to deep background at the bottom of hero */}
         <Box 
           position="absolute" 
           bottom={0} 
           left={0} 
           w="100%" 
-          h="200px" 
+          h="150px" 
           bgGradient="linear(to-b, transparent, background.deep)" 
           zIndex={5}
         />
+      </Flex>
+
+      {/* Workstation Preview */}
+      <Box position="relative" zIndex={10} mt={-20}> 
+        <WorkstationPreview />
       </Box>
 
       {/* Product Surface Showcases */}

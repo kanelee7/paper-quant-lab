@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Renderer, Camera, Transform, Geometry, Program, Mesh } from 'ogl';
+import { Renderer, Camera, Transform, Geometry, Program, Mesh, Vec2 } from 'ogl';
 import { Box, useToken } from '@chakra-ui/react';
 
 // Simple deterministic random
@@ -21,6 +21,7 @@ const vertex = `
   uniform float uMix;
   uniform float uTime;
   uniform float uPixelRatio;
+  uniform vec2 uMouse;
 
   varying float vType;
   varying float vAlpha;
@@ -28,22 +29,28 @@ const vertex = `
   void main() {
     vType = pointType;
     
-    // Smooth interpolation with ease-in-out
+    // Smooth interpolation
     float t = smoothstep(0.0, 1.0, uMix);
     vec3 pos = mix(position, target, t);
     
-    // Very subtle micro-drift - stable and weighted
+    // Micro-drift
     pos.x += sin(uTime * 0.12 + position.z) * 0.04;
     pos.y += cos(uTime * 0.12 + position.x) * 0.04;
 
+    // Mouse Interaction: Subtle repulsion
     vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+    vec4 mouseInSpace = modelViewMatrix * vec4(uMouse.x * 5.0, uMouse.y * 5.0, 0.0, 1.0);
+    float dist = distance(mvPosition.xy, mouseInSpace.xy);
+    float repulsion = smoothstep(1.5, 0.0, dist) * 0.25;
+    mvPosition.xy += normalize(mvPosition.xy - mouseInSpace.xy) * repulsion;
+
     gl_Position = projectionMatrix * mvPosition;
     
-    // Crisp micro-points - slightly larger for presence but still sharp
-    float size = (vType > 0.5) ? 1.8 : 1.1;
+    // Drastically smaller, crisp data points (tiny)
+    float size = (vType > 0.5) ? 1.2 : 0.7;
     gl_PointSize = size * uPixelRatio * (400.0 / -mvPosition.z);
     
-    // Stable depth-based alpha - less aggressive fade
+    // Stable depth-based alpha
     vAlpha = smoothstep(-20.0, -1.0, mvPosition.z);
   }
 `;
@@ -58,15 +65,15 @@ const fragment = `
   uniform float uOpacity;
 
   void main() {
-    // Sharp pixel-like data points
+    // Sharp pixel data points
     float d = distance(gl_PointCoord, vec2(0.5));
     if (d > 0.48) discard;
 
     vec3 color = mix(uColorWhite, uColorGold, vType);
     
-    // High-confidence alpha
+    // High-confidence crisp alpha
     float alpha = uOpacity * vAlpha;
-    if (vType > 0.5) alpha *= 1.5;
+    if (vType > 0.5) alpha *= 1.4;
 
     gl_FragColor = vec4(color, alpha);
   }
@@ -80,6 +87,7 @@ const lineVertex = `
   uniform mat4 projectionMatrix;
   uniform float uMix;
   uniform float uTime;
+  uniform vec2 uMouse;
 
   void main() {
     float t = smoothstep(0.0, 1.0, uMix);
@@ -88,7 +96,13 @@ const lineVertex = `
     pos.x += sin(uTime * 0.12 + position.z) * 0.04;
     pos.y += cos(uTime * 0.12 + position.x) * 0.04;
 
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+    vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+    vec4 mouseInSpace = modelViewMatrix * vec4(uMouse.x * 5.0, uMouse.y * 5.0, 0.0, 1.0);
+    float dist = distance(mvPosition.xy, mouseInSpace.xy);
+    float repulsion = smoothstep(1.2, 0.0, dist) * 0.15;
+    mvPosition.xy += normalize(mvPosition.xy - mouseInSpace.xy) * repulsion;
+
+    gl_Position = projectionMatrix * mvPosition;
   }
 `;
 
@@ -102,12 +116,14 @@ const lineFragment = `
   }
 `;
 
-const PARTICLE_COUNT = 3000; // Increased density for more "body"
-const LINE_COUNT = 600; // More lines for structural clarity
+const PARTICLE_COUNT = 3000;
+const LINE_COUNT = 600;
 
 export const QuantMorphField: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [whiteColor, goldColor, borderColor] = useToken('colors', ['gray.50', 'brand.400', 'ui.border']);
+  const mouse = useRef(new Vec2(0, 0));
+  const targetMouse = useRef(new Vec2(0, 0));
+  const [whiteColor, goldColor, borderColor] = useToken('colors', ['gray.50', 'brand.500', 'ui.border']);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -146,7 +162,6 @@ export const QuantMorphField: React.FC = () => {
     const generateCube = (count: number) => {
       const pos = new Float32Array(count * 3);
       for (let i = 0; i < count; i++) {
-        // Edge focused
         const edge = Math.floor(random() * 12);
         const t = random() * 2 - 1;
         const x = 2.2;
@@ -162,8 +177,6 @@ export const QuantMorphField: React.FC = () => {
         else if (edge === 9) { pos[i*3] = 2.2; pos[i*3+1] = -2.2; pos[i*3+2] = t*2.2; }
         else if (edge === 10) { pos[i*3] = -2.2; pos[i*3+1] = 2.2; pos[i*3+2] = t*2.2; }
         else { pos[i*3] = -2.2; pos[i*3+1] = -2.2; pos[i*3+2] = t*2.2; }
-        
-        // Face dust for better mass
         if (random() > 0.6) {
           const face = Math.floor(random() * 6);
           const u = random() * 2 - 1;
@@ -273,7 +286,7 @@ export const QuantMorphField: React.FC = () => {
 
     const pointTypes = new Float32Array(PARTICLE_COUNT);
     for (let i = 0; i < PARTICLE_COUNT; i++) {
-      pointTypes[i] = random() > 0.96 ? 1.0 : 0.0; // 4% gold anchors
+      pointTypes[i] = random() > 0.96 ? 1.0 : 0.0; // 4% tiny tiny gold anchors
     }
 
     const geometry = new Geometry(gl, {
@@ -291,7 +304,8 @@ export const QuantMorphField: React.FC = () => {
         uPixelRatio: { value: renderer.dpr },
         uColorWhite: { value: colorWhite },
         uColorGold: { value: colorGold },
-        uOpacity: { value: 0.5 }, // Increased baseline presence
+        uOpacity: { value: 0.45 },
+        uMouse: { value: mouse.current },
       },
       transparent: true,
       depthTest: false,
@@ -312,7 +326,8 @@ export const QuantMorphField: React.FC = () => {
             uMix: { value: 0 },
             uTime: { value: 0 },
             uColor: { value: colorLine },
-            uOpacity: { value: 0.25 }, // Strengthened scaffold
+            uOpacity: { value: 0.2 },
+            uMouse: { value: mouse.current },
         },
         transparent: true,
     });
@@ -323,8 +338,8 @@ export const QuantMorphField: React.FC = () => {
     let currentState = 0;
     let nextState = 1;
     let transitionTime = 0;
-    const transitionDuration = prefersReducedMotion ? 1000000 : 6.0; // Slower, more confident morph
-    const waitDuration = 4.0; // Longer hold for state readability
+    const transitionDuration = prefersReducedMotion ? 1000000 : 6.0;
+    const waitDuration = 4.0;
     let waitTime = 0;
 
     let requestID: number;
@@ -332,31 +347,31 @@ export const QuantMorphField: React.FC = () => {
       requestID = requestAnimationFrame(update);
       const time = t * 0.001;
 
+      // Mouse smoothing
+      mouse.current.lerp(targetMouse.current, 0.08);
+
       if (!prefersReducedMotion) {
         if (waitTime < waitDuration) {
           waitTime += 0.016;
         } else {
           transitionTime += 0.016;
-          const mix = Math.min(transitionTime / transitionDuration, 1.0);
-          program.uniforms.uMix.value = mix;
-          lineProgram.uniforms.uMix.value = mix;
+          const mixValue = Math.min(transitionTime / transitionDuration, 1.0);
+          program.uniforms.uMix.value = mixValue;
+          lineProgram.uniforms.uMix.value = mixValue;
 
           if (transitionTime >= transitionDuration) {
             currentState = nextState;
             nextState = (nextState + 1) % pointStates.length;
             transitionTime = 0;
             waitTime = 0;
-
             geometry.attributes.position.data = pointStates[currentState];
             geometry.attributes.target.data = pointStates[nextState];
             geometry.attributes.position.needsUpdate = true;
             geometry.attributes.target.needsUpdate = true;
-
             lineGeometry.attributes.position.data = lineStates[currentState];
             lineGeometry.attributes.target.data = lineStates[nextState];
             lineGeometry.attributes.position.needsUpdate = true;
             lineGeometry.attributes.target.needsUpdate = true;
-
             program.uniforms.uMix.value = 0;
             lineProgram.uniforms.uMix.value = 0;
           }
@@ -368,7 +383,6 @@ export const QuantMorphField: React.FC = () => {
       
       const rotY = time * 0.04;
       const rotX = Math.sin(time * 0.06) * 0.1;
-      
       particles.rotation.y = rotY;
       particles.rotation.x = rotX;
       lines.rotation.y = rotY;
@@ -386,11 +400,21 @@ export const QuantMorphField: React.FC = () => {
       camera.perspective({ aspect: gl.canvas.width / gl.canvas.height });
     };
 
+    const handleMouseMove = (e: MouseEvent) => {
+        const rect = container.getBoundingClientRect();
+        targetMouse.current.set(
+            ((e.clientX - rect.left) / rect.width) * 2 - 1,
+            -((e.clientY - rect.top) / rect.height) * 2 + 1
+        );
+    };
+
     window.addEventListener('resize', handleResize);
+    window.addEventListener('mousemove', handleMouseMove);
     handleResize();
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      window.removeEventListener('mousemove', handleMouseMove);
       cancelAnimationFrame(requestID);
       if (container && gl.canvas.parentElement) {
         container.removeChild(gl.canvas);
