@@ -28,23 +28,23 @@ const vertex = `
   void main() {
     vType = pointType;
     
-    // Smooth interpolation with ease-in-out
+    // Smooth interpolation
     float t = smoothstep(0.0, 1.0, uMix);
     vec3 pos = mix(position, target, t);
     
-    // Subtle analytical drift - reduced frequency, more "heavy"
-    pos.x += sin(uTime * 0.15 + position.z * 0.5) * 0.08;
-    pos.y += cos(uTime * 0.15 + position.x * 0.5) * 0.08;
+    // Very subtle micro-drift - high frequency, low amplitude
+    pos.x += sin(uTime * 0.1 + position.z) * 0.04;
+    pos.y += cos(uTime * 0.1 + position.x) * 0.04;
 
     vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
     gl_Position = projectionMatrix * mvPosition;
     
-    // Size: smaller individual points but with higher contrast
-    // Anchor points (vType > 0.5) are slightly more prominent
-    float size = (vType > 0.5) ? 2.8 : 1.4;
-    gl_PointSize = size * uPixelRatio * (300.0 / -mvPosition.z);
+    // Drastically smaller, crisp points
+    // Base size is tiny (0.7px - 1.2px)
+    float size = (vType > 0.5) ? 1.4 : 0.8;
+    gl_PointSize = size * uPixelRatio * (400.0 / -mvPosition.z);
     
-    // Depth-based alpha
+    // Depth-based alpha fade
     vAlpha = smoothstep(-15.0, -2.0, mvPosition.z);
   }
 `;
@@ -59,25 +59,26 @@ const fragment = `
   uniform float uOpacity;
 
   void main() {
-    // Sharp circle shape - no blur to keep it "data-like"
+    // Crisp micro-square/circle (no blur)
+    // We use a very tight disc to ensure it reads as a "pixel-like" data point
     float d = distance(gl_PointCoord, vec2(0.5));
-    if (d > 0.5) discard;
+    if (d > 0.45) discard;
 
     vec3 color = mix(uColorWhite, uColorGold, vType);
     
-    // High contrast alpha - sharp edges
+    // Flat, crisp alpha - no bokeh falloff
     float alpha = uOpacity * vAlpha;
-    if (vType > 0.5) alpha *= 1.5; // Gold points slightly stronger
+    if (vType > 0.5) alpha *= 1.3;
 
     gl_FragColor = vec4(color, alpha);
   }
 `;
 
-const PARTICLE_COUNT = 1400; // Balanced density
+const PARTICLE_COUNT = 3200; // High density for fine topology
 
 export const QuantMorphField: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [whiteColor, goldColor] = useToken('colors', ['gray.50', 'brand.400']); // Higher contrast tokens
+  const [whiteColor, goldColor] = useToken('colors', ['gray.50', 'brand.500']);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -93,9 +94,9 @@ export const QuantMorphField: React.FC = () => {
     const gl = renderer.gl;
     container.appendChild(gl.canvas);
 
-    const camera = new Camera(gl, { fov: 35 }); // Narrower FOV for more cinematic depth
-    // Cinematic Asymmetry: Positioned right-heavy but looking slightly left
-    camera.position.set(2.5, 0.5, 10); 
+    const camera = new Camera(gl, { fov: 30 }); // Very narrow FOV for "observed" look
+    // Focused composition: centered but deep
+    camera.position.set(0, 0, 10);
     camera.lookAt([0, 0, 0]);
 
     const scene = new Transform();
@@ -110,92 +111,87 @@ export const QuantMorphField: React.FC = () => {
     const colorWhite = hexToVec3(whiteColor || '#f7fafc');
     const colorGold = hexToVec3(goldColor || '#d4af37');
 
-    const random = createRandom(1337);
+    const random = createRandom(80085);
 
-    // Analytical Geometry States
+    // Structured Analytical Geometries
     
-    // 1. Orderbook Walls / Fragmented Grid
-    const generateWalls = (count: number) => {
+    // 1. Structured Volatility Surface
+    const generateSurface = (count: number) => {
       const pos = new Float32Array(count * 3);
+      const size = Math.sqrt(count);
       for (let i = 0; i < count; i++) {
-        if (random() > 0.8) { // Noise/scatter
-            pos[i * 3] = (random() - 0.5) * 12;
-            pos[i * 3 + 1] = (random() - 0.5) * 12;
-            pos[i * 3 + 2] = (random() - 0.5) * 12;
-            continue;
-        }
-        const side = random() > 0.5 ? 1 : -1;
-        pos[i * 3] = side * (1.5 + random() * 2.0); // Side walls
-        pos[i * 3 + 1] = (random() - 0.5) * 6.0;
-        pos[i * 3 + 2] = (random() - 0.5) * 4.0;
-      }
-      return pos;
-    };
-
-    // 2. Volatility Spike / Fragmented Wave
-    const generateSpike = (count: number) => {
-      const pos = new Float32Array(count * 3);
-      for (let i = 0; i < count; i++) {
-        const x = (random() - 0.5) * 8.0;
-        const z = (random() - 0.5) * 4.0;
-        // Incompleteness: Only keep points in central "spike" region
-        const dist = Math.abs(x);
-        const y = Math.exp(-dist * dist) * (random() > 0.8 ? 4.0 : 1.5) * (random() > 0.5 ? 1 : -1);
+        const x = ((i % size) / size - 0.5) * 10;
+        const z = (Math.floor(i / size) / size - 0.5) * 6;
         
+        // Complex structured wave
+        const y = Math.sin(x * 0.8) * Math.cos(z * 1.2) * 0.6 + 
+                  Math.sin(x * 2.5) * 0.15; // micro-ripples
+                  
         pos[i * 3] = x;
-        pos[i * 3 + 1] = y + (random() - 0.5) * 0.5;
+        pos[i * 3 + 1] = y;
         pos[i * 3 + 2] = z;
       }
       return pos;
     };
 
-    // 3. Incomplete Cube Lattice
+    // 2. Structured Cube Topology (Incomplete but Coherent)
     const generateLattice = (count: number) => {
-      const size = 10;
       const pos = new Float32Array(count * 3);
+      const step = 0.5;
+      const bounds = 6;
       for (let i = 0; i < count; i++) {
-        if (random() > 0.4) { // Highly fragmented
-            pos[i * 3] = (random() - 0.5) * 12;
-            pos[i * 3 + 1] = (random() - 0.5) * 12;
-            pos[i * 3 + 2] = (random() - 0.5) * 12;
-            continue;
-        }
-        const x = Math.floor(random() * size) - size / 2;
-        const y = Math.floor(random() * size) - size / 2;
-        const z = Math.floor(random() * size) - size / 2;
-        pos[i * 3] = x * 0.8;
-        pos[i * 3 + 1] = y * 0.8;
-        pos[i * 3 + 2] = z * 0.8;
+        // Form a shell-like structured lattice
+        const x = (Math.floor(random() * bounds) - bounds / 2) * step;
+        const y = (Math.floor(random() * bounds) - bounds / 2) * step;
+        const z = (Math.floor(random() * bounds) - bounds / 2) * step;
+        
+        // Add structured noise to fill volume but keep "grid" nodes
+        pos[i * 3] = x + (random() - 0.5) * 0.1;
+        pos[i * 3 + 1] = y + (random() - 0.5) * 0.1;
+        pos[i * 3 + 2] = z + (random() - 0.5) * 0.1;
       }
       return pos;
     };
 
-    // 4. Ellipsoid Cluster (Not a perfect sphere)
-    const generateCluster = (count: number) => {
+    // 3. Orderbook Stack / Horizontal Planes
+    const generatePlanes = (count: number) => {
       const pos = new Float32Array(count * 3);
       for (let i = 0; i < count; i++) {
-        const u = random();
-        const v = random();
-        const theta = 2 * Math.PI * u;
-        const phi = Math.acos(2 * v - 1);
-        const r = 2.5 + random() * 0.5;
-        pos[i * 3] = r * Math.sin(phi) * Math.cos(theta) * 1.5; // X-stretched
-        pos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta) * 0.8; // Y-squashed
-        pos[i * 3 + 2] = r * Math.cos(phi);
+        const level = Math.floor(random() * 5) - 2;
+        const x = (random() - 0.5) * 10;
+        const z = (random() - 0.5) * 5;
+        
+        pos[i * 3] = x;
+        pos[i * 3 + 1] = level * 0.4 + (random() - 0.5) * 0.05;
+        pos[i * 3 + 2] = z;
+      }
+      return pos;
+    };
+
+    // 4. Concentric Analytical Cluster (Not a sphere)
+    const generateEllipsoid = (count: number) => {
+      const pos = new Float32Array(count * 3);
+      for (let i = 0; i < count; i++) {
+        const phi = Math.acos(-1 + (2 * i) / count);
+        const theta = Math.sqrt(count * Math.PI) * phi;
+        const r = 3.0;
+        pos[i * 3] = r * Math.cos(theta) * Math.sin(phi) * 1.5; // Stretch X
+        pos[i * 3 + 1] = r * Math.sin(theta) * Math.sin(phi) * 0.6; // Squash Y
+        pos[i * 3 + 2] = r * Math.cos(phi) * 0.8; // Squash Z
       }
       return pos;
     };
 
     const states = [
-      generateWalls(PARTICLE_COUNT),
-      generateSpike(PARTICLE_COUNT),
+      generateSurface(PARTICLE_COUNT),
       generateLattice(PARTICLE_COUNT),
-      generateCluster(PARTICLE_COUNT),
+      generatePlanes(PARTICLE_COUNT),
+      generateEllipsoid(PARTICLE_COUNT),
     ];
 
     const pointTypes = new Float32Array(PARTICLE_COUNT);
     for (let i = 0; i < PARTICLE_COUNT; i++) {
-      pointTypes[i] = random() > 0.96 ? 1.0 : 0.0; // 4% gold anchors
+      pointTypes[i] = random() > 0.98 ? 1.0 : 0.0; // Minimal gold anchors (2%)
     }
 
     const geometry = new Geometry(gl, {
@@ -213,7 +209,7 @@ export const QuantMorphField: React.FC = () => {
         uPixelRatio: { value: renderer.dpr },
         uColorWhite: { value: colorWhite },
         uColorGold: { value: colorGold },
-        uOpacity: { value: 0.45 }, // Increased visibility
+        uOpacity: { value: 0.35 }, // Subtler but crisp
       },
       transparent: true,
       depthTest: false,
@@ -225,8 +221,8 @@ export const QuantMorphField: React.FC = () => {
     let currentState = 0;
     let nextState = 1;
     let transitionTime = 0;
-    const transitionDuration = prefersReducedMotion ? 1000000 : 7.0; // Slower transitions
-    const waitDuration = 5.0; // Longer pauses
+    const transitionDuration = prefersReducedMotion ? 1000000 : 8.0; // Very slow reorganizing
+    const waitDuration = 6.0;
     let waitTime = 0;
 
     let requestID: number;
@@ -257,8 +253,8 @@ export const QuantMorphField: React.FC = () => {
       }
 
       program.uniforms.uTime.value = time;
-      particles.rotation.y = time * 0.03; // Even slower rotation
-      particles.rotation.z = Math.sin(time * 0.05) * 0.05;
+      particles.rotation.y = time * 0.02; // Minimal rotation
+      particles.rotation.z = Math.sin(time * 0.04) * 0.02;
 
       renderer.render({ scene, camera });
     };
@@ -295,7 +291,7 @@ export const QuantMorphField: React.FC = () => {
       h="100%"
       zIndex={0}
       pointerEvents="none"
-      opacity={0.8}
+      opacity={0.7}
       bg="background.deep"
     />
   );
