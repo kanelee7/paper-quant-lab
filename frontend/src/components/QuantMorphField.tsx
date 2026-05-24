@@ -420,10 +420,10 @@ export const QuantMorphField: React.FC = () => {
     <Box
       ref={containerRef}
       position="absolute"
-      top="15%" // Shifted down slightly to align with headline at pt={40}
+      top={0}
       left={0}
       w="100%"
-      h="70%"
+      h="100%"
       zIndex={0}
       pointerEvents="none"
       opacity={0.8}
