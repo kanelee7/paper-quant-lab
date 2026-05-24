@@ -32,19 +32,19 @@ const vertex = `
     float t = smoothstep(0.0, 1.0, uMix);
     vec3 pos = mix(position, target, t);
     
-    // Very subtle micro-drift - high frequency, low amplitude
-    pos.x += sin(uTime * 0.15 + position.z) * 0.05;
-    pos.y += cos(uTime * 0.15 + position.x) * 0.05;
+    // Very subtle micro-drift - stable and weighted
+    pos.x += sin(uTime * 0.12 + position.z) * 0.04;
+    pos.y += cos(uTime * 0.12 + position.x) * 0.04;
 
     vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
     gl_Position = projectionMatrix * mvPosition;
     
-    // Crisp micro-points
-    float size = (vType > 0.5) ? 1.4 : 0.8;
+    // Crisp micro-points - slightly larger for presence but still sharp
+    float size = (vType > 0.5) ? 1.8 : 1.1;
     gl_PointSize = size * uPixelRatio * (400.0 / -mvPosition.z);
     
-    // Depth-based alpha fade
-    vAlpha = smoothstep(-15.0, -2.0, mvPosition.z);
+    // Stable depth-based alpha - less aggressive fade
+    vAlpha = smoothstep(-20.0, -1.0, mvPosition.z);
   }
 `;
 
@@ -60,13 +60,13 @@ const fragment = `
   void main() {
     // Sharp pixel-like data points
     float d = distance(gl_PointCoord, vec2(0.5));
-    if (d > 0.45) discard;
+    if (d > 0.48) discard;
 
     vec3 color = mix(uColorWhite, uColorGold, vType);
     
-    // Crisp alpha
+    // High-confidence alpha
     float alpha = uOpacity * vAlpha;
-    if (vType > 0.5) alpha *= 1.4;
+    if (vType > 0.5) alpha *= 1.5;
 
     gl_FragColor = vec4(color, alpha);
   }
@@ -85,9 +85,8 @@ const lineVertex = `
     float t = smoothstep(0.0, 1.0, uMix);
     vec3 pos = mix(position, target, t);
     
-    // Micro-drift matching particles
-    pos.x += sin(uTime * 0.15 + position.z) * 0.05;
-    pos.y += cos(uTime * 0.15 + position.x) * 0.05;
+    pos.x += sin(uTime * 0.12 + position.z) * 0.04;
+    pos.y += cos(uTime * 0.12 + position.x) * 0.04;
 
     gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
   }
@@ -103,12 +102,12 @@ const lineFragment = `
   }
 `;
 
-const PARTICLE_COUNT = 2500;
-const LINE_COUNT = 400; // Total vertices for line segments
+const PARTICLE_COUNT = 3000; // Increased density for more "body"
+const LINE_COUNT = 600; // More lines for structural clarity
 
 export const QuantMorphField: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [whiteColor, goldColor, borderColor] = useToken('colors', ['gray.100', 'brand.500', 'ui.border']);
+  const [whiteColor, goldColor, borderColor] = useToken('colors', ['gray.50', 'brand.400', 'ui.border']);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -137,40 +136,44 @@ export const QuantMorphField: React.FC = () => {
       return [r, g, b];
     };
 
-    const colorWhite = hexToVec3(whiteColor || '#f7fafc');
+    const colorWhite = hexToVec3(whiteColor || '#ffffff');
     const colorGold = hexToVec3(goldColor || '#d4af37');
-    const colorLine = hexToVec3(borderColor || '#2D3748');
+    const colorLine = hexToVec3(borderColor || '#4A5568');
 
-    const random = createRandom(1994);
-
-    // Geometry Generators for Clear Shapes
+    const random = createRandom(2026);
 
     // --- CUBE ---
     const generateCube = (count: number) => {
       const pos = new Float32Array(count * 3);
       for (let i = 0; i < count; i++) {
-        // Distribute points mainly along the edges of a 4x4x4 cube
+        // Edge focused
         const edge = Math.floor(random() * 12);
         const t = random() * 2 - 1;
-        const x = 2;
-        if (edge === 0) { pos[i*3] = x; pos[i*3+1] = t*2; pos[i*3+2] = 2; }
-        else if (edge === 1) { pos[i*3] = x; pos[i*3+1] = t*2; pos[i*3+2] = -2; }
-        else if (edge === 2) { pos[i*3] = -x; pos[i*3+1] = t*2; pos[i*3+2] = 2; }
-        else if (edge === 3) { pos[i*3] = -x; pos[i*3+1] = t*2; pos[i*3+2] = -2; }
-        else if (edge === 4) { pos[i*3] = t*2; pos[i*3+1] = x; pos[i*3+2] = 2; }
-        else if (edge === 5) { pos[i*3] = t*2; pos[i*3+1] = x; pos[i*3+2] = -2; }
-        else if (edge === 6) { pos[i*3] = t*2; pos[i*3+1] = -x; pos[i*3+2] = 2; }
-        else if (edge === 7) { pos[i*3] = t*2; pos[i*3+1] = -x; pos[i*3+2] = -2; }
-        else if (edge === 8) { pos[i*3] = 2; pos[i*3+1] = 2; pos[i*3+2] = t*2; }
-        else if (edge === 9) { pos[i*3] = 2; pos[i*3+1] = -2; pos[i*3+2] = t*2; }
-        else if (edge === 10) { pos[i*3] = -2; pos[i*3+1] = 2; pos[i*3+2] = t*2; }
-        else { pos[i*3] = -2; pos[i*3+1] = -2; pos[i*3+2] = t*2; }
+        const x = 2.2;
+        if (edge === 0) { pos[i*3] = x; pos[i*3+1] = t*2.2; pos[i*3+2] = 2.2; }
+        else if (edge === 1) { pos[i*3] = x; pos[i*3+1] = t*2.2; pos[i*3+2] = -2.2; }
+        else if (edge === 2) { pos[i*3] = -x; pos[i*3+1] = t*2.2; pos[i*3+2] = 2.2; }
+        else if (edge === 3) { pos[i*3] = -x; pos[i*3+1] = t*2.2; pos[i*3+2] = -2.2; }
+        else if (edge === 4) { pos[i*3] = t*2.2; pos[i*3+1] = x; pos[i*3+2] = 2.2; }
+        else if (edge === 5) { pos[i*3] = t*2.2; pos[i*3+1] = x; pos[i*3+2] = -2.2; }
+        else if (edge === 6) { pos[i*3] = t*2.2; pos[i*3+1] = -x; pos[i*3+2] = 2.2; }
+        else if (edge === 7) { pos[i*3] = t*2.2; pos[i*3+1] = -x; pos[i*3+2] = -2.2; }
+        else if (edge === 8) { pos[i*3] = 2.2; pos[i*3+1] = 2.2; pos[i*3+2] = t*2.2; }
+        else if (edge === 9) { pos[i*3] = 2.2; pos[i*3+1] = -2.2; pos[i*3+2] = t*2.2; }
+        else if (edge === 10) { pos[i*3] = -2.2; pos[i*3+1] = 2.2; pos[i*3+2] = t*2.2; }
+        else { pos[i*3] = -2.2; pos[i*3+1] = -2.2; pos[i*3+2] = t*2.2; }
         
-        // Add sparse interior dust
-        if (random() > 0.8) {
-          pos[i*3] = (random()-0.5)*4;
-          pos[i*3+1] = (random()-0.5)*4;
-          pos[i*3+2] = (random()-0.5)*4;
+        // Face dust for better mass
+        if (random() > 0.6) {
+          const face = Math.floor(random() * 6);
+          const u = random() * 2 - 1;
+          const v = random() * 2 - 1;
+          if (face === 0) { pos[i*3] = 2.2; pos[i*3+1] = u*2.2; pos[i*3+2] = v*2.2; }
+          else if (face === 1) { pos[i*3] = -2.2; pos[i*3+1] = u*2.2; pos[i*3+2] = v*2.2; }
+          else if (face === 2) { pos[i*3] = u*2.2; pos[i*3+1] = 2.2; pos[i*3+2] = v*2.2; }
+          else if (face === 3) { pos[i*3] = u*2.2; pos[i*3+1] = -2.2; pos[i*3+2] = v*2.2; }
+          else if (face === 4) { pos[i*3] = u*2.2; pos[i*3+1] = v*2.2; pos[i*3+2] = 2.2; }
+          else { pos[i*3] = u*2.2; pos[i*3+1] = v*2.2; pos[i*3+2] = -2.2; }
         }
       }
       return pos;
@@ -178,16 +181,17 @@ export const QuantMorphField: React.FC = () => {
 
     const generateCubeLines = (count: number) => {
         const pos = new Float32Array(count * 3);
+        const s = 2.2;
         const edges = [
-            [2,2,2], [2,-2,2], [2,-2,2], [-2,-2,2], [-2,-2,2], [-2,2,2], [-2,2,2], [2,2,2],
-            [2,2,-2], [2,-2,-2], [2,-2,-2], [-2,-2,-2], [-2,-2,-2], [-2,2,-2], [-2,2,-2], [2,2,-2],
-            [2,2,2], [2,2,-2], [2,-2,2], [2,-2,-2], [-2,-2,2], [-2,-2,-2], [-2,2,2], [-2,2,-2]
+            [s,s,s], [s,-s,s], [s,-s,s], [-s,-s,s], [-s,-s,s], [-s,s,s], [-s,s,s], [s,s,s],
+            [s,s,-s], [s,-s,-s], [s,-s,-s], [-s,-s,-s], [-s,-s,-s], [-s,s,-s], [-s,s,-s], [s,s,-s],
+            [s,s,s], [s,s,-s], [s,-s,s], [s,-s,-s], [-s,-s,s], [-s,-s,-s], [-s,s,s], [-s,s,-s]
         ];
         for (let i = 0; i < count; i++) {
-            const vertex = edges[i % edges.length];
-            pos[i*3] = vertex[0];
-            pos[i*3+1] = vertex[1];
-            pos[i*3+2] = vertex[2];
+            const v = edges[i % edges.length];
+            pos[i*3] = v[0];
+            pos[i*3+1] = v[1];
+            pos[i*3+2] = v[2];
         }
         return pos;
     };
@@ -198,7 +202,7 @@ export const QuantMorphField: React.FC = () => {
       for (let i = 0; i < count; i++) {
         const phi = Math.acos(-1 + (2 * i) / count);
         const theta = Math.sqrt(count * Math.PI) * phi;
-        const r = 3.0;
+        const r = 3.2;
         pos[i * 3] = r * Math.cos(theta) * Math.sin(phi);
         pos[i * 3 + 1] = r * Math.sin(theta) * Math.sin(phi);
         pos[i * 3 + 2] = r * Math.cos(phi);
@@ -209,27 +213,15 @@ export const QuantMorphField: React.FC = () => {
     const generateSphereLines = (count: number) => {
         const pos = new Float32Array(count * 3);
         for (let i = 0; i < count; i++) {
-            // Rings
-            const ring = Math.floor(i / (count / 4));
-            const angle = (i % (count / 4)) / (count / 4) * Math.PI * 2;
-            const r = 3.0;
-            if (ring === 0) { // XZ Ring
-                pos[i*3] = r * Math.cos(angle);
-                pos[i*3+1] = 0;
-                pos[i*3+2] = r * Math.sin(angle);
-            } else if (ring === 1) { // XY Ring
-                pos[i*3] = r * Math.cos(angle);
-                pos[i*3+1] = r * Math.sin(angle);
-                pos[i*3+2] = 0;
-            } else if (ring === 2) { // YZ Ring
-                pos[i*3] = 0;
-                pos[i*3+1] = r * Math.cos(angle);
-                pos[i*3+2] = r * Math.sin(angle);
-            } else {
-                pos[i*3] = (random()-0.5)*2;
-                pos[i*3+1] = (random()-0.5)*2;
-                pos[i*3+2] = (random()-0.5)*2;
-            }
+            const ring = Math.floor(i / (count / 6));
+            const angle = (i % (count / 6)) / (count / 6) * Math.PI * 2;
+            const r = 3.2;
+            if (ring === 0) { pos[i*3] = r * Math.cos(angle); pos[i*3+1] = 0; pos[i*3+2] = r * Math.sin(angle); }
+            else if (ring === 1) { pos[i*3] = r * Math.cos(angle); pos[i*3+1] = r * Math.sin(angle); pos[i*3+2] = 0; }
+            else if (ring === 2) { pos[i*3] = 0; pos[i*3+1] = r * Math.cos(angle); pos[i*3+2] = r * Math.sin(angle); }
+            else if (ring === 3) { pos[i*3] = r*0.7 * Math.cos(angle); pos[i*3+1] = r*0.7; pos[i*3+2] = r*0.7 * Math.sin(angle); }
+            else if (ring === 4) { pos[i*3] = r*0.7 * Math.cos(angle); pos[i*3+1] = -r*0.7; pos[i*3+2] = r*0.7 * Math.sin(angle); }
+            else { pos[i*3] = (random()-0.5)*0.5; pos[i*3+1] = (random()-0.5)*0.5; pos[i*3+2] = (random()-0.5)*0.5; }
         }
         return pos;
     };
@@ -239,9 +231,9 @@ export const QuantMorphField: React.FC = () => {
       const pos = new Float32Array(count * 3);
       const size = Math.floor(Math.sqrt(count));
       for (let i = 0; i < count; i++) {
-        const x = (i % size) / size * 8 - 4;
-        const z = Math.floor(i / size) / size * 6 - 3;
-        const y = Math.sin(x * 1.5) * Math.cos(z * 1.5) * 1.2;
+        const x = (i % size) / size * 9 - 4.5;
+        const z = Math.floor(i / size) / size * 7 - 3.5;
+        const y = Math.sin(x * 1.4) * Math.cos(z * 1.4) * 1.4;
         pos[i * 3] = x;
         pos[i * 3 + 1] = y;
         pos[i * 3 + 2] = z;
@@ -251,26 +243,18 @@ export const QuantMorphField: React.FC = () => {
 
     const generateSurfaceLines = (count: number) => {
         const pos = new Float32Array(count * 3);
-        const rows = 10;
-        const cols = count / 2 / rows;
+        const rows = 12;
+        const cols = Math.floor(count / 2 / rows);
         for (let i = 0; i < count; i++) {
             const isRow = i < count / 2;
             const idx = isRow ? i : i - count / 2;
             const r = Math.floor(idx / cols);
             const c = idx % cols;
-            
             let x, z;
-            if (isRow) {
-                x = (c / cols) * 8 - 4;
-                z = (r / rows) * 6 - 3;
-            } else {
-                x = (r / rows) * 8 - 4;
-                z = (c / cols) * 6 - 3;
-            }
-            const y = Math.sin(x * 1.5) * Math.cos(z * 1.5) * 1.2;
-            pos[i*3] = x;
-            pos[i*3+1] = y;
-            pos[i*3+2] = z;
+            if (isRow) { x = (c / cols) * 9 - 4.5; z = (r / rows) * 7 - 3.5; }
+            else { x = (r / rows) * 9 - 4.5; z = (c / cols) * 7 - 3.5; }
+            const y = Math.sin(x * 1.4) * Math.cos(z * 1.4) * 1.4;
+            pos[i*3] = x; pos[i*3+1] = y; pos[i*3+2] = z;
         }
         return pos;
     };
@@ -289,7 +273,7 @@ export const QuantMorphField: React.FC = () => {
 
     const pointTypes = new Float32Array(PARTICLE_COUNT);
     for (let i = 0; i < PARTICLE_COUNT; i++) {
-      pointTypes[i] = random() > 0.97 ? 1.0 : 0.0; // 3% gold anchors
+      pointTypes[i] = random() > 0.96 ? 1.0 : 0.0; // 4% gold anchors
     }
 
     const geometry = new Geometry(gl, {
@@ -307,7 +291,7 @@ export const QuantMorphField: React.FC = () => {
         uPixelRatio: { value: renderer.dpr },
         uColorWhite: { value: colorWhite },
         uColorGold: { value: colorGold },
-        uOpacity: { value: 0.35 },
+        uOpacity: { value: 0.5 }, // Increased baseline presence
       },
       transparent: true,
       depthTest: false,
@@ -316,7 +300,6 @@ export const QuantMorphField: React.FC = () => {
     const particles = new Mesh(gl, { mode: gl.POINTS, geometry, program });
     particles.setParent(scene);
 
-    // Line mesh for structural scaffolds
     const lineGeometry = new Geometry(gl, {
         position: { size: 3, data: lineStates[0] },
         target: { size: 3, data: lineStates[1] },
@@ -329,7 +312,7 @@ export const QuantMorphField: React.FC = () => {
             uMix: { value: 0 },
             uTime: { value: 0 },
             uColor: { value: colorLine },
-            uOpacity: { value: 0.15 },
+            uOpacity: { value: 0.25 }, // Strengthened scaffold
         },
         transparent: true,
     });
@@ -340,8 +323,8 @@ export const QuantMorphField: React.FC = () => {
     let currentState = 0;
     let nextState = 1;
     let transitionTime = 0;
-    const transitionDuration = prefersReducedMotion ? 1000000 : 5.0;
-    const waitDuration = 3.0;
+    const transitionDuration = prefersReducedMotion ? 1000000 : 6.0; // Slower, more confident morph
+    const waitDuration = 4.0; // Longer hold for state readability
     let waitTime = 0;
 
     let requestID: number;
