@@ -40,7 +40,7 @@ const vertex = `
     gl_Position = projectionMatrix * mvPosition;
     
     // Size attenuation
-    float size = (vType > 0.5) ? 4.0 : 2.0;
+    float size = (vType > 0.5) ? 2.6 : 1.3; // 35% smaller (approx)
     gl_PointSize = size * uPixelRatio * (300.0 / -mvPosition.z);
     
     vAlpha = 1.0;
@@ -63,14 +63,14 @@ const fragment = `
 
     vec3 color = mix(uColorWhite, uColorGold, vType);
     
-    // Soft edges
-    float alpha = smoothstep(0.5, 0.4, d) * uOpacity;
+    // Soft edges + Thinner alpha
+    float alpha = smoothstep(0.5, 0.4, d) * uOpacity * 0.6; // Thinned further
     
     gl_FragColor = vec4(color, alpha);
   }
 `;
 
-const PARTICLE_COUNT = 1500;
+const PARTICLE_COUNT = 1200; // 20% lower density
 
 export const QuantMorphField: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -92,7 +92,9 @@ export const QuantMorphField: React.FC = () => {
     container.appendChild(gl.canvas);
 
     const camera = new Camera(gl, { fov: 45 });
-    camera.position.set(0, 0, 8);
+    // Offset camera for asymmetry: Move right and up
+    camera.position.set(1.5, 1.0, 8); 
+    camera.lookAt([1.0, 0.5, 0]);
 
     const scene = new Transform();
 
@@ -109,11 +111,18 @@ export const QuantMorphField: React.FC = () => {
 
     const random = createRandom(42);
 
-    // Geometry Generation
+    // Geometry Generation with Incompleteness
     const generateLattice = (count: number) => {
       const size = Math.ceil(Math.pow(count, 1 / 3));
       const pos = new Float32Array(count * 3);
       for (let i = 0; i < count; i++) {
+        // Shape incompleteness: only fill 70% of the lattice structure randomly
+        if (random() > 0.7) {
+            pos[i * 3] = (random() - 0.5) * 15; // scattered fallback
+            pos[i * 3 + 1] = (random() - 0.5) * 15;
+            pos[i * 3 + 2] = (random() - 0.5) * 15;
+            continue;
+        }
         const x = (i % size) - size / 2;
         const y = (Math.floor(i / size) % size) - size / 2;
         const z = Math.floor(i / (size * size)) - size / 2;
@@ -127,6 +136,13 @@ export const QuantMorphField: React.FC = () => {
     const generateSphere = (count: number) => {
       const pos = new Float32Array(count * 3);
       for (let i = 0; i < count; i++) {
+        // Incompleteness: Gaps in the sphere
+        if (random() > 0.75) {
+            pos[i * 3] = (random() - 0.5) * 15;
+            pos[i * 3 + 1] = (random() - 0.5) * 15;
+            pos[i * 3 + 2] = (random() - 0.5) * 15;
+            continue;
+        }
         const phi = Math.acos(-1 + (2 * i) / count);
         const theta = Math.sqrt(count * Math.PI) * phi;
         pos[i * 3] = 2.5 * Math.cos(theta) * Math.sin(phi);
@@ -142,6 +158,15 @@ export const QuantMorphField: React.FC = () => {
       for (let i = 0; i < count; i++) {
         const x = (i % size) - size / 2;
         const z = Math.floor(i / size) - size / 2;
+        
+        // Incompleteness: Fragmented surface
+        if (Math.abs(x) > size * 0.35 && Math.abs(z) > size * 0.35 && random() > 0.5) {
+             pos[i * 3] = (random() - 0.5) * 15;
+             pos[i * 3 + 1] = (random() - 0.5) * 15;
+             pos[i * 3 + 2] = (random() - 0.5) * 15;
+             continue;
+        }
+
         pos[i * 3] = x * 0.4;
         pos[i * 3 + 1] = Math.sin(x * 0.5) * Math.cos(z * 0.5) * 0.5;
         pos[i * 3 + 2] = z * 0.4;
