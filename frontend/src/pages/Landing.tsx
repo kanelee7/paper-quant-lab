@@ -21,11 +21,13 @@ import {
   ArrowForwardIcon,
   TimeIcon,
 } from '@chakra-ui/icons';
+import { QuantMorphField } from '../components/QuantMorphField';
 
-// Deterministic heights — no Math.random() on render
+// Deterministic heights – no Math.random() on render
 const TIMELINE_HEIGHTS = [38, 55, 28, 65, 42, 50, 35, 72, 45, 30, 58, 40, 68, 25, 52, 44, 60, 32, 47, 56, 29, 64, 39, 48, 33, 70, 43, 27, 61, 46, 36, 53, 31, 67, 41, 49, 26, 57, 38, 54];
 
 const WorkstationPreview: React.FC = () => (
+
   <Box
     position="relative"
     maxW="container.xl"
@@ -198,53 +200,69 @@ const Landing: React.FC<{
         </Container>
       </Box>
 
-      {/* Hero */}
-      <Container maxW="container.lg" pt={28} pb={16} position="relative" zIndex={10}>
-        <VStack spacing={6} textAlign="center">
-          <Text
-            fontSize="11px"
-            fontWeight="700"
-            color={brandColor}
-            textTransform="uppercase"
-            letterSpacing="widest"
-          >
-            PaperQuantLab
-          </Text>
-          <Heading
-            size="3xl"
-            maxW="800px"
-            lineHeight="1.1"
-            letterSpacing="tighter"
-            fontWeight="800"
-          >
-            AI Reasoning Research Workstation
-          </Heading>
-          <Text fontSize="lg" color="ui.muted" maxW="640px" lineHeight="tall">
-            Run, replay, and audit AI-assisted market analysis. A local-first research environment
-            for studying how AI models reason through market data — with full evidence tracing
-            and longitudinal archiving.
-          </Text>
-          <HStack spacing={4} pt={4}>
-            <Button size="md" px={10} height="52px" colorScheme="brand" onClick={onLaunch} rightIcon={<ArrowForwardIcon />} borderRadius="sm" fontWeight="700" letterSpacing="wider">
-              OPEN WORKSTATION
-            </Button>
-            <Button size="md" px={10} height="52px" variant="outline" onClick={() => onNavigate('PHILOSOPHY')} borderRadius="sm" fontWeight="700" letterSpacing="wider">
-              Research Method
-            </Button>
-          </HStack>
-          <HStack spacing={3} pt={1}>
-            <Text fontSize="11px" color="ui.muted">Local-first</Text>
-            <Text fontSize="11px" color="ui.border">·</Text>
-            <Text fontSize="11px" color="ui.muted">Simulation-only</Text>
-            <Text fontSize="11px" color="ui.border">·</Text>
-            <Text fontSize="11px" color="ui.muted">No brokerage execution</Text>
-          </HStack>
-        </VStack>
-      </Container>
+      {/* Ambient Background & Hero */}
+      <Box position="relative" overflow="hidden">
+        <QuantMorphField />
+        
+        {/* Hero */}
+        <Container maxW="container.lg" pt={28} pb={16} position="relative" zIndex={10}>
+          <VStack spacing={6} textAlign="center">
+            <Text
+              fontSize="11px"
+              fontWeight="700"
+              color={brandColor}
+              textTransform="uppercase"
+              letterSpacing="widest"
+            >
+              PaperQuantLab
+            </Text>
+            <Heading
+              size="3xl"
+              maxW="800px"
+              lineHeight="1.1"
+              letterSpacing="tighter"
+              fontWeight="800"
+            >
+              AI Reasoning Research Workstation
+            </Heading>
+            <Text fontSize="lg" color="ui.muted" maxW="640px" lineHeight="tall">
+              Run, replay, and audit AI-assisted market analysis. A local-first research environment
+              for studying how AI models reason through market data — with full evidence tracing
+              and longitudinal archiving.
+            </Text>
+            <HStack spacing={4} pt={4}>
+              <Button size="md" px={10} height="52px" colorScheme="brand" onClick={onLaunch} rightIcon={<ArrowForwardIcon />} borderRadius="sm" fontWeight="700" letterSpacing="wider">
+                OPEN WORKSTATION
+              </Button>
+              <Button size="md" px={10} height="52px" variant="outline" onClick={() => onNavigate('PHILOSOPHY')} borderRadius="sm" fontWeight="700" letterSpacing="wider">
+                Research Method
+              </Button>
+            </HStack>
+            <HStack spacing={3} pt={1}>
+              <Text fontSize="11px" color="ui.muted">Local-first</Text>
+              <Text fontSize="11px" color="ui.border">·</Text>
+              <Text fontSize="11px" color="ui.muted">Simulation-only</Text>
+              <Text fontSize="11px" color="ui.border">·</Text>
+              <Text fontSize="11px" color="ui.muted">No brokerage execution</Text>
+            </HStack>
+          </VStack>
+        </Container>
 
-      {/* Workstation Preview */}
-      <Box position="relative" zIndex={10}>
-        <WorkstationPreview />
+        {/* Workstation Preview */}
+        <Box position="relative" zIndex={10}>
+          <WorkstationPreview />
+        </Box>
+        
+        {/* Gradient fade to deep background */}
+        <Box 
+          position="absolute" 
+          bottom={0} 
+          left={0} 
+          w="100%" 
+          h="200px" 
+          bgGradient="linear(to-b, transparent, background.deep)" 
+          zIndex={5}
+        />
       </Box>
 
       {/* Product Surface Showcases */}
