@@ -35,27 +35,27 @@ const vertex = `
     float t = smoothstep(0.0, 1.0, uMix);
     vec3 pos = mix(position, target, t);
     
-    // Global analytical drift
-    float driftX = sin(uTime * 0.08 + pos.z * 0.5) * 0.05;
-    float driftY = cos(uTime * 0.08 + pos.x * 0.5) * 0.05;
+    // Global analytical drift (Calibration drift)
+    float driftX = sin(uTime * 0.06 + pos.z * 0.4) * 0.04;
+    float driftY = cos(uTime * 0.06 + pos.x * 0.4) * 0.04;
     pos.x += driftX;
     pos.y += driftY;
 
-    // Field Distortion phase modulation
-    float wave = sin(uTime * 1.5 + pos.x * 2.0) * cos(uTime * 1.2 + pos.z * 2.0);
-    pos.y += wave * uDistortion * 0.5;
+    // Phase 3 Distortion modulation
+    float wave = sin(uTime * 1.8 + pos.x * 2.5) * cos(uTime * 1.4 + pos.z * 2.5);
+    pos.y += wave * uDistortion * 0.6;
 
     // Mouse Interaction
     vec4 mvPosition = modelViewMatrix * vec4(pos * uObjectScale, 1.0);
-    vec3 mousePos = vec3(uMouse.x * 6.0, uMouse.y * 4.0, 0.0);
+    vec3 mousePos = vec3(uMouse.x * 5.5, uMouse.y * 3.5, 0.0);
     float dist = distance(mvPosition.xyz, mousePos);
-    float repulsion = smoothstep(1.5, 0.0, dist) * 0.12;
+    float repulsion = smoothstep(1.5, 0.0, dist) * 0.1;
     mvPosition.xyz += normalize(mvPosition.xyz - mousePos + 0.001) * repulsion;
 
     gl_Position = projectionMatrix * mvPosition;
     
-    // Tiny data nodes
-    float size = (vType > 0.5) ? 0.8 : 0.45;
+    // Fine Data Nodes
+    float size = (vType > 0.5) ? 0.9 : 0.5;
     gl_PointSize = size * uPixelRatio * (400.0 / -mvPosition.z);
     
     vAlpha = smoothstep(-25.0, -1.0, mvPosition.z);
@@ -75,8 +75,8 @@ const fragment = `
     float d = distance(gl_PointCoord, vec2(0.5));
     if (d > 0.48) discard;
 
-    vec3 color = mix(uColorA, uColorB, vType);
-    float alpha = uOpacity * vAlpha * (vType > 0.5 ? 1.2 : 0.8);
+    vec3 color = mix(uColorA, uColorB, vType * 0.3);
+    float alpha = uOpacity * vAlpha * (vType > 0.5 ? 1.3 : 0.8);
     gl_FragColor = vec4(color, alpha);
   }
 `;
@@ -97,18 +97,18 @@ const lineVertex = `
     float t = smoothstep(0.0, 1.0, uMix);
     vec3 pos = mix(position, target, t);
     
-    float driftX = sin(uTime * 0.08 + pos.z * 0.5) * 0.05;
-    float driftY = cos(uTime * 0.08 + pos.x * 0.5) * 0.05;
+    float driftX = sin(uTime * 0.06 + pos.z * 0.4) * 0.04;
+    float driftY = cos(uTime * 0.06 + pos.x * 0.4) * 0.04;
     pos.x += driftX;
     pos.y += driftY;
 
-    float wave = sin(uTime * 1.5 + pos.x * 2.0) * cos(uTime * 1.2 + pos.z * 2.0);
-    pos.y += wave * uDistortion * 0.5;
+    float wave = sin(uTime * 1.8 + pos.x * 2.5) * cos(uTime * 1.4 + pos.z * 2.5);
+    pos.y += wave * uDistortion * 0.6;
 
     vec4 mvPosition = modelViewMatrix * vec4(pos * uObjectScale, 1.0);
-    vec3 mousePos = vec3(uMouse.x * 6.0, uMouse.y * 4.0, 0.0);
+    vec3 mousePos = vec3(uMouse.x * 5.5, uMouse.y * 3.5, 0.0);
     float dist = distance(mvPosition.xyz, mousePos);
-    float repulsion = smoothstep(1.5, 0.0, dist) * 0.08;
+    float repulsion = smoothstep(1.5, 0.0, dist) * 0.06;
     mvPosition.xyz += normalize(mvPosition.xyz - mousePos + 0.001) * repulsion;
 
     gl_Position = projectionMatrix * mvPosition;
@@ -124,15 +124,15 @@ const lineFragment = `
   }
 `;
 
-const NODE_COUNT = 4000;
-const LINE_COUNT = 1200;
+const NODE_COUNT = 3000;
+const LINE_COUNT = 1000;
 
 export const QuantMorphField: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const mouse = useRef(new Vec2(0, 0));
-  const [colorA, colorB, borderColor] = useToken('colors', ['gray.50', 'gray.300', 'ui.border']);
+  const [colorA, colorB, borderColor] = useToken('colors', ['gray.100', 'gray.300', 'ui.border']);
 
-  const objectScale = useBreakpointValue({ base: 0.55, md: 0.85, lg: 1.05 }) || 0.55;
+  const objectScale = useBreakpointValue({ base: 0.5, md: 0.8, lg: 1.0 }) || 0.5;
   const cameraZ = useBreakpointValue({ base: 18, md: 15, lg: 13 }) || 18;
 
   useEffect(() => {
@@ -156,107 +156,91 @@ export const QuantMorphField: React.FC = () => {
       return [r, g, b];
     };
 
-    const cA = hexToVec3(colorA || '#ffffff');
+    const cA = hexToVec3(colorA || '#f7fafc');
     const cB = hexToVec3(colorB || '#cbd5e0');
-    const cL = hexToVec3(borderColor || '#2d3748');
+    const cL = hexToVec3(borderColor || '#4A5568');
 
-    const random = createRandom(1337);
+    const random = createRandom(2026);
 
-    // --- PHASE GENERATORS ---
+    // --- PHASE GEOMETRY ISOLATION ---
 
     const generatePhaseData = (phase: number) => {
         const nodes = new Float32Array(NODE_COUNT * 3);
         const lines = new Float32Array(LINE_COUNT * 3);
 
-        const fillRandom = (arr: Float32Array, start: number, count: number, r: number) => {
-            for (let i = 0; i < count; i++) {
-                const u = random() * Math.PI * 2;
-                const v = Math.acos(2 * random() - 1);
-                const dist = r * Math.pow(random(), 1/3);
-                arr[(start + i) * 3] = dist * Math.sin(v) * Math.cos(u);
-                arr[(start + i) * 3 + 1] = dist * Math.sin(v) * Math.sin(u);
-                arr[(start + i) * 3 + 2] = dist * Math.cos(v);
-            }
-        };
-
-        if (phase === 0) { // Constraint Seed
-            // Triangular core
-            const triPoints = [[0,1.2,0], [-1,-0.6,0], [1,-0.6,0]];
+        if (phase === 0) { // Constraint Seed: Triangle Core + Rings
+            // Triangle Nodes
+            const tri = [[0, 1.5, 0], [-1.5, -1, 0], [1.5, -1, 0]];
             for (let i = 0; i < NODE_COUNT; i++) {
-                const p = triPoints[i % 3];
-                nodes[i*3] = p[0] + (random()-0.5)*0.1;
-                nodes[i*3+1] = p[1] + (random()-0.5)*0.1;
-                nodes[i*3+2] = p[2] + (random()-0.5)*0.1;
+                const p = tri[i % 3];
+                nodes[i*3] = p[0] + (random()-0.5)*0.05;
+                nodes[i*3+1] = p[1] + (random()-0.5)*0.05;
+                nodes[i*3+2] = p[2];
             }
-            // Rings and Guides
-            for (let i = 0; i < LINE_COUNT / 2; i++) {
-                const r = 1.5 + Math.floor(i / 100) * 1.0;
-                const angle = (i % 100) / 100 * Math.PI * 2;
-                lines[i*3] = r * Math.cos(angle);
-                lines[i*3+1] = r * Math.sin(angle);
-                lines[i*3+2] = 0;
-            }
-            for (let i = Math.floor(LINE_COUNT/2); i < LINE_COUNT; i++) {
-                const side = i % 2 === 0 ? 1 : -1;
-                lines[i*3] = side * 8;
-                lines[i*3+1] = (random()-0.5) * 10;
-                lines[i*3+2] = (random()-0.5) * 5;
+            // Calibration Rings Lines
+            const numRings = 5;
+            const ptsPerRing = Math.floor(LINE_COUNT / numRings);
+            for (let r = 0; r < numRings; r++) {
+                const radius = 1.8 + r * 1.2;
+                for (let i = 0; i < ptsPerRing; i++) {
+                    const angle = (i / ptsPerRing) * Math.PI * 2;
+                    lines[(r * ptsPerRing + i) * 3] = radius * Math.cos(angle);
+                    lines[(r * ptsPerRing + i) * 3 + 1] = radius * Math.sin(angle);
+                    lines[(r * ptsPerRing + i) * 3 + 2] = 0;
+                }
             }
         } 
-        else if (phase === 1) { // Contour Emergence
+        else if (phase === 1) { // Contour Emergence: Contours + Guides
+            // Contour Arcs Nodes
             for (let i = 0; i < NODE_COUNT; i++) {
-                const r = 2.5 + random() * 2.0;
-                const theta = random() * Math.PI * 2;
-                nodes[i*3] = r * Math.cos(theta);
-                nodes[i*3+1] = r * Math.sin(theta) * 0.5 + Math.sin(r * 2.0) * 0.5;
-                nodes[i*3+2] = (random()-0.5) * 2.0;
+                const ring = Math.floor(i / 100);
+                const angle = (i % 100) / 100 * Math.PI * 1.2 - 0.6 * Math.PI;
+                const r = 2.0 + ring * 0.4;
+                nodes[i*3] = r * Math.sin(angle);
+                nodes[i*3+1] = r * Math.cos(angle) * 0.6;
+                nodes[i*3+2] = (random()-0.5) * 1.5;
             }
+            // Slicing Guides Lines
             for (let i = 0; i < LINE_COUNT; i++) {
-                const r = 1.5 + random() * 4.0;
-                const theta = random() * Math.PI * 2;
-                lines[i*3] = r * Math.cos(theta);
-                lines[i*3+1] = r * Math.sin(theta) * 0.6;
-                lines[i*3+2] = (random()-0.5) * 1.5;
+                const guide = Math.floor(i / 50);
+                const angle = (guide / 20) * Math.PI;
+                const len = (i % 50) / 50 * 10 - 5;
+                lines[i*3] = Math.cos(angle) * len;
+                lines[i*3+1] = Math.sin(angle) * len;
+                lines[i*3+2] = (random()-0.5) * 1.0;
             }
         }
-        else if (phase === 2 || phase === 3) { // Surface Formation / Field Distortion
-            const size = Math.floor(Math.sqrt(NODE_COUNT));
+        else if (phase === 2 || phase === 3) { // Surface Formation: Surface + Sparse Nodes
+            // Sparse Nodes (metadata dots)
             for (let i = 0; i < NODE_COUNT; i++) {
-                const x = (i % size) / size * 10 - 5;
-                const z = Math.floor(i / size) / size * 8 - 4;
-                nodes[i*3] = x;
-                nodes[i*3+1] = Math.sin(x * 1.2) * Math.cos(z * 1.2) * 1.5;
-                nodes[i*3+2] = z;
+                const r = 1.0 + random() * 6.0;
+                const theta = random() * Math.PI * 2;
+                nodes[i*3] = r * Math.cos(theta);
+                nodes[i*3+1] = Math.sin(r * 0.8) * 1.5;
+                nodes[i*3+2] = r * Math.sin(theta) * 0.5;
             }
-            const lSize = Math.floor(Math.sqrt(LINE_COUNT));
+            // Surface Mesh Lines
+            const size = Math.floor(Math.sqrt(LINE_COUNT));
             for (let i = 0; i < LINE_COUNT; i++) {
-                const x = (i % lSize) / lSize * 10 - 5;
-                const z = Math.floor(i / lSize) / lSize * 8 - 4;
+                const x = (i % size) / size * 12 - 6;
+                const z = Math.floor(i / size) / size * 8 - 4;
                 lines[i*3] = x;
-                lines[i*3+1] = Math.sin(x * 1.2) * Math.cos(z * 1.2) * 1.5;
+                lines[i*3+1] = Math.sin(x * 1.0) * Math.cos(z * 1.0) * 2.0;
                 lines[i*3+2] = z;
             }
         }
-        else if (phase === 4) { // Lattice Reorganization
+        else { // Reasoning Topology: Lattice Nodes + Structural Edges
+            // Lattice Nodes
+            const g = 8;
             for (let i = 0; i < NODE_COUNT; i++) {
-                const gx = Math.floor(random() * 10) - 5;
-                const gy = Math.floor(random() * 6) - 3;
-                const gz = Math.floor(random() * 8) - 4;
-                nodes[i*3] = gx * 0.8;
-                nodes[i*3+1] = gy * 0.8;
-                nodes[i*3+2] = gz * 0.8;
+                const x = (Math.floor(random()*g) - g/2) * 1.2;
+                const y = (Math.floor(random()*g) - g/2) * 0.8;
+                const z = (Math.floor(random()*g) - g/2) * 1.0;
+                nodes[i*3] = x + (random()-0.5)*0.2;
+                nodes[i*3+1] = y + (random()-0.5)*0.2;
+                nodes[i*3+2] = z + (random()-0.5)*0.2;
             }
-            fillRandom(lines, 0, LINE_COUNT, 5);
-        }
-        else { // Reasoning Topology
-            for (let i = 0; i < NODE_COUNT; i++) {
-                const r = 4.0;
-                const u = random() * Math.PI * 2;
-                const v = Math.acos(2 * random() - 1);
-                nodes[i*3] = r * Math.sin(v) * Math.cos(u) * 1.5;
-                nodes[i*3+1] = r * Math.sin(v) * Math.sin(u) * 0.4;
-                nodes[i*3+2] = r * Math.cos(v) * 0.8;
-            }
+            // Structural Edges Lines
             for (let i = 0; i < LINE_COUNT; i++) {
                 const idx = Math.floor(random() * (NODE_COUNT-1));
                 lines[i*3] = nodes[idx*3];
@@ -302,7 +286,7 @@ export const QuantMorphField: React.FC = () => {
         vertex: lineVertex, fragment: lineFragment,
         uniforms: {
             uMix: { value: 0 }, uTime: { value: 0 },
-            uColor: { value: cL }, uOpacity: { value: 0.15 },
+            uColor: { value: cL }, uOpacity: { value: 0.12 },
             uMouse: { value: mouse.current },
             uObjectScale: { value: objectScale }, uDistortion: { value: 0 },
         },
@@ -314,8 +298,8 @@ export const QuantMorphField: React.FC = () => {
     let currentPhase = 0;
     let nextPhase = 1;
     let transitionTime = 0;
-    const transitionDuration = 7.0;
-    const waitDuration = 5.0;
+    const transitionDuration = 7.5;
+    const waitDuration = 4.5;
     let waitTime = 0;
 
     let requestID: number;
@@ -351,15 +335,14 @@ export const QuantMorphField: React.FC = () => {
         }
       }
 
-      // Modulate uDistortion during Phase 3 (Field Distortion)
-      const distortionVal = currentPhase === 3 ? Math.sin(time * 2.0) * 0.5 + 0.5 : 0;
+      const distortionVal = currentPhase === 3 ? Math.sin(time * 1.5) * 0.5 + 0.5 : 0;
       nodeProgram.uniforms.uDistortion.value = distortionVal;
       lineProgram.uniforms.uDistortion.value = distortionVal;
 
       nodeProgram.uniforms.uTime.value = time;
       lineProgram.uniforms.uTime.value = time;
 
-      const rotY = time * 0.012;
+      const rotY = time * 0.01;
       nodesMesh.rotation.y = rotY;
       linesMesh.rotation.y = rotY;
 
@@ -391,6 +374,6 @@ export const QuantMorphField: React.FC = () => {
   }, [colorA, colorB, borderColor, objectScale, cameraZ]);
 
   return (
-    <Box ref={containerRef} position="absolute" top={0} left={0} w="100%" h="100%" zIndex={0} pointerEvents="none" opacity={0.85} />
+    <Box ref={containerRef} position="absolute" top={0} left={0} w="100%" h="100%" zIndex={0} pointerEvents="none" opacity={0.9} />
   );
 };
