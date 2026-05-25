@@ -2,7 +2,6 @@ import React, { useEffect, useRef } from 'react';
 import { Renderer, Camera, Transform, Geometry, Program, Mesh, Vec2 } from 'ogl';
 import { Box, useToken, useBreakpointValue } from '@chakra-ui/react';
 
-// Simple deterministic random
 const createRandom = (seed: number) => {
   let s = seed;
   return () => {
@@ -23,7 +22,7 @@ const vertex = `
   uniform float uPixelRatio;
   uniform vec2 uMouse;
   uniform float uObjectScale;
-  uniform float uPointSize;
+  uniform float uInstability;
 
   varying float vType;
   varying float vAlpha;
@@ -31,32 +30,35 @@ const vertex = `
   void main() {
     vType = pointType;
     
-    // Smooth interpolation
+    // Smooth transition
     float t = smoothstep(0.0, 1.0, uMix);
-    vec3 pos = mix(position, target, t) * uObjectScale;
+    vec3 pos = mix(position, target, t);
     
-    // Constant analytical micro-drift (Geological)
-    float driftX = sin(uTime * 0.1 + position.z * 0.5) * 0.04;
-    float driftY = cos(uTime * 0.1 + position.x * 0.5) * 0.04;
+    // Geological instrument drift
+    float driftX = sin(uTime * 0.05 + pos.z * 0.2) * 0.03;
+    float driftY = cos(uTime * 0.05 + pos.x * 0.2) * 0.03;
     pos.x += driftX;
     pos.y += driftY;
 
-    // Mouse Interaction: High-responsiveness repulsion
-    vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
-    
-    // Raw mouse tracking in view space
-    vec3 mousePos = vec3(uMouse.x * 6.0, uMouse.y * 4.0, 0.0); 
+    // Controlled Instability (Resolving from uncertainty)
+    float noiseX = sin(uTime * 1.5 + pos.y * 2.0 + pos.z * 1.0);
+    float noiseY = cos(uTime * 1.3 + pos.x * 2.0 + pos.z * 1.0);
+    float noiseZ = sin(uTime * 1.4 + pos.x * 1.0 + pos.y * 2.0);
+    pos += vec3(noiseX, noiseY, noiseZ) * uInstability;
+
+    // Mouse Interaction
+    vec4 mvPosition = modelViewMatrix * vec4(pos * uObjectScale, 1.0);
+    vec3 mousePos = vec3(uMouse.x * 6.0, uMouse.y * 4.0, 0.0);
     float dist = distance(mvPosition.xyz, mousePos);
-    float repulsion = smoothstep(1.5, 0.0, dist) * 0.25;
+    float repulsion = smoothstep(1.5, 0.0, dist) * 0.08;
     mvPosition.xyz += normalize(mvPosition.xyz - mousePos + 0.001) * repulsion;
 
     gl_Position = projectionMatrix * mvPosition;
     
-    // High-uniformity computational nodes
-    float size = (vType > 0.5) ? uPointSize * 1.3 : uPointSize;
+    // Tiny, tight metadata nodes
+    float size = (vType > 0.5) ? 1.0 : 0.6;
     gl_PointSize = size * uPixelRatio * (400.0 / -mvPosition.z);
     
-    // Stable depth-based alpha
     vAlpha = smoothstep(-25.0, -1.0, mvPosition.z);
   }
 `;
@@ -71,13 +73,12 @@ const fragment = `
   uniform float uOpacity;
 
   void main() {
-    // Sharp square nodes (computationally honest)
-    // No soft disc falloff
-    
-    vec3 color = mix(uColorA, uColorB, vType * 0.3);
-    float alpha = uOpacity * vAlpha;
-    if (vType > 0.5) alpha *= 1.2;
+    // Sharp pixel rendering, absolutely NO soft bokeh edges
+    float d = distance(gl_PointCoord, vec2(0.5));
+    if (d > 0.48) discard;
 
+    vec3 color = mix(uColorA, uColorB, vType);
+    float alpha = uOpacity * vAlpha * (vType > 0.5 ? 1.4 : 0.8);
     gl_FragColor = vec4(color, alpha);
   }
 `;
@@ -92,58 +93,62 @@ const lineVertex = `
   uniform float uTime;
   uniform vec2 uMouse;
   uniform float uObjectScale;
+  uniform float uInstability;
+
+  varying float vAlpha;
 
   void main() {
     float t = smoothstep(0.0, 1.0, uMix);
-    vec3 pos = mix(position, target, t) * uObjectScale;
+    vec3 pos = mix(position, target, t);
     
-    pos.x += sin(uTime * 0.1 + position.z * 0.5) * 0.04;
-    pos.y += cos(uTime * 0.1 + position.x * 0.5) * 0.04;
+    float driftX = sin(uTime * 0.05 + pos.z * 0.2) * 0.03;
+    float driftY = cos(uTime * 0.05 + pos.x * 0.2) * 0.03;
+    pos.x += driftX;
+    pos.y += driftY;
 
-    vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+    float noiseX = sin(uTime * 1.5 + pos.y * 2.0 + pos.z * 1.0);
+    float noiseY = cos(uTime * 1.3 + pos.x * 2.0 + pos.z * 1.0);
+    float noiseZ = sin(uTime * 1.4 + pos.x * 1.0 + pos.y * 2.0);
+    pos += vec3(noiseX, noiseY, noiseZ) * uInstability;
+
+    vec4 mvPosition = modelViewMatrix * vec4(pos * uObjectScale, 1.0);
     vec3 mousePos = vec3(uMouse.x * 6.0, uMouse.y * 4.0, 0.0);
     float dist = distance(mvPosition.xyz, mousePos);
-    float repulsion = smoothstep(1.5, 0.0, dist) * 0.2;
+    float repulsion = smoothstep(1.5, 0.0, dist) * 0.08;
     mvPosition.xyz += normalize(mvPosition.xyz - mousePos + 0.001) * repulsion;
 
     gl_Position = projectionMatrix * mvPosition;
+    
+    vAlpha = smoothstep(-25.0, -1.0, mvPosition.z);
   }
 `;
 
 const lineFragment = `
   precision highp float;
+  varying float vAlpha;
   uniform vec3 uColor;
   uniform float uOpacity;
-
   void main() {
-    gl_FragColor = vec4(uColor, uOpacity);
+    gl_FragColor = vec4(uColor, uOpacity * vAlpha);
   }
 `;
+
+// Exact 1:1 vertex mapping guarantees continuous silhouette without fog build-up
+const ELEMENT_COUNT = 4096;
 
 export const QuantMorphField: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const mouse = useRef(new Vec2(0, 0));
-  const [colorA, colorB, borderColor] = useToken('colors', ['gray.100', 'gray.400', 'ui.border']);
+  const [colorA, colorB, borderColor] = useToken('colors', ['gray.50', 'gray.300', 'ui.border']);
 
-  // Responsive Configuration
-  const particleCount = useBreakpointValue({ base: 4500, md: 7000, lg: 9500 }) || 4500;
-  const lineCount = useBreakpointValue({ base: 400, md: 600, lg: 800 }) || 400;
-  const pointSize = useBreakpointValue({ base: 0.32, md: 0.35, lg: 0.38 }) || 0.35;
-  const objectScale = useBreakpointValue({ base: 0.6, md: 0.85, lg: 1.1 }) || 0.6;
-  const cameraZ = useBreakpointValue({ base: 16, md: 14, lg: 13 }) || 16;
-  const baseOpacity = 0.55;
+  const objectScale = useBreakpointValue({ base: 0.5, md: 0.75, lg: 0.9 }) || 0.5;
+  const cameraZ = useBreakpointValue({ base: 18, md: 15, lg: 13 }) || 18;
 
   useEffect(() => {
     if (!containerRef.current) return;
 
     const container = containerRef.current;
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    const renderer = new Renderer({
-      alpha: true,
-      antialias: true,
-      dpr: window.devicePixelRatio,
-    });
+    const renderer = new Renderer({ alpha: true, antialias: true, dpr: window.devicePixelRatio });
     const gl = renderer.gl;
     container.appendChild(gl.canvas);
 
@@ -161,153 +166,155 @@ export const QuantMorphField: React.FC = () => {
     };
 
     const cA = hexToVec3(colorA || '#f7fafc');
-    const cB = hexToVec3(colorB || '#a0aec0');
-    const cL = hexToVec3(borderColor || '#2d3748');
+    const cB = hexToVec3(colorB || '#e2e8f0');
+    const cL = hexToVec3(borderColor || '#4A5568');
 
-    const random = createRandom(2026);
+    const random = createRandom(1994);
 
-    // --- REFINED GEOMETRIES (IMPLIED, NOT EXPLICIT) ---
+    // --- PHASE GENERATORS ---
+    const generatePhaseData = (phase: number) => {
+        const nodes = new Float32Array(ELEMENT_COUNT * 3);
+        const lines = new Float32Array(ELEMENT_COUNT * 6); // 2 vertices per line
+        
+        for (let i = 0; i < ELEMENT_COUNT; i++) {
+            let nx = 0, ny = 0, nz = 0;
+            let tx = 0, ty = 0, tz = 0;
+            let drawLine = false;
 
-    // 1. Manifold surface (fragmented contour)
-    const generateManifold = (count: number) => {
-      const pos = new Float32Array(count * 3);
-      for (let i = 0; i < count; i++) {
-        const u = random() * Math.PI * 2;
-        const v = random() * Math.PI * 2;
-        // Torus-like but fragmented
-        const r = 3.0 + Math.sin(v * 2.0) * 0.5;
-        pos[i*3] = r * Math.cos(u) * 1.5;
-        pos[i*3+1] = r * Math.sin(u) * 0.8;
-        pos[i*3+2] = Math.sin(v) * 2.0;
+            if (phase === 0) { 
+                // 01 Constraint Seed: Triangle Core + Calibration Rings + Slicing Guides
+                if (i < 120) {
+                    // Triangle core
+                    const tri = [[0, 2.0, 0], [-1.8, -1.0, 0], [1.8, -1.0, 0]];
+                    const edge = Math.floor(i / 40);
+                    const pt = i % 40;
+                    const p1 = tri[edge];
+                    const p2 = tri[(edge+1)%3];
+                    const t = pt / 40;
+                    const t_next = (pt+1) / 40;
+                    nx = p1[0] + (p2[0]-p1[0])*t; ny = p1[1] + (p2[1]-p1[1])*t; nz = p1[2] + (p2[2]-p1[2])*t;
+                    tx = p1[0] + (p2[0]-p1[0])*t_next; ty = p1[1] + (p2[1]-p1[1])*t_next; tz = p1[2] + (p2[2]-p1[2])*t_next;
+                    drawLine = true;
+                } else if (i < 512) {
+                    // Diagonal slicing guides
+                    const a = (i / 392) * Math.PI;
+                    const len = 8.0;
+                    nx = Math.cos(a)*len; ny = Math.sin(a)*len; nz = 0;
+                    tx = -nx; ty = -ny; tz = 0;
+                    drawLine = random() > 0.8; // sparse guides
+                } else {
+                    // Concentric rings
+                    const ring = Math.floor((i-512) / 256);
+                    const pt = (i-512) % 256;
+                    const rad = 2.0 + ring * 1.2;
+                    const a1 = (pt / 256) * Math.PI * 2;
+                    nx = Math.cos(a1)*rad; ny = Math.sin(a1)*rad; nz = 0;
+                    const a2 = ((pt+1) / 256) * Math.PI * 2;
+                    tx = Math.cos(a2)*rad; ty = Math.sin(a2)*rad; tz = 0;
+                    drawLine = random() > 0.65; // fragmented arcs
+                }
+            } 
+            else if (phase === 1) { 
+                // 02 Topology Mesh: Implied Market Structure (Wave)
+                const c = i % 64; 
+                const r = Math.floor(i / 64);
+                nx = (c/64)*16 - 8; nz = (r/64)*12 - 6;
+                ny = Math.sin(nx*0.6)*Math.cos(nz*0.6)*2.5;
 
-        if (random() > 0.6) { // Fragmentation
-           pos[i*3] *= (0.8 + random() * 0.4);
-           pos[i*3+1] *= (0.8 + random() * 0.4);
-        }
-      }
-      return pos;
-    };
+                const nc = (c+1)%64;
+                tx = (nc/64)*16 - 8; tz = nz;
+                ty = Math.sin(tx*0.6)*Math.cos(tz*0.6)*2.5;
 
-    // 2. Fragmented Topology (reorganizing)
-    const generateTopology = (count: number) => {
-        const pos = new Float32Array(count * 3);
-        const size = Math.floor(Math.sqrt(count));
-        for (let i = 0; i < count; i++) {
-            const x = ((i % size) / size - 0.5) * 12;
-            const z = (Math.floor(i / size) / size - 0.5) * 8;
-            const y = Math.sin(x * 0.8) * Math.cos(z * 1.2) * 2.0 + Math.sin(x * 4.0) * 0.3;
-            
-            pos[i*3] = x;
-            pos[i*3+1] = y;
-            pos[i*3+2] = z;
+                drawLine = random() > 0.4 && c !== 63; // horizontal mesh lines
+            }
+            else if (phase === 2) { 
+                // 03 Lattice Reorganization: Structural Grid
+                const x = i % 16; 
+                const y = Math.floor(i/16) % 16; 
+                const z = Math.floor(i/256);
+                
+                nx = (x/16)*10 - 5; 
+                ny = (y/16)*10 - 5; 
+                nz = (z/16)*10 - 5;
+                
+                const nx_t = (x+1)%16; 
+                tx = (nx_t/16)*10 - 5; ty = ny; tz = nz;
 
-            if (random() > 0.85) { // Scatter for continuity mass
-                pos[i*3] += (random()-0.5)*2.0;
-                pos[i*3+2] += (random()-0.5)*2.0;
+                drawLine = random() > 0.65 && x !== 15; // sparse lattice connections
+            }
+
+            nodes[i*3] = nx; nodes[i*3+1] = ny; nodes[i*3+2] = nz;
+
+            if (drawLine) {
+                lines[i*6] = nx; lines[i*6+1] = ny; lines[i*6+2] = nz;
+                lines[i*6+3] = tx; lines[i*6+4] = ty; lines[i*6+5] = tz;
+            } else {
+                // Invisible zero-length line (prevents fog and stray artifacts)
+                lines[i*6] = nx; lines[i*6+1] = ny; lines[i*6+2] = nz;
+                lines[i*6+3] = nx; lines[i*6+4] = ny; lines[i*6+5] = nz;
             }
         }
-        return pos;
+
+        return { nodes, lines };
     };
 
-    // 3. Implied Latticed Cloud
-    const generateLatticeMass = (count: number) => {
-        const pos = new Float32Array(count * 3);
-        for (let i = 0; i < count; i++) {
-            const gridX = Math.floor(random() * 8) - 4;
-            const gridY = Math.floor(random() * 6) - 3;
-            const gridZ = Math.floor(random() * 8) - 4;
-            
-            // Nodes with volumetric noise
-            pos[i*3] = gridX * 1.2 + (random() - 0.5) * 0.8;
-            pos[i*3+1] = gridY * 1.2 + (random() - 0.5) * 0.8;
-            pos[i*3+2] = gridZ * 1.2 + (random() - 0.5) * 0.8;
-        }
-        return pos;
-    };
+    const phases = [0, 1, 2].map(p => generatePhaseData(p));
+    
+    const nodeTypes = new Float32Array(ELEMENT_COUNT);
+    for (let i = 0; i < ELEMENT_COUNT; i++) nodeTypes[i] = random() > 0.95 ? 1.0 : 0.0;
 
-    const pointStates = [
-      generateManifold(particleCount),
-      generateTopology(particleCount),
-      generateLatticeMass(particleCount),
-    ];
-
-    // Scaffold Lines (Fragmented Arcs)
-    const generateScaffold = (count: number, state: number) => {
-        const pos = new Float32Array(count * 3);
-        const source = pointStates[state];
-        for (let i = 0; i < count; i++) {
-            const idx = Math.floor(random() * (particleCount - 1));
-            pos[i*3] = source[idx*3];
-            pos[i*3+1] = source[idx*3+1];
-            pos[i*3+2] = source[idx*3+2];
-        }
-        return pos;
-    };
-
-    const lineStates = [
-        generateScaffold(lineCount, 0),
-        generateScaffold(lineCount, 1),
-        generateScaffold(lineCount, 2),
-    ];
-
-    const pointTypes = new Float32Array(particleCount);
-    for (let i = 0; i < particleCount; i++) {
-      pointTypes[i] = random() > 0.98 ? 1.0 : 0.0;
-    }
-
-    const geometry = new Geometry(gl, {
-      position: { size: 3, data: pointStates[0] },
-      target: { size: 3, data: pointStates[1] },
-      pointType: { size: 1, data: pointTypes },
+    const nodeGeometry = new Geometry(gl, {
+        position: { size: 3, data: phases[0].nodes },
+        target: { size: 3, data: phases[1].nodes },
+        pointType: { size: 1, data: nodeTypes }
     });
 
-    const program = new Program(gl, {
-      vertex,
-      fragment,
-      uniforms: {
-        uMix: { value: 0 },
-        uTime: { value: 0 },
-        uPixelRatio: { value: renderer.dpr },
-        uColorA: { value: cA },
-        uColorB: { value: cB },
-        uOpacity: { value: baseOpacity },
-        uMouse: { value: mouse.current },
-        uObjectScale: { value: objectScale },
-        uPointSize: { value: pointSize },
-      },
-      transparent: true,
-      depthTest: false,
+    const nodeProgram = new Program(gl, {
+        vertex, fragment,
+        uniforms: {
+            uMix: { value: 0 }, uTime: { value: 0 },
+            uPixelRatio: { value: renderer.dpr },
+            uColorA: { value: cA }, uColorB: { value: cB },
+            uOpacity: { value: 0.6 },
+            uMouse: { value: mouse.current },
+            uObjectScale: { value: objectScale }, uInstability: { value: 0.05 },
+        },
+        transparent: true, depthTest: false
     });
-
-    const particles = new Mesh(gl, { mode: gl.POINTS, geometry, program });
-    particles.setParent(scene);
+    
+    // Sparse Nodes
+    // We only render 1/4 of the nodes to keep it clean and structural, not cloudy.
+    const nodesMesh = new Mesh(gl, { 
+        mode: gl.POINTS, 
+        geometry: nodeGeometry, 
+        program: nodeProgram 
+    });
+    // @ts-ignore
+    nodeGeometry.drawRange = { start: 0, count: Math.floor(ELEMENT_COUNT * 0.25) }; 
+    nodesMesh.setParent(scene);
 
     const lineGeometry = new Geometry(gl, {
-        position: { size: 3, data: lineStates[0] },
-        target: { size: 3, data: lineStates[1] },
+        position: { size: 3, data: phases[0].lines },
+        target: { size: 3, data: phases[1].lines }
     });
 
     const lineProgram = new Program(gl, {
-        vertex: lineVertex,
-        fragment: lineFragment,
+        vertex: lineVertex, fragment: lineFragment,
         uniforms: {
-            uMix: { value: 0 },
-            uTime: { value: 0 },
-            uColor: { value: cL },
-            uOpacity: { value: 0.08 },
+            uMix: { value: 0 }, uTime: { value: 0 },
+            uColor: { value: cL }, uOpacity: { value: 0.35 },
             uMouse: { value: mouse.current },
-            uObjectScale: { value: objectScale },
+            uObjectScale: { value: objectScale }, uInstability: { value: 0.05 },
         },
-        transparent: true,
+        transparent: true, depthTest: false
     });
+    const linesMesh = new Mesh(gl, { mode: gl.LINES, geometry: lineGeometry, program: lineProgram });
+    linesMesh.setParent(scene);
 
-    const lines = new Mesh(gl, { mode: gl.LINES, geometry: lineGeometry, program: lineProgram });
-    lines.setParent(scene);
-
-    let currentState = 0;
-    let nextState = 1;
+    let currentPhase = 0;
+    let nextPhase = 1;
     let transitionTime = 0;
-    const transitionDuration = prefersReducedMotion ? 1000000 : 8.0;
+    const transitionDuration = 7.0;
     const waitDuration = 5.0;
     let waitTime = 0;
 
@@ -315,64 +322,64 @@ export const QuantMorphField: React.FC = () => {
     const update = (t: number) => {
       requestID = requestAnimationFrame(update);
       const time = t * 0.001;
+      
+      let mixVal = 0;
 
-      if (!prefersReducedMotion) {
-        if (waitTime < waitDuration) {
-          waitTime += 0.016;
-        } else {
-          transitionTime += 0.016;
-          const mixVal = Math.min(transitionTime / transitionDuration, 1.0);
-          program.uniforms.uMix.value = mixVal;
-          lineProgram.uniforms.uMix.value = mixVal;
+      if (waitTime < waitDuration) {
+        waitTime += 0.016;
+        mixVal = 0;
+      } else {
+        transitionTime += 0.016;
+        mixVal = Math.min(transitionTime / transitionDuration, 1.0);
+        
+        if (transitionTime >= transitionDuration) {
+          currentPhase = nextPhase;
+          nextPhase = (nextPhase + 1) % phases.length;
+          transitionTime = 0; waitTime = 0;
+          mixVal = 0;
 
-          if (transitionTime >= transitionDuration) {
-            currentState = nextState;
-            nextState = (nextState + 1) % pointStates.length;
-            transitionTime = 0;
-            waitTime = 0;
-            geometry.attributes.position.data = pointStates[currentState];
-            geometry.attributes.target.data = pointStates[nextState];
-            geometry.attributes.position.needsUpdate = true;
-            geometry.attributes.target.needsUpdate = true;
-            lineGeometry.attributes.position.data = lineStates[currentState];
-            lineGeometry.attributes.target.data = lineStates[nextState];
-            lineGeometry.attributes.position.needsUpdate = true;
-            lineGeometry.attributes.target.needsUpdate = true;
-            program.uniforms.uMix.value = 0;
-            lineProgram.uniforms.uMix.value = 0;
-          }
+          nodeGeometry.attributes.position.data = phases[currentPhase].nodes;
+          nodeGeometry.attributes.target.data = phases[nextPhase].nodes;
+          nodeGeometry.attributes.position.needsUpdate = true;
+          nodeGeometry.attributes.target.needsUpdate = true;
+
+          lineGeometry.attributes.position.data = phases[currentPhase].lines;
+          lineGeometry.attributes.target.data = phases[nextPhase].lines;
+          lineGeometry.attributes.position.needsUpdate = true;
+          lineGeometry.attributes.target.needsUpdate = true;
         }
       }
 
-      program.uniforms.uTime.value = time;
-      lineProgram.uniforms.uTime.value = time;
+      nodeProgram.uniforms.uMix.value = mixVal;
+      lineProgram.uniforms.uMix.value = mixVal;
+
+      // Controlled Instability (peaks during transition, settles during hold)
+      const baseInstability = 0.05;
+      const transitionInstability = Math.sin(mixVal * Math.PI) * 0.6; 
+      const currentInstability = baseInstability + transitionInstability;
       
-      const rotY = time * 0.02;
-      const rotX = Math.sin(time * 0.04) * 0.05;
-      particles.rotation.y = rotY;
-      particles.rotation.x = rotX;
-      lines.rotation.y = rotY;
-      lines.rotation.x = rotX;
+      nodeProgram.uniforms.uInstability.value = currentInstability;
+      lineProgram.uniforms.uInstability.value = currentInstability;
+
+      nodeProgram.uniforms.uTime.value = time;
+      lineProgram.uniforms.uTime.value = time;
+
+      const rotY = time * 0.01;
+      nodesMesh.rotation.y = rotY;
+      linesMesh.rotation.y = rotY;
 
       renderer.render({ scene, camera });
     };
-
     requestID = requestAnimationFrame(update);
 
     const handleResize = () => {
-      const width = container.clientWidth || window.innerWidth;
-      const height = container.clientHeight || window.innerHeight;
-      renderer.setSize(width, height);
+      renderer.setSize(container.clientWidth, container.clientHeight);
       camera.perspective({ aspect: gl.canvas.width / gl.canvas.height });
     };
 
     const handleMouseMove = (e: MouseEvent) => {
         const rect = container.getBoundingClientRect();
-        // Raw mouse tracking for interaction
-        mouse.current.set(
-            ((e.clientX - rect.left) / rect.width) * 2 - 1,
-            -((e.clientY - rect.top) / rect.height) * 2 + 1
-        );
+        mouse.current.set(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1);
     };
 
     window.addEventListener('resize', handleResize);
@@ -383,25 +390,12 @@ export const QuantMorphField: React.FC = () => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('mousemove', handleMouseMove);
       cancelAnimationFrame(requestID);
-      if (container && gl.canvas.parentElement) {
-        container.removeChild(gl.canvas);
-      }
+      if (container && gl.canvas.parentElement) container.removeChild(gl.canvas);
       gl.getExtension('WEBGL_lose_context')?.loseContext();
     };
-  }, [colorA, colorB, borderColor, particleCount, lineCount, pointSize, objectScale, cameraZ]);
+  }, [colorA, colorB, borderColor, objectScale, cameraZ]);
 
   return (
-    <Box
-      ref={containerRef}
-      position="absolute"
-      top={0}
-      left={0}
-      w="100%"
-      h="100%"
-      zIndex={0}
-      pointerEvents="none"
-      opacity={0.9}
-      bg="transparent"
-    />
+    <Box ref={containerRef} position="absolute" top={0} left={0} w="100%" h="100%" zIndex={0} pointerEvents="none" opacity={0.9} />
   );
 };
