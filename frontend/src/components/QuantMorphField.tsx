@@ -142,7 +142,7 @@ export const QuantMorphField: React.FC = () => {
     const generateRings = () => {
         const points: number[] = [];
         const numRings = 5;
-        for (let r = 0; j < numRings; r++) {
+        for (let r = 0; r < numRings; r++) {
             const radius = (r + 1) * 1.5;
             const segments = 120;
             for (let i = 0; i < segments; i++) {
