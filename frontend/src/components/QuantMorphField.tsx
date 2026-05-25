@@ -13,38 +13,49 @@ const createRandom = (seed: number) => {
 
 const vertex = `
   attribute vec3 position;
+  attribute vec3 target;
   attribute float pointType;
 
   uniform mat4 modelViewMatrix;
   uniform mat4 projectionMatrix;
+  uniform float uMix;
   uniform float uTime;
   uniform float uPixelRatio;
   uniform vec2 uMouse;
   uniform float uObjectScale;
+  uniform float uDistortion;
 
   varying float vType;
   varying float vAlpha;
 
   void main() {
     vType = pointType;
-    vec3 pos = position * uObjectScale;
     
-    // Constant analytical drift
-    float drift = sin(uTime * 0.08 + position.z * 0.1) * 0.04;
-    pos.x += drift;
-    pos.y += drift;
+    // Smooth transition
+    float t = smoothstep(0.0, 1.0, uMix);
+    vec3 pos = mix(position, target, t);
+    
+    // Global analytical drift
+    float driftX = sin(uTime * 0.08 + pos.z * 0.5) * 0.05;
+    float driftY = cos(uTime * 0.08 + pos.x * 0.5) * 0.05;
+    pos.x += driftX;
+    pos.y += driftY;
 
-    // Mouse Interaction: Subtle local distortion
-    vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
-    vec3 mousePos = vec3(uMouse.x * 5.0, uMouse.y * 3.0, 0.0);
+    // Field Distortion phase modulation
+    float wave = sin(uTime * 1.5 + pos.x * 2.0) * cos(uTime * 1.2 + pos.z * 2.0);
+    pos.y += wave * uDistortion * 0.5;
+
+    // Mouse Interaction
+    vec4 mvPosition = modelViewMatrix * vec4(pos * uObjectScale, 1.0);
+    vec3 mousePos = vec3(uMouse.x * 6.0, uMouse.y * 4.0, 0.0);
     float dist = distance(mvPosition.xyz, mousePos);
-    float distortion = smoothstep(1.8, 0.0, dist) * 0.08;
-    mvPosition.xyz += normalize(mvPosition.xyz - mousePos + 0.001) * distortion;
+    float repulsion = smoothstep(1.5, 0.0, dist) * 0.12;
+    mvPosition.xyz += normalize(mvPosition.xyz - mousePos + 0.001) * repulsion;
 
     gl_Position = projectionMatrix * mvPosition;
     
-    // Tiny measurement nodes
-    float size = (vType > 0.5) ? 1.1 : 0.6;
+    // Tiny data nodes
+    float size = (vType > 0.5) ? 0.8 : 0.45;
     gl_PointSize = size * uPixelRatio * (400.0 / -mvPosition.z);
     
     vAlpha = smoothstep(-25.0, -1.0, mvPosition.z);
@@ -56,38 +67,49 @@ const fragment = `
   varying float vType;
   varying float vAlpha;
   
-  uniform vec3 uColor;
+  uniform vec3 uColorA;
+  uniform vec3 uColorB;
   uniform float uOpacity;
 
   void main() {
     float d = distance(gl_PointCoord, vec2(0.5));
     if (d > 0.48) discard;
 
-    float alpha = uOpacity * vAlpha * (vType > 0.5 ? 1.4 : 0.7);
-    gl_FragColor = vec4(uColor, alpha);
+    vec3 color = mix(uColorA, uColorB, vType);
+    float alpha = uOpacity * vAlpha * (vType > 0.5 ? 1.2 : 0.8);
+    gl_FragColor = vec4(color, alpha);
   }
 `;
 
 const lineVertex = `
   attribute vec3 position;
+  attribute vec3 target;
+
   uniform mat4 modelViewMatrix;
   uniform mat4 projectionMatrix;
+  uniform float uMix;
   uniform float uTime;
   uniform vec2 uMouse;
   uniform float uObjectScale;
+  uniform float uDistortion;
 
   void main() {
-    vec3 pos = position * uObjectScale;
+    float t = smoothstep(0.0, 1.0, uMix);
+    vec3 pos = mix(position, target, t);
     
-    float drift = sin(uTime * 0.08 + position.z * 0.1) * 0.04;
-    pos.x += drift;
-    pos.y += drift;
+    float driftX = sin(uTime * 0.08 + pos.z * 0.5) * 0.05;
+    float driftY = cos(uTime * 0.08 + pos.x * 0.5) * 0.05;
+    pos.x += driftX;
+    pos.y += driftY;
 
-    vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
-    vec3 mousePos = vec3(uMouse.x * 5.0, uMouse.y * 3.0, 0.0);
+    float wave = sin(uTime * 1.5 + pos.x * 2.0) * cos(uTime * 1.2 + pos.z * 2.0);
+    pos.y += wave * uDistortion * 0.5;
+
+    vec4 mvPosition = modelViewMatrix * vec4(pos * uObjectScale, 1.0);
+    vec3 mousePos = vec3(uMouse.x * 6.0, uMouse.y * 4.0, 0.0);
     float dist = distance(mvPosition.xyz, mousePos);
-    float distortion = smoothstep(1.5, 0.0, dist) * 0.06;
-    mvPosition.xyz += normalize(mvPosition.xyz - mousePos + 0.001) * distortion;
+    float repulsion = smoothstep(1.5, 0.0, dist) * 0.08;
+    mvPosition.xyz += normalize(mvPosition.xyz - mousePos + 0.001) * repulsion;
 
     gl_Position = projectionMatrix * mvPosition;
   }
@@ -102,15 +124,16 @@ const lineFragment = `
   }
 `;
 
+const NODE_COUNT = 4000;
+const LINE_COUNT = 1200;
+
 export const QuantMorphField: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const mouse = useRef(new Vec2(0, 0));
-  const [lineColor, pointColor] = useToken('colors', ['ui.border', 'gray.100']);
+  const [colorA, colorB, borderColor] = useToken('colors', ['gray.50', 'gray.300', 'ui.border']);
 
-  // Instrument Configuration
-  const objectScale = useBreakpointValue({ base: 0.5, md: 0.8, lg: 1.0 }) || 0.5;
-  const cameraZ = useBreakpointValue({ base: 18, md: 15, lg: 14 }) || 18;
-  const instrumentOpacity = useBreakpointValue({ base: 0.25, md: 0.35, lg: 0.45 }) || 0.35;
+  const objectScale = useBreakpointValue({ base: 0.55, md: 0.85, lg: 1.05 }) || 0.55;
+  const cameraZ = useBreakpointValue({ base: 18, md: 15, lg: 13 }) || 18;
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -133,158 +156,212 @@ export const QuantMorphField: React.FC = () => {
       return [r, g, b];
     };
 
-    const cL = hexToVec3(lineColor || '#4A5568');
-    const cP = hexToVec3(pointColor || '#f7fafc');
+    const cA = hexToVec3(colorA || '#ffffff');
+    const cB = hexToVec3(colorB || '#cbd5e0');
+    const cL = hexToVec3(borderColor || '#2d3748');
 
-    const random = createRandom(9999);
+    const random = createRandom(1337);
 
-    // --- INSTRUMENT GEOMETRY GENERATORS ---
+    // --- PHASE GENERATORS ---
 
-    // 1. Concentric Calibration Rings (3-5 visible)
-    const generateRings = () => {
-        const points: number[] = [];
-        const numRings = 5;
-        for (let r = 0; r < numRings; r++) {
-            const radius = 1.5 + r * 1.2;
-            const segments = 200;
-            for (let i = 0; i < segments; i++) {
-                // Stochastic gaps for technical look
-                if (random() > 0.45) continue;
-                
-                const angle = (i / segments) * Math.PI * 2;
-                const angleNext = ((i + 1.5) / segments) * Math.PI * 2;
-                
-                points.push(radius * Math.cos(angle), radius * Math.sin(angle), 0);
-                points.push(radius * Math.cos(angleNext), radius * Math.sin(angleNext), 0);
+    const generatePhaseData = (phase: number) => {
+        const nodes = new Float32Array(NODE_COUNT * 3);
+        const lines = new Float32Array(LINE_COUNT * 3);
+
+        const fillRandom = (arr: Float32Array, start: number, count: number, r: number) => {
+            for (let i = 0; i < count; i++) {
+                const u = random() * Math.PI * 2;
+                const v = Math.acos(2 * random() - 1);
+                const dist = r * Math.pow(random(), 1/3);
+                arr[(start + i) * 3] = dist * Math.sin(v) * Math.cos(u);
+                arr[(start + i) * 3 + 1] = dist * Math.sin(v) * Math.sin(u);
+                arr[(start + i) * 3 + 2] = dist * Math.cos(v);
+            }
+        };
+
+        if (phase === 0) { // Constraint Seed
+            // Triangular core
+            const triPoints = [[0,1.2,0], [-1,-0.6,0], [1,-0.6,0]];
+            for (let i = 0; i < NODE_COUNT; i++) {
+                const p = triPoints[i % 3];
+                nodes[i*3] = p[0] + (random()-0.5)*0.1;
+                nodes[i*3+1] = p[1] + (random()-0.5)*0.1;
+                nodes[i*3+2] = p[2] + (random()-0.5)*0.1;
+            }
+            // Rings and Guides
+            for (let i = 0; i < LINE_COUNT / 2; i++) {
+                const r = 1.5 + Math.floor(i / 100) * 1.0;
+                const angle = (i % 100) / 100 * Math.PI * 2;
+                lines[i*3] = r * Math.cos(angle);
+                lines[i*3+1] = r * Math.sin(angle);
+                lines[i*3+2] = 0;
+            }
+            for (let i = Math.floor(LINE_COUNT/2); i < LINE_COUNT; i++) {
+                const side = i % 2 === 0 ? 1 : -1;
+                lines[i*3] = side * 8;
+                lines[i*3+1] = (random()-0.5) * 10;
+                lines[i*3+2] = (random()-0.5) * 5;
+            }
+        } 
+        else if (phase === 1) { // Contour Emergence
+            for (let i = 0; i < NODE_COUNT; i++) {
+                const r = 2.5 + random() * 2.0;
+                const theta = random() * Math.PI * 2;
+                nodes[i*3] = r * Math.cos(theta);
+                nodes[i*3+1] = r * Math.sin(theta) * 0.5 + Math.sin(r * 2.0) * 0.5;
+                nodes[i*3+2] = (random()-0.5) * 2.0;
+            }
+            for (let i = 0; i < LINE_COUNT; i++) {
+                const r = 1.5 + random() * 4.0;
+                const theta = random() * Math.PI * 2;
+                lines[i*3] = r * Math.cos(theta);
+                lines[i*3+1] = r * Math.sin(theta) * 0.6;
+                lines[i*3+2] = (random()-0.5) * 1.5;
             }
         }
-        return new Float32Array(points);
-    };
-
-    // 2. Slicing / Measurement Guide Lines
-    const generateGuides = () => {
-        const points: number[] = [];
-        const numGuides = 12;
-        for (let i = 0; i < numGuides; i++) {
-            const angle = (i / numGuides) * Math.PI;
-            const len = 8.0;
-            const x = Math.cos(angle) * len;
-            const y = Math.sin(angle) * len;
-            
-            // Draw diagonal slices across the instrument
-            points.push(-x, -y, (random()-0.5) * 2.0);
-            points.push(x, y, (random()-0.5) * 2.0);
-            
-            // Optional shorter cross-hairs
-            if (random() > 0.5) {
-                const offX = (random()-0.5) * 4.0;
-                points.push(offX, -2, 0);
-                points.push(offX, 2, 0);
+        else if (phase === 2 || phase === 3) { // Surface Formation / Field Distortion
+            const size = Math.floor(Math.sqrt(NODE_COUNT));
+            for (let i = 0; i < NODE_COUNT; i++) {
+                const x = (i % size) / size * 10 - 5;
+                const z = Math.floor(i / size) / size * 8 - 4;
+                nodes[i*3] = x;
+                nodes[i*3+1] = Math.sin(x * 1.2) * Math.cos(z * 1.2) * 1.5;
+                nodes[i*3+2] = z;
+            }
+            const lSize = Math.floor(Math.sqrt(LINE_COUNT));
+            for (let i = 0; i < LINE_COUNT; i++) {
+                const x = (i % lSize) / lSize * 10 - 5;
+                const z = Math.floor(i / lSize) / lSize * 8 - 4;
+                lines[i*3] = x;
+                lines[i*3+1] = Math.sin(x * 1.2) * Math.cos(z * 1.2) * 1.5;
+                lines[i*3+2] = z;
             }
         }
-        return new Float32Array(points);
-    };
-
-    // 3. Fragmented Contour Arcs
-    const generateContours = () => {
-        const points: number[] = [];
-        const numContours = 6;
-        for (let c = 0; c < numContours; c++) {
-            const z = (c - numContours/2) * 1.5;
-            const segments = 60;
-            const radius = 4.0;
-            for (let i = 0; i < segments; i++) {
-                if (random() > 0.3) continue;
-                const angle = (i / segments - 0.5) * Math.PI * 0.8;
-                const x = radius * Math.sin(angle);
-                const y = Math.cos(angle) * 1.5 + Math.sin(x * 0.5) * 0.5;
-                
-                points.push(x, y, z);
-                points.push(x + 0.2, y + 0.1, z);
+        else if (phase === 4) { // Lattice Reorganization
+            for (let i = 0; i < NODE_COUNT; i++) {
+                const gx = Math.floor(random() * 10) - 5;
+                const gy = Math.floor(random() * 6) - 3;
+                const gz = Math.floor(random() * 8) - 4;
+                nodes[i*3] = gx * 0.8;
+                nodes[i*3+1] = gy * 0.8;
+                nodes[i*3+2] = gz * 0.8;
+            }
+            fillRandom(lines, 0, LINE_COUNT, 5);
+        }
+        else { // Reasoning Topology
+            for (let i = 0; i < NODE_COUNT; i++) {
+                const r = 4.0;
+                const u = random() * Math.PI * 2;
+                const v = Math.acos(2 * random() - 1);
+                nodes[i*3] = r * Math.sin(v) * Math.cos(u) * 1.5;
+                nodes[i*3+1] = r * Math.sin(v) * Math.sin(u) * 0.4;
+                nodes[i*3+2] = r * Math.cos(v) * 0.8;
+            }
+            for (let i = 0; i < LINE_COUNT; i++) {
+                const idx = Math.floor(random() * (NODE_COUNT-1));
+                lines[i*3] = nodes[idx*3];
+                lines[i*3+1] = nodes[idx*3+1];
+                lines[i*3+2] = nodes[idx*3+2];
             }
         }
-        return new Float32Array(points);
+
+        return { nodes, lines };
     };
 
-    // 4. Sparse Measurement Nodes
-    const generateNodes = (count: number) => {
-        const pos = new Float32Array(count * 3);
-        const types = new Float32Array(count);
-        for (let i = 0; i < count; i++) {
-            // Distribute mainly within the ring field
-            const r = random() * 6.0;
-            const theta = random() * Math.PI * 2;
-            const phi = random() * Math.PI;
-            
-            pos[i*3] = r * Math.sin(phi) * Math.cos(theta);
-            pos[i*3+1] = r * Math.sin(phi) * Math.sin(theta) * 0.7;
-            pos[i*3+2] = r * Math.cos(phi) * 0.5;
-            
-            types[i] = random() > 0.94 ? 1.0 : 0.0;
-        }
-        return { pos, types };
-    };
+    const phases = [0, 1, 2, 3, 4, 5].map(p => generatePhaseData(p));
+    
+    const nodeTypes = new Float32Array(NODE_COUNT);
+    for (let i = 0; i < NODE_COUNT; i++) nodeTypes[i] = random() > 0.98 ? 1.0 : 0.0;
 
-    // Initialize Meshes
-    const nodeData = generateNodes(2500);
     const nodeGeometry = new Geometry(gl, {
-        position: { size: 3, data: nodeData.pos },
-        pointType: { size: 1, data: nodeData.types }
+        position: { size: 3, data: phases[0].nodes },
+        target: { size: 3, data: phases[1].nodes },
+        pointType: { size: 1, data: nodeTypes }
     });
+
     const nodeProgram = new Program(gl, {
         vertex, fragment,
         uniforms: {
-            uTime: { value: 0 },
+            uMix: { value: 0 }, uTime: { value: 0 },
             uPixelRatio: { value: renderer.dpr },
-            uColor: { value: cP },
-            uOpacity: { value: 0.35 },
-            uMouse: { value: mouse.current },
-            uObjectScale: { value: objectScale },
+            uColorA: { value: cA }, uColorB: { value: cB },
+            uOpacity: { value: 0.45 }, uMouse: { value: mouse.current },
+            uObjectScale: { value: objectScale }, uDistortion: { value: 0 },
         },
         transparent: true, depthTest: false
     });
     const nodesMesh = new Mesh(gl, { mode: gl.POINTS, geometry: nodeGeometry, program: nodeProgram });
     nodesMesh.setParent(scene);
 
-    const ringData = generateRings();
-    const guideData = generateGuides();
-    const contourData = generateContours();
-    const allLines = new Float32Array(ringData.length + guideData.length + contourData.length);
-    allLines.set(ringData);
-    allLines.set(guideData, ringData.length);
-    allLines.set(contourData, ringData.length + guideData.length);
+    const lineGeometry = new Geometry(gl, {
+        position: { size: 3, data: phases[0].lines },
+        target: { size: 3, data: phases[1].lines }
+    });
 
-    const lineGeometry = new Geometry(gl, { position: { size: 3, data: allLines } });
     const lineProgram = new Program(gl, {
-        vertex: lineVertex,
-        fragment: lineFragment,
+        vertex: lineVertex, fragment: lineFragment,
         uniforms: {
-            uTime: { value: 0 },
-            uColor: { value: cL },
-            uOpacity: { value: instrumentOpacity },
+            uMix: { value: 0 }, uTime: { value: 0 },
+            uColor: { value: cL }, uOpacity: { value: 0.15 },
             uMouse: { value: mouse.current },
-            uObjectScale: { value: objectScale },
+            uObjectScale: { value: objectScale }, uDistortion: { value: 0 },
         },
         transparent: true
     });
     const linesMesh = new Mesh(gl, { mode: gl.LINES, geometry: lineGeometry, program: lineProgram });
     linesMesh.setParent(scene);
 
+    let currentPhase = 0;
+    let nextPhase = 1;
+    let transitionTime = 0;
+    const transitionDuration = 7.0;
+    const waitDuration = 5.0;
+    let waitTime = 0;
+
     let requestID: number;
     const update = (t: number) => {
       requestID = requestAnimationFrame(update);
       const time = t * 0.001;
       
+      if (waitTime < waitDuration) {
+        waitTime += 0.016;
+      } else {
+        transitionTime += 0.016;
+        const m = Math.min(transitionTime / transitionDuration, 1.0);
+        nodeProgram.uniforms.uMix.value = m;
+        lineProgram.uniforms.uMix.value = m;
+
+        if (transitionTime >= transitionDuration) {
+          currentPhase = nextPhase;
+          nextPhase = (nextPhase + 1) % phases.length;
+          transitionTime = 0; waitTime = 0;
+
+          nodeGeometry.attributes.position.data = phases[currentPhase].nodes;
+          nodeGeometry.attributes.target.data = phases[nextPhase].nodes;
+          nodeGeometry.attributes.position.needsUpdate = true;
+          nodeGeometry.attributes.target.needsUpdate = true;
+
+          lineGeometry.attributes.position.data = phases[currentPhase].lines;
+          lineGeometry.attributes.target.data = phases[nextPhase].lines;
+          lineGeometry.attributes.position.needsUpdate = true;
+          lineGeometry.attributes.target.needsUpdate = true;
+          
+          nodeProgram.uniforms.uMix.value = 0;
+          lineProgram.uniforms.uMix.value = 0;
+        }
+      }
+
+      // Modulate uDistortion during Phase 3 (Field Distortion)
+      const distortionVal = currentPhase === 3 ? Math.sin(time * 2.0) * 0.5 + 0.5 : 0;
+      nodeProgram.uniforms.uDistortion.value = distortionVal;
+      lineProgram.uniforms.uDistortion.value = distortionVal;
+
       nodeProgram.uniforms.uTime.value = time;
       lineProgram.uniforms.uTime.value = time;
 
-      const rotY = time * 0.012; // Extremely slow recalibration
-      const rotX = Math.sin(time * 0.05) * 0.03;
-      
+      const rotY = time * 0.012;
       nodesMesh.rotation.y = rotY;
-      nodesMesh.rotation.x = rotX;
       linesMesh.rotation.y = rotY;
-      linesMesh.rotation.x = rotX;
 
       renderer.render({ scene, camera });
     };
@@ -311,9 +388,9 @@ export const QuantMorphField: React.FC = () => {
       if (container && gl.canvas.parentElement) container.removeChild(gl.canvas);
       gl.getExtension('WEBGL_lose_context')?.loseContext();
     };
-  }, [lineColor, pointColor, objectScale, cameraZ, instrumentOpacity]);
+  }, [colorA, colorB, borderColor, objectScale, cameraZ]);
 
   return (
-    <Box ref={containerRef} position="absolute" top={0} left={0} w="100%" h="100%" zIndex={0} pointerEvents="none" opacity={0.8} />
+    <Box ref={containerRef} position="absolute" top={0} left={0} w="100%" h="100%" zIndex={0} pointerEvents="none" opacity={0.85} />
   );
 };
