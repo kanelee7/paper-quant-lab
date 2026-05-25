@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useMemo } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Renderer, Camera, Transform, Geometry, Program, Mesh, Vec2 } from 'ogl';
 import { Box, useToken, useBreakpointValue } from '@chakra-ui/react';
 
@@ -29,25 +29,25 @@ const vertex = `
     vType = pointType;
     vec3 pos = position * uObjectScale;
     
-    // Constraint-field drift (Instrument-grade motion)
-    float drift = sin(uTime * 0.1 + position.z * 0.2) * 0.05;
+    // Constant analytical drift
+    float drift = sin(uTime * 0.08 + position.z * 0.1) * 0.04;
     pos.x += drift;
     pos.y += drift;
 
-    // Mouse Interaction: Local distortion (Calibration feel)
+    // Mouse Interaction: Subtle local distortion
     vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
     vec3 mousePos = vec3(uMouse.x * 5.0, uMouse.y * 3.0, 0.0);
     float dist = distance(mvPosition.xyz, mousePos);
-    float distortion = smoothstep(2.0, 0.0, dist) * 0.1;
+    float distortion = smoothstep(1.8, 0.0, dist) * 0.08;
     mvPosition.xyz += normalize(mvPosition.xyz - mousePos + 0.001) * distortion;
 
     gl_Position = projectionMatrix * mvPosition;
     
-    // Measurement points (tiny dots)
-    float size = (vType > 0.5) ? 0.7 : 0.4;
+    // Tiny measurement nodes
+    float size = (vType > 0.5) ? 1.1 : 0.6;
     gl_PointSize = size * uPixelRatio * (400.0 / -mvPosition.z);
     
-    vAlpha = smoothstep(-20.0, -1.0, mvPosition.z);
+    vAlpha = smoothstep(-25.0, -1.0, mvPosition.z);
   }
 `;
 
@@ -63,7 +63,7 @@ const fragment = `
     float d = distance(gl_PointCoord, vec2(0.5));
     if (d > 0.48) discard;
 
-    float alpha = uOpacity * vAlpha * (vType > 0.5 ? 1.4 : 0.6);
+    float alpha = uOpacity * vAlpha * (vType > 0.5 ? 1.4 : 0.7);
     gl_FragColor = vec4(uColor, alpha);
   }
 `;
@@ -78,14 +78,15 @@ const lineVertex = `
 
   void main() {
     vec3 pos = position * uObjectScale;
-    float drift = sin(uTime * 0.1 + position.z * 0.2) * 0.05;
+    
+    float drift = sin(uTime * 0.08 + position.z * 0.1) * 0.04;
     pos.x += drift;
     pos.y += drift;
 
     vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
     vec3 mousePos = vec3(uMouse.x * 5.0, uMouse.y * 3.0, 0.0);
     float dist = distance(mvPosition.xyz, mousePos);
-    float distortion = smoothstep(1.5, 0.0, dist) * 0.08;
+    float distortion = smoothstep(1.5, 0.0, dist) * 0.06;
     mvPosition.xyz += normalize(mvPosition.xyz - mousePos + 0.001) * distortion;
 
     gl_Position = projectionMatrix * mvPosition;
@@ -107,8 +108,9 @@ export const QuantMorphField: React.FC = () => {
   const [lineColor, pointColor] = useToken('colors', ['ui.border', 'gray.100']);
 
   // Instrument Configuration
-  const objectScale = useBreakpointValue({ base: 0.6, md: 0.8, lg: 1.0 }) || 0.6;
-  const cameraZ = useBreakpointValue({ base: 18, md: 15, lg: 13 }) || 18;
+  const objectScale = useBreakpointValue({ base: 0.5, md: 0.8, lg: 1.0 }) || 0.5;
+  const cameraZ = useBreakpointValue({ base: 18, md: 15, lg: 14 }) || 18;
+  const instrumentOpacity = useBreakpointValue({ base: 0.25, md: 0.35, lg: 0.45 }) || 0.35;
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -131,74 +133,105 @@ export const QuantMorphField: React.FC = () => {
       return [r, g, b];
     };
 
-    const cL = hexToVec3(lineColor || '#2d3748');
+    const cL = hexToVec3(lineColor || '#4A5568');
     const cP = hexToVec3(pointColor || '#f7fafc');
 
-    const random = createRandom(888);
+    const random = createRandom(9999);
 
-    // --- INSTRUMENT GEOMETRY GENERATION ---
+    // --- INSTRUMENT GEOMETRY GENERATORS ---
 
-    // 1. Calibration Rings (Sparse concentric arcs)
+    // 1. Concentric Calibration Rings (3-5 visible)
     const generateRings = () => {
         const points: number[] = [];
         const numRings = 5;
         for (let r = 0; r < numRings; r++) {
-            const radius = (r + 1) * 1.5;
-            const segments = 120;
+            const radius = 1.5 + r * 1.2;
+            const segments = 200;
             for (let i = 0; i < segments; i++) {
-                // Fragmented arcs
-                if (random() > 0.4) continue;
+                // Stochastic gaps for technical look
+                if (random() > 0.45) continue;
+                
                 const angle = (i / segments) * Math.PI * 2;
-                points.push(radius * Math.cos(angle), radius * Math.sin(angle), (random()-0.5)*0.5);
-                points.push(radius * Math.cos(angle + 0.05), radius * Math.sin(angle + 0.05), (random()-0.5)*0.5);
+                const angleNext = ((i + 1.5) / segments) * Math.PI * 2;
+                
+                points.push(radius * Math.cos(angle), radius * Math.sin(angle), 0);
+                points.push(radius * Math.cos(angleNext), radius * Math.sin(angleNext), 0);
             }
         }
         return new Float32Array(points);
     };
 
-    // 2. Topology Arcs (Fragmented contour guiding)
+    // 2. Slicing / Measurement Guide Lines
+    const generateGuides = () => {
+        const points: number[] = [];
+        const numGuides = 12;
+        for (let i = 0; i < numGuides; i++) {
+            const angle = (i / numGuides) * Math.PI;
+            const len = 8.0;
+            const x = Math.cos(angle) * len;
+            const y = Math.sin(angle) * len;
+            
+            // Draw diagonal slices across the instrument
+            points.push(-x, -y, (random()-0.5) * 2.0);
+            points.push(x, y, (random()-0.5) * 2.0);
+            
+            // Optional shorter cross-hairs
+            if (random() > 0.5) {
+                const offX = (random()-0.5) * 4.0;
+                points.push(offX, -2, 0);
+                points.push(offX, 2, 0);
+            }
+        }
+        return new Float32Array(points);
+    };
+
+    // 3. Fragmented Contour Arcs
     const generateContours = () => {
         const points: number[] = [];
-        const numContours = 8;
+        const numContours = 6;
         for (let c = 0; c < numContours; c++) {
-            const z = (c - numContours/2) * 1.2;
-            const segments = 100;
+            const z = (c - numContours/2) * 1.5;
+            const segments = 60;
+            const radius = 4.0;
             for (let i = 0; i < segments; i++) {
                 if (random() > 0.3) continue;
-                const x = (i / segments - 0.5) * 15;
-                const y = Math.sin(x * 0.5 + z * 0.2) * 1.5;
+                const angle = (i / segments - 0.5) * Math.PI * 0.8;
+                const x = radius * Math.sin(angle);
+                const y = Math.cos(angle) * 1.5 + Math.sin(x * 0.5) * 0.5;
+                
                 points.push(x, y, z);
-                points.push(x + 0.1, y + Math.cos(x * 0.5)*0.05, z);
+                points.push(x + 0.2, y + 0.1, z);
             }
         }
         return new Float32Array(points);
     };
 
-    // 3. Lattice Anchors (Measurement Points)
-    const generateAnchors = (count: number) => {
+    // 4. Sparse Measurement Nodes
+    const generateNodes = (count: number) => {
         const pos = new Float32Array(count * 3);
         const types = new Float32Array(count);
         for (let i = 0; i < count; i++) {
-            const r = 2.0 + random() * 4.0;
+            // Distribute mainly within the ring field
+            const r = random() * 6.0;
             const theta = random() * Math.PI * 2;
             const phi = random() * Math.PI;
             
             pos[i*3] = r * Math.sin(phi) * Math.cos(theta);
-            pos[i*3+1] = r * Math.sin(phi) * Math.sin(theta) * 0.6;
-            pos[i*3+2] = r * Math.cos(phi) * 0.8;
+            pos[i*3+1] = r * Math.sin(phi) * Math.sin(theta) * 0.7;
+            pos[i*3+2] = r * Math.cos(phi) * 0.5;
             
-            types[i] = random() > 0.95 ? 1.0 : 0.0;
+            types[i] = random() > 0.94 ? 1.0 : 0.0;
         }
         return { pos, types };
     };
 
-    // Points
-    const anchors = generateAnchors(3500);
-    const pointGeometry = new Geometry(gl, {
-        position: { size: 3, data: anchors.pos },
-        pointType: { size: 1, data: anchors.types }
+    // Initialize Meshes
+    const nodeData = generateNodes(2500);
+    const nodeGeometry = new Geometry(gl, {
+        position: { size: 3, data: nodeData.pos },
+        pointType: { size: 1, data: nodeData.types }
     });
-    const pointProgram = new Program(gl, {
+    const nodeProgram = new Program(gl, {
         vertex, fragment,
         uniforms: {
             uTime: { value: 0 },
@@ -210,24 +243,25 @@ export const QuantMorphField: React.FC = () => {
         },
         transparent: true, depthTest: false
     });
-    const pointsMesh = new Mesh(gl, { mode: gl.POINTS, geometry: pointGeometry, program: pointProgram });
-    pointsMesh.setParent(scene);
+    const nodesMesh = new Mesh(gl, { mode: gl.POINTS, geometry: nodeGeometry, program: nodeProgram });
+    nodesMesh.setParent(scene);
 
-    // Lines (Instrument Scaffolding)
     const ringData = generateRings();
+    const guideData = generateGuides();
     const contourData = generateContours();
-    const combinedLines = new Float32Array(ringData.length + contourData.length);
-    combinedLines.set(ringData);
-    combinedLines.set(contourData, ringData.length);
+    const allLines = new Float32Array(ringData.length + guideData.length + contourData.length);
+    allLines.set(ringData);
+    allLines.set(guideData, ringData.length);
+    allLines.set(contourData, ringData.length + guideData.length);
 
-    const lineGeometry = new Geometry(gl, { position: { size: 3, data: combinedLines } });
+    const lineGeometry = new Geometry(gl, { position: { size: 3, data: allLines } });
     const lineProgram = new Program(gl, {
         vertex: lineVertex,
         fragment: lineFragment,
         uniforms: {
             uTime: { value: 0 },
             uColor: { value: cL },
-            uOpacity: { value: 0.15 },
+            uOpacity: { value: instrumentOpacity },
             uMouse: { value: mouse.current },
             uObjectScale: { value: objectScale },
         },
@@ -241,12 +275,16 @@ export const QuantMorphField: React.FC = () => {
       requestID = requestAnimationFrame(update);
       const time = t * 0.001;
       
-      pointProgram.uniforms.uTime.value = time;
+      nodeProgram.uniforms.uTime.value = time;
       lineProgram.uniforms.uTime.value = time;
 
-      const rotY = time * 0.015;
-      pointsMesh.rotation.y = rotY;
+      const rotY = time * 0.012; // Extremely slow recalibration
+      const rotX = Math.sin(time * 0.05) * 0.03;
+      
+      nodesMesh.rotation.y = rotY;
+      nodesMesh.rotation.x = rotX;
       linesMesh.rotation.y = rotY;
+      linesMesh.rotation.x = rotX;
 
       renderer.render({ scene, camera });
     };
@@ -273,7 +311,7 @@ export const QuantMorphField: React.FC = () => {
       if (container && gl.canvas.parentElement) container.removeChild(gl.canvas);
       gl.getExtension('WEBGL_lose_context')?.loseContext();
     };
-  }, [lineColor, pointColor, objectScale, cameraZ]);
+  }, [lineColor, pointColor, objectScale, cameraZ, instrumentOpacity]);
 
   return (
     <Box ref={containerRef} position="absolute" top={0} left={0} w="100%" h="100%" zIndex={0} pointerEvents="none" opacity={0.8} />
