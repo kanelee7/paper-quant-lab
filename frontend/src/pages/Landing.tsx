@@ -22,6 +22,7 @@ import {
   TimeIcon,
 } from '@chakra-ui/icons';
 import { keyframes } from '@emotion/react';
+import { motion } from 'framer-motion';
 import { QuantMorphField } from '../components/QuantMorphField';
 import { QuantGlyphLayer } from '../components/QuantGlyphLayer';
 
@@ -212,7 +213,7 @@ const Landing: React.FC<{
       <Flex 
         position="relative" 
         overflow="hidden" 
-        minH="calc(100vh - 64px)" // Adjusting for approx nav height
+        minH="100vh" 
         flexDirection="column"
         justifyContent="center"
         bg="background.deep"
@@ -220,7 +221,7 @@ const Landing: React.FC<{
         <QuantMorphField />
         
         {/* Hero */}
-        <Container maxW="container.lg" position="relative" zIndex={10} py={20}>
+        <Container maxW="container.lg" position="relative" zIndex={10}>
           <VStack spacing={10} textAlign="center">
             <Text
               fontSize="11px"
@@ -287,15 +288,28 @@ const Landing: React.FC<{
           bottom={0} 
           left={0} 
           w="100%" 
-          h="150px" 
+          h="200px" 
           bgGradient="linear(to-b, transparent, background.deep)" 
           zIndex={5}
         />
       </Flex>
 
-      {/* Workstation Preview */}
-      <Box position="relative" zIndex={10} mt={-20}> 
-        <WorkstationPreview />
+      {/* Workstation Preview with Scroll Reveal */}
+      <Box 
+        position="relative" 
+        zIndex={10} 
+        pt={32} 
+        pb={20}
+        bg="background.deep"
+      >
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <WorkstationPreview />
+        </motion.div>
       </Box>
 
       {/* Product Surface Showcases */}

@@ -41,17 +41,17 @@ const vertex = `
     vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
     vec4 mouseInSpace = modelViewMatrix * vec4(uMouse.x * 5.0, uMouse.y * 5.0, 0.0, 1.0);
     float dist = distance(mvPosition.xy, mouseInSpace.xy);
-    float repulsion = smoothstep(1.5, 0.0, dist) * 0.25;
+    float repulsion = smoothstep(1.5, 0.0, dist) * 0.2;
     mvPosition.xy += normalize(mvPosition.xy - mouseInSpace.xy) * repulsion;
 
     gl_Position = projectionMatrix * mvPosition;
     
-    // Drastically smaller, crisp data points (tiny)
-    float size = (vType > 0.5) ? 1.2 : 0.7;
+    // Ultrafine Data Points (0.45px - 0.9px)
+    float size = (vType > 0.5) ? 0.9 : 0.55;
     gl_PointSize = size * uPixelRatio * (400.0 / -mvPosition.z);
     
     // Stable depth-based alpha
-    vAlpha = smoothstep(-20.0, -1.0, mvPosition.z);
+    vAlpha = smoothstep(-22.0, -1.0, mvPosition.z);
   }
 `;
 
@@ -71,9 +71,9 @@ const fragment = `
 
     vec3 color = mix(uColorWhite, uColorGold, vType);
     
-    // High-confidence crisp alpha
+    // High-density crisp alpha
     float alpha = uOpacity * vAlpha;
-    if (vType > 0.5) alpha *= 1.4;
+    if (vType > 0.5) alpha *= 1.3;
 
     gl_FragColor = vec4(color, alpha);
   }
@@ -99,7 +99,7 @@ const lineVertex = `
     vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
     vec4 mouseInSpace = modelViewMatrix * vec4(uMouse.x * 5.0, uMouse.y * 5.0, 0.0, 1.0);
     float dist = distance(mvPosition.xy, mouseInSpace.xy);
-    float repulsion = smoothstep(1.2, 0.0, dist) * 0.15;
+    float repulsion = smoothstep(1.2, 0.0, dist) * 0.12;
     mvPosition.xy += normalize(mvPosition.xy - mouseInSpace.xy) * repulsion;
 
     gl_Position = projectionMatrix * mvPosition;
@@ -116,8 +116,8 @@ const lineFragment = `
   }
 `;
 
-const PARTICLE_COUNT = 3000;
-const LINE_COUNT = 600;
+const PARTICLE_COUNT = 5200; // Increased to high-density fabric
+const LINE_COUNT = 800; // Strengthened scaffold for ultrafine particles
 
 export const QuantMorphField: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -177,7 +177,7 @@ export const QuantMorphField: React.FC = () => {
         else if (edge === 9) { pos[i*3] = 2.2; pos[i*3+1] = -2.2; pos[i*3+2] = t*2.2; }
         else if (edge === 10) { pos[i*3] = -2.2; pos[i*3+1] = 2.2; pos[i*3+2] = t*2.2; }
         else { pos[i*3] = -2.2; pos[i*3+1] = -2.2; pos[i*3+2] = t*2.2; }
-        if (random() > 0.6) {
+        if (random() > 0.5) { // Denser volume
           const face = Math.floor(random() * 6);
           const u = random() * 2 - 1;
           const v = random() * 2 - 1;
@@ -226,14 +226,17 @@ export const QuantMorphField: React.FC = () => {
     const generateSphereLines = (count: number) => {
         const pos = new Float32Array(count * 3);
         for (let i = 0; i < count; i++) {
-            const ring = Math.floor(i / (count / 6));
-            const angle = (i % (count / 6)) / (count / 6) * Math.PI * 2;
+            const ring = Math.floor(i / (count / 8));
+            const angle = (i % (count / 8)) / (count / 8) * Math.PI * 2;
             const r = 3.2;
             if (ring === 0) { pos[i*3] = r * Math.cos(angle); pos[i*3+1] = 0; pos[i*3+2] = r * Math.sin(angle); }
             else if (ring === 1) { pos[i*3] = r * Math.cos(angle); pos[i*3+1] = r * Math.sin(angle); pos[i*3+2] = 0; }
             else if (ring === 2) { pos[i*3] = 0; pos[i*3+1] = r * Math.cos(angle); pos[i*3+2] = r * Math.sin(angle); }
-            else if (ring === 3) { pos[i*3] = r*0.7 * Math.cos(angle); pos[i*3+1] = r*0.7; pos[i*3+2] = r*0.7 * Math.sin(angle); }
-            else if (ring === 4) { pos[i*3] = r*0.7 * Math.cos(angle); pos[i*3+1] = -r*0.7; pos[i*3+2] = r*0.7 * Math.sin(angle); }
+            else if (ring < 6) { 
+                const y = (ring - 4) * 1.5;
+                const r2 = Math.sqrt(r*r - y*y);
+                pos[i*3] = r2 * Math.cos(angle); pos[i*3+1] = y; pos[i*3+2] = r2 * Math.sin(angle); 
+            }
             else { pos[i*3] = (random()-0.5)*0.5; pos[i*3+1] = (random()-0.5)*0.5; pos[i*3+2] = (random()-0.5)*0.5; }
         }
         return pos;
@@ -256,7 +259,7 @@ export const QuantMorphField: React.FC = () => {
 
     const generateSurfaceLines = (count: number) => {
         const pos = new Float32Array(count * 3);
-        const rows = 12;
+        const rows = 14;
         const cols = Math.floor(count / 2 / rows);
         for (let i = 0; i < count; i++) {
             const isRow = i < count / 2;
@@ -286,7 +289,7 @@ export const QuantMorphField: React.FC = () => {
 
     const pointTypes = new Float32Array(PARTICLE_COUNT);
     for (let i = 0; i < PARTICLE_COUNT; i++) {
-      pointTypes[i] = random() > 0.96 ? 1.0 : 0.0; // 4% tiny tiny gold anchors
+      pointTypes[i] = random() > 0.98 ? 1.0 : 0.0; // Minimal tiny gold anchors
     }
 
     const geometry = new Geometry(gl, {
@@ -304,7 +307,7 @@ export const QuantMorphField: React.FC = () => {
         uPixelRatio: { value: renderer.dpr },
         uColorWhite: { value: colorWhite },
         uColorGold: { value: colorGold },
-        uOpacity: { value: 0.45 },
+        uOpacity: { value: 0.55 }, // High-density opacity
         uMouse: { value: mouse.current },
       },
       transparent: true,
@@ -326,7 +329,7 @@ export const QuantMorphField: React.FC = () => {
             uMix: { value: 0 },
             uTime: { value: 0 },
             uColor: { value: colorLine },
-            uOpacity: { value: 0.2 },
+            uOpacity: { value: 0.22 }, // Slightly stronger scaffold for ultrafine points
             uMouse: { value: mouse.current },
         },
         transparent: true,
@@ -347,7 +350,6 @@ export const QuantMorphField: React.FC = () => {
       requestID = requestAnimationFrame(update);
       const time = t * 0.001;
 
-      // Mouse smoothing
       mouse.current.lerp(targetMouse.current, 0.08);
 
       if (!prefersReducedMotion) {
