@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useMemo } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Renderer, Camera, Transform, Geometry, Program, Mesh, Vec2 } from 'ogl';
 import { Box, useToken, useBreakpointValue } from '@chakra-ui/react';
 
@@ -23,6 +23,7 @@ const vertex = `
   uniform float uPixelRatio;
   uniform vec2 uMouse;
   uniform float uObjectScale;
+  uniform float uInstabilityBlend;
 
   varying float vType;
   varying float vAlpha;
@@ -34,10 +35,16 @@ const vertex = `
     float t = smoothstep(0.0, 1.0, uMix);
     vec3 pos = mix(position, target, t) * uObjectScale;
     
-    // Perpetual micro-motion
-    float driftX = sin(uTime * 0.15 + position.z) * 0.06;
-    float driftY = cos(uTime * 0.15 + position.x) * 0.06;
-    float jitter = sin(uTime * 1.5 + position.y * 10.0) * 0.005;
+    // Continuous Analytical Instability
+    // Baseline is moving-state texture; settled state is only ~10% calmer
+    float driftSpeed = 0.18 + (uInstabilityBlend * 0.04);
+    float driftAmp = 0.09 + (uInstabilityBlend * 0.03);
+    float jitterAmp = 0.012 + (uInstabilityBlend * 0.008);
+
+    float driftX = sin(uTime * driftSpeed + position.z) * driftAmp;
+    float driftY = cos(uTime * driftSpeed + position.x) * driftAmp;
+    float jitter = sin(uTime * 1.5 + position.y * 10.0) * jitterAmp;
+    
     pos.x += (driftX + jitter) * uObjectScale;
     pos.y += (driftY + jitter) * uObjectScale;
 
@@ -50,8 +57,10 @@ const vertex = `
 
     gl_Position = projectionMatrix * mvPosition;
     
-    // Ultrafine Data Nodes (0.3px - 0.6px)
-    float size = (vType > 0.5) ? 0.65 : 0.35;
+    // Minimal Data Nodes (0.25px - 0.45px) - NO SETTLED GROWTH
+    // All oversized circles removed. 
+    float size = (vType > 0.5) ? 0.48 : 0.28;
+    
     gl_PointSize = size * uPixelRatio * (400.0 / -mvPosition.z);
     
     // Stable depth-based alpha
@@ -74,8 +83,9 @@ const fragment = `
 
     vec3 color = mix(uColorA, uColorB, vType * 0.4);
     
+    // Raw texture baseline - NO ALPHA BOOST
     float alpha = uOpacity * vAlpha;
-    if (vType > 0.5) alpha *= 1.2;
+    if (vType > 0.5) alpha *= 1.1;
 
     gl_FragColor = vec4(color, alpha);
   }
@@ -91,13 +101,15 @@ const lineVertex = `
   uniform float uTime;
   uniform vec2 uMouse;
   uniform float uObjectScale;
+  uniform float uInstabilityBlend;
 
   void main() {
     float t = smoothstep(0.0, 1.0, uMix);
     vec3 pos = mix(position, target, t) * uObjectScale;
     
-    pos.x += sin(uTime * 0.15 + position.z) * 0.06 * uObjectScale;
-    pos.y += cos(uTime * 0.15 + position.x) * 0.06 * uObjectScale;
+    float driftAmp = 0.09 + (uInstabilityBlend * 0.03);
+    pos.x += sin(uTime * 0.18 + position.z) * driftAmp * uObjectScale;
+    pos.y += cos(uTime * 0.18 + position.x) * driftAmp * uObjectScale;
 
     vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
     vec4 mouseInSpace = modelViewMatrix * vec4(uMouse.x * 5.0, uMouse.y * 5.0, 0.0, 1.0);
@@ -115,7 +127,8 @@ const lineFragment = `
   uniform float uOpacity;
 
   void main() {
-    gl_FragColor = vec4(uColor, uOpacity);
+    // Subtle lattice visibility - NO SETTLED FADE-IN
+    gl_FragColor = vec4(uColor, uOpacity * 0.85);
   }
 `;
 
@@ -130,8 +143,8 @@ export const QuantMorphField: React.FC = () => {
   const lineCount = useBreakpointValue({ base: 500, md: 700, lg: 900 }) || 500;
   const objectScale = useBreakpointValue({ base: 0.55, md: 0.8, lg: 1.0 }) || 0.55;
   const cameraZ = useBreakpointValue({ base: 15, md: 13, lg: 12 }) || 15;
-  const baseOpacity = useBreakpointValue({ base: 0.45, md: 0.55, lg: 0.6 }) || 0.45;
-  const scaffoldOpacity = useBreakpointValue({ base: 0.08, md: 0.1, lg: 0.12 }) || 0.08;
+  const baseOpacity = useBreakpointValue({ base: 0.4, md: 0.5, lg: 0.55 }) || 0.4;
+  const scaffoldOpacity = useBreakpointValue({ base: 0.06, md: 0.08, lg: 0.1 }) || 0.06;
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -311,6 +324,7 @@ export const QuantMorphField: React.FC = () => {
         uOpacity: { value: baseOpacity },
         uMouse: { value: mouse.current },
         uObjectScale: { value: objectScale },
+        uInstabilityBlend: { value: 0.0 },
       },
       transparent: true,
       depthTest: false,
@@ -334,6 +348,7 @@ export const QuantMorphField: React.FC = () => {
             uOpacity: { value: scaffoldOpacity },
             uMouse: { value: mouse.current },
             uObjectScale: { value: objectScale },
+            uInstabilityBlend: { value: 0.0 },
         },
         transparent: true,
     });
@@ -348,6 +363,9 @@ export const QuantMorphField: React.FC = () => {
     const waitDuration = 5.0;
     let waitTime = 0;
 
+    // Smoothed Instability Blend
+    let instabilityBlend = 0.0;
+
     let requestID: number;
     const update = (t: number) => {
       requestID = requestAnimationFrame(update);
@@ -358,8 +376,15 @@ export const QuantMorphField: React.FC = () => {
       if (!prefersReducedMotion) {
         if (waitTime < waitDuration) {
           waitTime += 0.016;
+          
+          // Settled state is only ~10% calmer than morphing state
+          instabilityBlend = Math.max(instabilityBlend - 0.008, 0.0);
         } else {
           transitionTime += 0.016;
+          
+          // Morphing state instability
+          instabilityBlend = Math.min(instabilityBlend + 0.015, 1.0);
+
           const mixVal = Math.min(transitionTime / transitionDuration, 1.0);
           program.uniforms.uMix.value = mixVal;
           lineProgram.uniforms.uMix.value = mixVal;
@@ -369,19 +394,26 @@ export const QuantMorphField: React.FC = () => {
             nextState = (nextState + 1) % pointStates.length;
             transitionTime = 0;
             waitTime = 0;
+            
+            // Seamless Buffer Swap
             geometry.attributes.position.data = pointStates[currentState];
             geometry.attributes.target.data = pointStates[nextState];
             geometry.attributes.position.needsUpdate = true;
             geometry.attributes.target.needsUpdate = true;
+            
             lineGeometry.attributes.position.data = lineStates[currentState];
             lineGeometry.attributes.target.data = lineStates[nextState];
             lineGeometry.attributes.position.needsUpdate = true;
             lineGeometry.attributes.target.needsUpdate = true;
+            
             program.uniforms.uMix.value = 0;
             lineProgram.uniforms.uMix.value = 0;
           }
         }
       }
+
+      program.uniforms.uInstabilityBlend.value = instabilityBlend;
+      lineProgram.uniforms.uInstabilityBlend.value = instabilityBlend;
 
       program.uniforms.uTime.value = time;
       lineProgram.uniforms.uTime.value = time;
