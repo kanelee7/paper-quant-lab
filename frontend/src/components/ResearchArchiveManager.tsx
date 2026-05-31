@@ -6,9 +6,7 @@ import {
   HStack,
   Text,
   Button,
-  Heading,
   Badge,
-  Divider,
   List,
   ListItem,
   IconButton,
@@ -24,7 +22,6 @@ import {
   Textarea,
   useToast,
   Icon,
-  Tooltip,
   Select,
 } from '@chakra-ui/react';
 import { DownloadIcon, AttachmentIcon, InfoOutlineIcon } from '@chakra-ui/icons';
@@ -105,15 +102,20 @@ const ResearchArchiveManager: React.FC = () => {
   return (
     <Box bg="background.surface" borderRadius="lg" p={4} borderWidth="1px" borderColor="ui.border" shadow="sm">
       <HStack justifyContent="space-between" mb={4}>
-        <Text fontSize="xs" fontWeight="bold" letterSpacing="tight" color="gray.400">STATE REPOSITORIES</Text>
-        <Button size="xs" variant="ghost" colorScheme="brand" leftIcon={<DownloadIcon />} onClick={onOpen} fontSize="9px">
-          Freeze Environment
+        <VStack align="start" spacing={0}>
+            <Text fontSize="10px" fontWeight="900" color="brand.500" letterSpacing="widest">LONGITUDINAL REPOSITORIES</Text>
+            <Text fontSize="9px" color="ui.muted">IMMUTABLE STATE ARCHIVES</Text>
+        </VStack>
+        <Button size="xs" variant="ghost" colorScheme="brand" leftIcon={<DownloadIcon />} onClick={onOpen} fontSize="9px" borderRadius="xs">
+          FREEZE STATE
         </Button>
       </HStack>
 
       <List spacing={2}>
-        {archives.length === 0 ? (
-          <Text fontSize="10px" color="ui.muted" fontStyle="italic">No archived states found.</Text>
+        {(archives || []).length === 0 ? (
+          <Box py={4} textAlign="center" borderRadius="sm" border="1px dashed" borderColor="ui.border" bg="blackAlpha.100">
+            <Text fontSize="9px" color="ui.muted" fontWeight="800">NO PERSISTENT ARCHIVES</Text>
+          </Box>
         ) : (
           (archives || []).map(archive => (
             <ListItem 
@@ -130,7 +132,10 @@ const ResearchArchiveManager: React.FC = () => {
                   <Text fontWeight="bold" fontSize="xs" color="gray.200" noOfLines={1}>{archive.title}</Text>
                   <HStack spacing={2}>
                     <Text fontSize="9px" color="ui.muted">{new Date(archive.created_at).toLocaleDateString()}</Text>
-                    <Badge fontSize="8px" variant="ghost" color="brand.200">{archive.session_count || 0} sessions</Badge>
+                    <Badge fontSize="8px" variant="ghost" color="brand.200" borderRadius="xs">{archive.session_count || 0} SESSIONS</Badge>
+                    {new Date(archive.created_at).getTime() < Date.now() - 7776000000 && (
+                      <Badge fontSize="8px" colorScheme="orange" variant="outline" borderRadius="xs">STALE</Badge>
+                    )}
                   </HStack>
                 </VStack>
                 <HStack>
@@ -138,7 +143,7 @@ const ResearchArchiveManager: React.FC = () => {
                         size="xs" 
                         variant="ghost"
                         icon={<Icon as={InfoOutlineIcon} w={3} h={3} />} 
-                        aria-label="View Archive" 
+                        aria-label="Inspect Archive" 
                         onClick={() => { setSelectedArchive(archive); onDetailOpen(); }}
                     />
                 </HStack>

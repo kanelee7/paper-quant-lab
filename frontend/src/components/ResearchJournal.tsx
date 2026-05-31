@@ -5,7 +5,6 @@ import {
   VStack,
   HStack,
   Text,
-  Heading,
   Badge,
   Icon,
   Button,
@@ -39,6 +38,7 @@ interface ReflectionEntry {
 const ResearchJournal: React.FC = () => {
   const { isOpen, onToggle } = useDisclosure({ defaultIsOpen: true });
   const [entries, setEntries] = useState<ReflectionEntry[]>([]);
+  const [resolvedHypotheses, setResolvedHypotheses] = useState<any[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newContent, setNewContent] = useState('');
@@ -54,6 +54,18 @@ const ResearchJournal: React.FC = () => {
       setEntries(JSON.parse(saved));
     }
     fetchSessions();
+
+    // Sync resolved hypotheses
+    const syncHypotheses = () => {
+        const savedH = localStorage.getItem('pql_hypotheses');
+        if (savedH) {
+            const hList = JSON.parse(savedH).filter((h: any) => h.status === 'resolved' || h.status === 'invalidated');
+            setResolvedHypotheses(hList);
+        }
+    };
+    syncHypotheses();
+    window.addEventListener('storage', syncHypotheses);
+    return () => window.removeEventListener('storage', syncHypotheses);
   }, []);
 
   const fetchSessions = async () => {
@@ -112,12 +124,15 @@ const ResearchJournal: React.FC = () => {
     <Box bg="background.surface" borderRadius="md" p={4} borderWidth="1px" borderColor="ui.border" shadow="sm">
       <HStack justifyContent="space-between" mb={2}>
         <HStack spacing={2}>
-            <Heading size="xs" color="brand.500" letterSpacing="widest" textTransform="uppercase">Analytical Reflections</Heading>
-            {entries.length > 0 && <Badge variant="subtle" fontSize="9px">{entries.length} RECORDS</Badge>}
+            <VStack align="start" spacing={0}>
+                <Text fontSize="10px" fontWeight="900" color="brand.500" letterSpacing="widest">RESEARCH NOTES</Text>
+                <Text fontSize="9px" color="ui.muted">ARCHIVE</Text>
+            </VStack>
+            {(entries || []).length > 0 && <Badge variant="subtle" fontSize="9px" borderRadius="xs">{(entries || []).length} RECORDS</Badge>}
         </HStack>
         <HStack spacing={2}>
-            <Button size="2xs" leftIcon={isEditing ? <ChevronRightIcon /> : <EditIcon />} colorScheme="brand" variant="ghost" onClick={() => setIsEditing(!isEditing)} fontSize="10px">
-                {isEditing ? 'Discard' : 'New Entry'}
+            <Button size="2xs" leftIcon={isEditing ? <ChevronRightIcon /> : <EditIcon />} colorScheme="brand" variant="ghost" onClick={() => setIsEditing(!isEditing)} fontSize="10px" borderRadius="xs">
+                {isEditing ? 'DISCARD' : 'NEW ENTRY'}
             </Button>
             <IconButton 
             size="xs" 
@@ -130,27 +145,27 @@ const ResearchJournal: React.FC = () => {
       </HStack>
 
       <Collapse in={isOpen}>
-        <VStack align="stretch" spacing={4} mt={entries.length > 0 || isEditing ? 2 : 0}>
-          {entries.length > 0 && <Text fontSize="11px" color="ui.muted">Synthesized takeaways from longitudinal market observation.</Text>}
+        <VStack align="stretch" spacing={4} mt={(entries || []).length > 0 || isEditing ? 2 : 0}>
+          {(entries || []).length > 0 && <Text fontSize="11px" color="ui.muted">Synthesized takeaways from longitudinal market observation and evidence review.</Text>}
           
           <Collapse in={isEditing}>
             <VStack align="stretch" spacing={3} p={3} bg="blackAlpha.300" borderRadius="sm" borderWidth="1px" borderColor="brand.500" mb={4}>
                 <HStack spacing={2}>
-                    <Select size="xs" w="120px" bg="background.deep" borderColor="ui.border" value={newType} onChange={(e) => setNewType(e.target.value as any)} fontSize="10px">
+                    <Select size="xs" w="120px" bg="background.deep" borderColor="ui.border" value={newType} onChange={(e) => setNewType(e.target.value as any)} fontSize="10px" borderRadius="xs">
                         <option value="Observation">Observation</option>
                         <option value="Learning">Learning</option>
                         <option value="Hypothesis">Hypothesis</option>
                         <option value="Conclusion">Conclusion</option>
                     </Select>
-                    <Select size="xs" bg="background.deep" borderColor="ui.border" value={linkedSession} onChange={(e) => setLinkedSession(e.target.value)} fontSize="10px">
+                    <Select size="xs" bg="background.deep" borderColor="ui.border" value={linkedSession} onChange={(e) => setLinkedSession(e.target.value)} fontSize="10px" borderRadius="xs">
                         <option value="">Contextual Link (Optional)</option>
-                        {sessions.map(s => (
+                        {(sessions || []).map(s => (
                             <option key={s.session_id} value={s.session_id}>{s.title}</option>
                         ))}
                     </Select>
                 </HStack>
                 <Box>
-                    <Text fontSize="9px" color="ui.muted" mb={1} fontWeight="800" textTransform="uppercase">Identifier</Text>
+                    <Text fontSize="9px" color="ui.muted" mb={1} fontWeight="800" textTransform="uppercase">Record Identifier</Text>
                     <Textarea 
                         placeholder="e.g., Sentiment Divergence Analysis" 
                         size="sm" 
@@ -164,9 +179,9 @@ const ResearchJournal: React.FC = () => {
                     />
                 </Box>
                 <Box>
-                    <Text fontSize="9px" color="ui.muted" mb={1} fontWeight="800" textTransform="uppercase">Qualitative Synthesis</Text>
+                    <Text fontSize="9px" color="ui.muted" mb={1} fontWeight="800" textTransform="uppercase">Observation</Text>
                     <Textarea 
-                        placeholder="Detail the analytical findings..." 
+                        placeholder="Detail the analytical findings or cross-session patterns..." 
                         size="sm" 
                         fontSize="xs" 
                         rows={4}
@@ -177,19 +192,36 @@ const ResearchJournal: React.FC = () => {
                         borderRadius="xs"
                     />
                 </Box>
-                <Button size="xs" colorScheme="brand" rightIcon={<CheckIcon />} onClick={handleAddEntry} fontWeight="800" letterSpacing="wider">COMMIT REFLECTION</Button>
+                <Button size="xs" colorScheme="brand" rightIcon={<CheckIcon />} onClick={handleAddEntry} fontWeight="800" letterSpacing="wider" borderRadius="xs">COMMIT REFLECTION</Button>
             </VStack>
           </Collapse>
 
-          <VStack align="stretch" spacing={3} maxH={entries.length > 3 ? "400px" : "auto"} overflowY="auto" pr={2}>
-            {entries.length === 0 && !isEditing && (
-                <Box py={6} px={4} textAlign="center" borderRadius="sm" border="1px dashed" borderColor="ui.border" bg="blackAlpha.100">
-                    <Icon as={ChatIcon} color="ui.muted" mb={2} w={4} h={4} />
-                    <Text fontSize="xs" color="ui.muted" fontStyle="italic">No analytical reflections recorded for this session.</Text>
+          <VStack align="stretch" spacing={3} maxH={(entries || []).length > 3 ? "400px" : "auto"} overflowY="auto" pr={2}>
+            {(entries || []).length === 0 && !isEditing && (
+                <Box py={10} px={4} textAlign="center" borderRadius="sm" border="1px dashed" borderColor="ui.border" bg="blackAlpha.100">
+                    <VStack spacing={3}>
+                        <Icon as={ChatIcon} color="ui.muted" w={5} h={5} opacity={0.5} />
+                        <VStack spacing={1}>
+                            <Text fontSize="xs" color="gray.300" fontWeight="800" letterSpacing="widest">NO RESEARCH NOTES</Text>
+                            <Text fontSize="10px" color="ui.muted" maxW="240px" lineHeight="tall">
+                                Qualitative observations are critical for longitudinal synthesis. Add your first note to begin building the research context.
+                            </Text>
+                        </VStack>
+                        <Button 
+                            size="xs" 
+                            variant="outline" 
+                            colorScheme="brand" 
+                            fontSize="9px" 
+                            mt={1}
+                            onClick={() => setIsEditing(true)}
+                        >
+                            ADD FIRST NOTE
+                        </Button>
+                    </VStack>
                 </Box>
             )}
             
-            {entries.map(entry => (
+            {(entries || []).map(entry => (
                 <Box key={entry.id} p={3} bg="blackAlpha.200" borderRadius="sm" borderLeft="3px solid" borderColor={getTypeColor(entry.type) + ".500"}>
                     <VStack align="stretch" spacing={2}>
                         <HStack justifyContent="space-between">
@@ -228,6 +260,35 @@ const ResearchJournal: React.FC = () => {
                     </VStack>
                 </Box>
             ))}
+
+            {(resolvedHypotheses || []).length > 0 && (
+                <>
+                    <HStack spacing={2} pt={2}>
+                        <Text fontSize="9px" fontWeight="800" color="ui.muted" letterSpacing="widest">FINDINGS</Text>
+                        <Divider flex={1} borderColor="whiteAlpha.100" />
+                    </HStack>
+                    {(resolvedHypotheses || []).map(h => (
+                        <Box key={h.id} p={3} bg="blackAlpha.300" borderRadius="sm" borderLeft="3px solid" borderColor={h.status === 'resolved' ? "green.500" : "red.500"}>
+                            <VStack align="stretch" spacing={2}>
+                                <HStack justifyContent="space-between">
+                                    <HStack spacing={2}>
+                                        <Badge colorScheme={h.status === 'resolved' ? "green" : "red"} fontSize="8px" variant="solid" borderRadius="xs">{h.status.toUpperCase()}</Badge>
+                                        <Text fontSize="xs" fontWeight="bold" color="gray.200">{h.title}</Text>
+                                    </HStack>
+                                    <Icon as={LinkIcon} w={2.5} h={2.5} color="ui.muted" />
+                                </HStack>
+                                <Text fontSize="10px" color="gray.400" lineHeight="1.5">{h.description}</Text>
+                                <HStack spacing={3}>
+                                    <HStack spacing={1}>
+                                        <Icon as={TimeIcon} w={2.5} h={2.5} color="ui.muted" />
+                                        <Text fontSize="9px" color="ui.muted">RESOLVED: {new Date(h.timestamp).toLocaleDateString()}</Text>
+                                    </HStack>
+                                </HStack>
+                            </VStack>
+                        </Box>
+                    ))}
+                </>
+            )}
           </VStack>
         </VStack>
       </Collapse>

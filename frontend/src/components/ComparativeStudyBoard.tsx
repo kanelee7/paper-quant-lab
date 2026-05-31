@@ -165,7 +165,7 @@ const ComparativeStudyBoard: React.FC = () => {
       
       <Heading size="xs" color="gray.500" mb={3} textTransform="uppercase">Reasoning Archetypes (Presets)</Heading>
       <VStack align="stretch" spacing={2}>
-        {presets.map(preset => (
+        {(presets || []).map(preset => (
             <Box key={preset.id} p={2} bg="gray.900" borderRadius="sm" cursor="help">
                 <HStack justifyContent="space-between">
                     <Text fontSize="xs" fontWeight="bold">{preset.title}</Text>
@@ -194,8 +194,8 @@ const ComparativeStudyBoard: React.FC = () => {
                 <Box>
                     <Heading size="xs" color="gray.500" mb={3} textTransform="uppercase">Representative Replay Cases</Heading>
                     <VStack align="stretch" spacing={2}>
-                        {selectedPattern.linked_replay_ids.length > 0 ? (
-                            selectedPattern.linked_replay_ids.map(rid => (
+                        {(selectedPattern.linked_replay_ids || []).length > 0 ? (
+                            (selectedPattern.linked_replay_ids || []).map(rid => (
                                 <HStack key={rid} bg="gray.900" p={2} borderRadius="sm" justifyContent="space-between">
                                     <HStack>
                                         <Icon as={LinkIcon} color="blue.400" w={3} h={3} />
@@ -215,8 +215,8 @@ const ComparativeStudyBoard: React.FC = () => {
                 <Box>
                     <Heading size="xs" color="gray.500" mb={3} textTransform="uppercase">Linked Research Insights</Heading>
                     <VStack align="stretch" spacing={2}>
-                        {selectedPattern.linked_insight_ids && selectedPattern.linked_insight_ids.length > 0 ? (
-                            selectedPattern.linked_insight_ids.map(iid => (
+                        {selectedPattern.linked_insight_ids && (selectedPattern.linked_insight_ids || []).length > 0 ? (
+                            (selectedPattern.linked_insight_ids || []).map(iid => (
                                 <HStack key={iid} bg="blackAlpha.300" p={2} borderRadius="sm" justifyContent="space-between" borderWidth="1px" borderColor="ui.border">
                                     <HStack>
                                         <Icon as={ExternalLinkIcon} color="purple.400" w={3} h={3} />
@@ -235,7 +235,7 @@ const ComparativeStudyBoard: React.FC = () => {
                     <Box>
                         <Heading size="xs" color="gray.500" mb={2} textTransform="uppercase">Linked Failure Modes</Heading>
                         <HStack wrap="wrap">
-                            {selectedPattern.linked_failure_types.map(ft => (
+                            {(selectedPattern.linked_failure_types || []).map(ft => (
                                 <Badge key={ft} colorScheme="red">{ft}</Badge>
                             ))}
                         </HStack>
@@ -243,7 +243,7 @@ const ComparativeStudyBoard: React.FC = () => {
                     <Box>
                         <Heading size="xs" color="gray.500" mb={2} textTransform="uppercase">Affected Personas</Heading>
                         <HStack wrap="wrap">
-                            {selectedPattern.linked_personas.map(lp => (
+                            {(selectedPattern.linked_personas || []).map(lp => (
                                 <Badge key={lp} colorScheme="purple" variant="outline">{lp}</Badge>
                             ))}
                         </HStack>

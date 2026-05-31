@@ -14,7 +14,6 @@ import {
   useToast,
   Badge,
   Divider,
-  Heading,
   Textarea,
   List,
   ListItem,
@@ -28,8 +27,14 @@ import {
   ModalCloseButton,
   ModalBody,
   ModalFooter,
+  Icon,
+  Tooltip,
 } from '@chakra-ui/react';
-import { InfoOutlineIcon } from '@chakra-ui/icons';
+import { 
+  RepeatIcon, 
+  SearchIcon,
+  LinkIcon,
+} from '@chakra-ui/icons';
 
 interface Session {
   session_id: string;
@@ -63,7 +68,7 @@ const ResearchSessionManager: React.FC = () => {
   const [newTag, setNewTag] = useState('');
   const toast = useToast();
 
-  const fetchSessions = async () => {
+  const fetchSessions = React.useCallback(async () => {
     try {
       const response = await demoFetch('http://localhost:8000/api/sessions');
       const data = await response.json();
@@ -74,11 +79,11 @@ const ResearchSessionManager: React.FC = () => {
     } catch (error) {
       console.error('Failed to fetch sessions:', error);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchSessions();
-  }, []);
+  }, [fetchSessions]);
 
   const handleStartSession = async () => {
     if (!newSession.title) {
@@ -138,34 +143,70 @@ const ResearchSessionManager: React.FC = () => {
     setNewSession({ ...newSession, tags: newSession.tags.filter(t => t !== tag) });
   };
 
+  // Group archived sessions by market
+  const archivedSessionsByMarket = sessions
+    .filter(s => s.status === 'completed')
+    .reduce((acc, s) => {
+      if (!acc[s.market]) acc[s.market] = [];
+      acc[s.market].push(s);
+      return acc;
+    }, {} as Record<string, Session[]>);
+
   return (
     <Box bg="background.surface" borderRadius="lg" p={4} borderWidth="1px" borderColor="ui.border" shadow="sm">
-      <Heading size="xs" color="brand.500" letterSpacing="widest" textTransform="uppercase" mb={4}>Research Operations</Heading>
+      <VStack align="start" spacing={0} mb={4}>
+        <Text fontSize="10px" fontWeight="900" color="brand.500" letterSpacing="widest">SESSIONS</Text>
+        <Text fontSize="9px" color="ui.muted">ACTIVE INVESTIGATION</Text>
+      </VStack>
       
       {activeSession ? (
         <VStack align="stretch" spacing={3}>
-          <Box p={3} bg="brand.900" borderRadius="md" borderLeft="4px solid" borderColor="brand.500">
-            <HStack justifyContent="space-between">
-              <VStack align="start" spacing={0}>
-                <Text fontWeight="bold" fontSize="sm">{activeSession.title}</Text>
-                <Text fontSize="xs" color="brand.200">Established: {new Date(activeSession.start_time || activeSession.created_at).toLocaleString()}</Text>
-              </VStack>
-              <Badge colorScheme="brand" variant="solid" fontSize="9px">ACTIVE REPOSITORY</Badge>
-            </HStack>
-            <HStack mt={2} spacing={1}>
-              {(activeSession.tags || []).map(tag => (
-                <Badge key={tag} variant="outline" fontSize="8px" colorScheme="brand">{tag}</Badge>
-              ))}
-            </HStack>
-            <Button size="xs" colorScheme="red" mt={3} w="100%" onClick={handleStopSession} fontSize="9px" borderRadius="sm">
-              Finalize Research State & Archive
-            </Button>
+          <Box p={4} bg="brand.900" borderRadius="md" borderLeft="4px solid" borderColor="brand.500" position="relative">
+            <VStack align="stretch" spacing={3}>
+                <HStack justifyContent="space-between">
+                    <VStack align="start" spacing={0}>
+                        <Text fontWeight="bold" fontSize="sm" color="white">{activeSession.title}</Text>
+                        <Text fontSize="10px" color="brand.200" fontWeight="700">ACTIVE</Text>
+                    </VStack>
+                    <Badge colorScheme="brand" variant="solid" fontSize="8px" px={2} borderRadius="xs">LIVE</Badge>
+                </HStack>
+                
+                <SimpleGrid columns={2} spacing={2}>
+                    <Box>
+                        <Text fontSize="9px" color="ui.muted" fontWeight="800">STARTED</Text>
+                        <Text fontSize="10px" color="gray.300">{new Date(activeSession.start_time || activeSession.created_at).toLocaleTimeString()}</Text>
+                    </Box>
+                    <Box>
+                        <Text fontSize="9px" color="ui.muted" fontWeight="800">RECORDS</Text>
+                        <Text fontSize="10px" color="gray.300">{activeSession.signal_count || 0} Traces</Text>
+                    </Box>
+                </SimpleGrid>
+
+                <Box p={2} bg="blackAlpha.400" borderRadius="xs" border="1px solid" borderColor="whiteAlpha.100">
+                    <Text fontSize="9px" color="brand.500" fontWeight="900" mb={1}>NEXT STEP</Text>
+                    <Text fontSize="10px" color="gray.100">
+                        {activeSession.signal_count && activeSession.signal_count > 0 
+                            ? "Inspect replay traces in the Replay panel." 
+                            : "Awaiting market data. Monitor chart for signals."}
+                    </Text>
+                </Box>
+
+                <HStack wrap="wrap" spacing={1}>
+                {(activeSession.tags || []).map(tag => (
+                    <Badge key={tag} variant="outline" fontSize="8px" colorScheme="brand" borderRadius="xs">{tag}</Badge>
+                ))}
+                </HStack>
+
+                <Button size="xs" colorScheme="red" mt={1} w="100%" onClick={handleStopSession} fontSize="9px" borderRadius="sm" fontWeight="800">
+                FINALIZE & ARCHIVE
+                </Button>
+            </VStack>
           </Box>
         </VStack>
       ) : (
         <VStack align="stretch" spacing={3}>
           <Input 
-            placeholder="Analytical Hypothesis Title" 
+            placeholder="Research Title" 
             size="xs" 
             value={newSession.title}
             onChange={(e) => setNewSession({ ...newSession, title: e.target.value })}
@@ -196,7 +237,7 @@ const ResearchSessionManager: React.FC = () => {
             />
           </HStack>
           <Textarea 
-            placeholder="Core research question or constraint parameters..." 
+            placeholder="Research objective or parameters..." 
             size="xs" 
             value={newSession.notes}
             onChange={(e) => setNewSession({ ...newSession, notes: e.target.value })}
@@ -226,63 +267,104 @@ const ResearchSessionManager: React.FC = () => {
             ))}
           </HStack>
           <Button size="xs" colorScheme="brand" onClick={handleStartSession} fontWeight="800" fontSize="10px" borderRadius="sm">
-            Establish Research Repository Stream
+            START RESEARCH RUN
           </Button>
         </VStack>
       )}
 
       <Divider my={4} borderColor="ui.border" />
       
-      <Text fontSize="10px" fontWeight="800" color="ui.muted" mb={2} letterSpacing="widest">HISTORICAL ARCHIVE</Text>
-      <Box maxH="220px" overflowY="auto" pr={1} sx={{ '&::-webkit-scrollbar': { width: '2px' }, '&::-webkit-scrollbar-thumb': { bg: 'whiteAlpha.100' } }}>
-        <List spacing={2}>
-          {(sessions || []).filter(s => s.status === 'completed').map(s => (
-            <ListItem key={s.session_id} p={2} bg="blackAlpha.300" borderRadius="md" borderWidth="1px" borderColor="ui.border" _hover={{ borderColor: 'brand.500' }}>
-              <VStack align="stretch" spacing={1}>
-                <HStack justifyContent="space-between">
-                  <VStack align="start" spacing={0} flex={1}>
-                    <Text fontSize="xs" fontWeight="bold" noOfLines={1} color="gray.200">{s.title}</Text>
-                    <Text fontSize="9px" color="ui.muted">Archive Date: {new Date(s.end_time || s.created_at).toLocaleDateString()}</Text>
-                  </VStack>
-                  <IconButton 
-                    size="2xs" 
-                    variant="ghost"
-                    icon={<InfoOutlineIcon w={3} h={3} />} 
-                    aria-label="View Summary" 
-                    onClick={() => handleViewSummary(s.session_id)}
-                  />
-                </HStack>
-                <HStack justifyContent="space-between" mt={1}>
-                  <HStack spacing={1}>
-                    <Badge fontSize="8px" variant="outline" colorScheme="gray">{s.market}</Badge>
-                    <Badge fontSize="8px" variant="outline" colorScheme="blue">{s.signal_count || 0} signals</Badge>
-                  </HStack>
-                  {s.last_reviewed && (
-                    <Text fontSize="8px" color="brand.200" fontStyle="italic">Last reviewed {Math.floor((Date.now() - new Date(s.last_reviewed).getTime()) / 3600000)}h ago</Text>
-                  )}
-                </HStack>
-              </VStack>
-            </ListItem>
+      <HStack justifyContent="space-between" mb={2}>
+        <Text fontSize="10px" fontWeight="800" color="ui.muted" letterSpacing="widest">ARCHIVE</Text>
+        <Badge fontSize="8px" variant="outline" colorScheme="gray">{Object.keys(archivedSessionsByMarket).length} MARKETS</Badge>
+      </HStack>
+
+      <Box maxH="300px" overflowY="auto" pr={1} sx={{ '&::-webkit-scrollbar': { width: '2px' }, '&::-webkit-scrollbar-thumb': { bg: 'whiteAlpha.100' } }}>
+        <VStack align="stretch" spacing={4}>
+          {Object.entries(archivedSessionsByMarket).map(([market, marketSessions]) => (
+            <Box key={market}>
+              <HStack spacing={2} mb={1} px={1}>
+                <Icon as={RepeatIcon} w={2} h={2} color="brand.500" />
+                <Text fontSize="9px" fontWeight="bold" color="brand.200">{market} STREAM</Text>
+                <Divider flex={1} borderColor="whiteAlpha.100" />
+              </HStack>
+              <List spacing={1.5}>
+                {marketSessions.map(s => {
+                  const isRelated = activeSession && (s.market === activeSession.market || s.tags.some(t => activeSession.tags.includes(t)));
+                  return (
+                    <ListItem 
+                      key={s.session_id} 
+                      p={2} 
+                      bg="blackAlpha.300" 
+                      borderRadius="md" 
+                      borderWidth="1px" 
+                      borderColor={isRelated ? "brand.900" : "ui.border"} 
+                      _hover={{ borderColor: 'brand.500', bg: 'blackAlpha.400' }}
+                      transition="all 0.2s"
+                      position="relative"
+                    >
+                      <VStack align="stretch" spacing={1}>
+                        <HStack justifyContent="space-between">
+                          <VStack align="start" spacing={0} flex={1} cursor="pointer" onClick={() => handleViewSummary(s.session_id)}>
+                            <HStack spacing={1}>
+                                <Text fontSize="xs" fontWeight="bold" noOfLines={1} color="gray.200">{s.title}</Text>
+                                {isRelated && (
+                                    <Tooltip label="Continuity Detected: Same Market/Tags" fontSize="9px">
+                                        <Icon as={LinkIcon} w={2} h={2} color="brand.500" />
+                                    </Tooltip>
+                                )}
+                            </HStack>
+                            <HStack spacing={2}>
+                                <Text fontSize="9px" color="ui.muted">{new Date(s.end_time || s.created_at).toLocaleDateString()}</Text>
+                                <Text fontSize="9px" color="ui.muted" borderLeft="1px solid" borderColor="whiteAlpha.100" pl={2}>
+                                    {s.signal_count || 0} TRACES
+                                </Text>
+                            </HStack>
+                          </VStack>
+                          <IconButton 
+                            size="2xs" 
+                            variant="ghost"
+                            icon={<SearchIcon w={2} h={2} />} 
+                            aria-label="Inspect Archive" 
+                            onClick={() => handleViewSummary(s.session_id)}
+                          />
+                        </HStack>
+                        
+                        <HStack wrap="wrap" spacing={1} mt={1}>
+                            {(s.tags || []).slice(0, 3).map(tag => (
+                                <Badge key={tag} variant="outline" fontSize="7px" px={1} colorScheme="gray" borderRadius="xs">{tag}</Badge>
+                            ))}
+                            {s.tags.length > 3 && <Text fontSize="7px" color="ui.muted">+{s.tags.length - 3}</Text>}
+                        </HStack>
+                      </VStack>
+                    </ListItem>
+                  );
+                })}
+              </List>
+            </Box>
           ))}
-        </List>
+          {Object.keys(archivedSessionsByMarket).length === 0 && (
+            <Text fontSize="10px" color="ui.muted" fontStyle="italic" textAlign="center" py={4}>No archived research repositories found.</Text>
+          )}
+        </VStack>
       </Box>
 
       <Modal isOpen={isOpen} onClose={onClose} size="lg">
         <ModalOverlay backdropFilter="blur(4px)" />
-        <ModalContent bg="background.surface" color="white" borderWidth="1px" borderColor="ui.border">
-          <ModalHeader fontSize="md" fontWeight="bold">Experiment Synthesis & Summary</ModalHeader>
+        <ModalContent bg="background.surface" color="white" borderWidth="1px" borderColor="ui.border" borderRadius="md">
+          <ModalHeader fontSize="md" fontWeight="bold">Session Summary</ModalHeader>
           <ModalCloseButton />
           <ModalBody pb={6}>
             {selectedSessionSummary ? (
               <VStack align="stretch" spacing={4}>
                 <Box p={3} bg="blackAlpha.400" borderRadius="md" borderLeft="2px solid" borderColor="brand.500">
-                  <Text fontWeight="800" fontSize="9px" mb={2} color="ui.muted" letterSpacing="widest">AUTOMATIC SUMMARY</Text>
+                  <Text fontWeight="800" fontSize="9px" mb={2} color="ui.muted" letterSpacing="widest">SUMMARY</Text>
                   <Text fontSize="sm" lineHeight="relaxed">{selectedSessionSummary.summary}</Text>
                 </Box>
 
                 <SimpleGrid columns={2} gap={4}>
                   <Box p={3} bg="blackAlpha.300" borderRadius="md" borderWidth="1px" borderColor="ui.border">
-                    <Text fontWeight="800" fontSize="9px" mb={2} color="ui.muted" letterSpacing="widest">TOP REASONING PATTERNS</Text>
+                    <Text fontWeight="800" fontSize="9px" mb={2} color="ui.muted" letterSpacing="widest">TOP PATTERNS</Text>
                     <HStack wrap="wrap" spacing={1}>
                       {(selectedSessionSummary.top_patterns || []).map((p: string) => (
                         <Badge key={p} colorScheme="brand" variant="outline" fontSize="9px">{p}</Badge>
@@ -304,9 +386,33 @@ const ResearchSessionManager: React.FC = () => {
                   <Badge colorScheme="brand" variant="solid" fontSize="10px">{(selectedSessionSummary.strongest_regime || 'UNKNOWN').toUpperCase()}</Badge>
                 </HStack>
 
-                <Box>
-                  <Text fontSize="10px" color="ui.muted">Generated from {selectedSessionSummary.signal_count} decisions at {new Date(selectedSessionSummary.generated_at).toLocaleString()}</Text>
+                <Box p={3} bg="blackAlpha.200" borderRadius="md" borderWidth="1px" borderColor="ui.border">
+                    <HStack justify="space-between" mb={2}>
+                        <Text fontWeight="800" fontSize="9px" color="ui.muted" letterSpacing="widest">PROVENANCE</Text>
+                        <Badge fontSize="8px" variant="outline">STABLE</Badge>
+                    </HStack>
+                    <SimpleGrid columns={2} spacing={2}>
+                        <VStack align="start" spacing={0}>
+                            <Text fontSize="8px" color="ui.muted">SESSION_ID</Text>
+                            <Text fontSize="10px" color="gray.400" fontFamily="mono">{selectedSessionSummary.session_id?.slice(0, 12)}</Text>
+                        </VStack>
+                        <VStack align="start" spacing={0}>
+                            <Text fontSize="8px" color="ui.muted">GENERATED_AT</Text>
+                            <Text fontSize="10px" color="gray.400">{new Date(selectedSessionSummary.generated_at).toLocaleString()}</Text>
+                        </VStack>
+                    </SimpleGrid>
                 </Box>
+
+                <Button 
+                    size="sm" 
+                    colorScheme="brand" 
+                    variant="outline" 
+                    leftIcon={<RepeatIcon />} 
+                    fontSize="10px"
+                    fontWeight="800"
+                >
+                    REPLAY FULL SESSION TRACE
+                </Button>
               </VStack>
             ) : (
               <Text fontSize="xs" color="ui.muted">Loading summary...</Text>

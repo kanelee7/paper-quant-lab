@@ -48,6 +48,7 @@ import PerformanceMetrics from './components/PerformanceMetrics';
 import QuantInsights from './components/QuantInsights';
 import PersonaSandbox from './components/PersonaSandbox';
 import ResearchSessionManager from './components/ResearchSessionManager';
+import HypothesisManager from './components/HypothesisManager';
 import ResearchKnowledgeBase from './components/ResearchKnowledgeBase';
 import ResearchDiscovery from './components/ResearchDiscovery';
 import ResearchCommentary from './components/ResearchCommentary';
@@ -129,6 +130,7 @@ const App: React.FC = () => {
   const [workspaceMode, setWorkspaceMode] = useState<'RESEARCH' | 'REVIEW' | 'TRAINING'>(() => {
     return (localStorage.getItem('pql_workspace_mode') as any) || 'RESEARCH';
   });
+  const [investigatingSignalId, setInvestigatingSignalId] = useState<string | null>(null);
   
   const toast = useToast();
   const { colorMode, toggleColorMode } = useColorMode();
@@ -188,11 +190,20 @@ const App: React.FC = () => {
   };
 
   const handleFocusSignal = (signal: any) => {
+    setInvestigatingSignalId(signal.id);
     const event = new CustomEvent('focus-chart', {
       detail: { timestamp: new Date(signal.timestamp).getTime() }
     });
     window.dispatchEvent(event);
   };
+
+  const handleClearFocus = () => {
+      setInvestigatingSignalId(null);
+  };
+
+  // Attach a global listener to clear focus when clicking outside or hitting escape?
+  // For now, we will add a clear focus button in ReplayTimeline or header.
+
 
   const handleStartTrading = async () => {
     try {
@@ -378,18 +389,20 @@ const App: React.FC = () => {
                         px={3}
                         borderRadius="sm"
                     >
-                        {isDemoMode ? "REPOSITORY: DEMO_ARCHIVE" : "LOAD HISTORICAL SEED"}
+                        {isDemoMode ? "REPOSITORY: DEMO_ARCHIVE" : "INIT DEMO REPOSITORY"}
                     </Button>
                     <Divider orientation="vertical" h="16px" borderColor="ui.border" />
-                    <IconButton 
-                        aria-label="Toggle Focus Mode" 
-                        size="xs" 
-                        variant="ghost" 
-                        color={preferences.focusMode ? 'brand.500' : 'ui.muted'}
-                        icon={<ViewIcon w={3} h={3} />} 
-                        onClick={toggleFocusMode} 
-                        _hover={{ bg: 'whiteAlpha.100' }}
-                    />
+                    <Tooltip label="Research Focus Mode" fontSize="2xs" bg="background.elevated" color="white" borderRadius="xs">
+                        <IconButton 
+                            aria-label="Toggle Focus Mode" 
+                            size="xs" 
+                            variant="ghost" 
+                            color={preferences.focusMode ? 'brand.500' : 'ui.muted'}
+                            icon={<ViewIcon w={3} h={3} />} 
+                            onClick={toggleFocusMode} 
+                            _hover={{ bg: 'whiteAlpha.100' }}
+                        />
+                    </Tooltip>
                     <Menu>
                         <MenuButton as={IconButton} size="xs" variant="ghost" icon={<SettingsIcon w={3} h={3} />} color="ui.muted" />
                         <MenuList bg="background.surface" borderColor="ui.border" minW="150px" boxShadow="panel">
@@ -451,7 +464,7 @@ const App: React.FC = () => {
                             <PriceChart symbol="ETH/USDT" onSymbolChange={() => {}} />
                             </Box>
                         ) : workspaceMode === 'RESEARCH' ? (
-                        <VStack spacing={4}>
+                        <VStack spacing={4} opacity={investigatingSignalId ? 0.3 : 1} transition="opacity 0.2s" pointerEvents={investigatingSignalId ? 'none' : 'auto'}>
                             <Box p={3} borderRadius="md" bg={cardBg} borderWidth="1px" borderColor={borderColor} w="100%" h="250px" overflow="auto" boxShadow="panel">
                             <OrderBook symbol={selectedSymbol} />
                             </Box>
@@ -462,24 +475,35 @@ const App: React.FC = () => {
                         ) : null}
                     </Grid>
 
-                    {workspaceMode === 'RESEARCH' && isConnected && (
-                        <ReplayTimeline symbol={selectedSymbol} onFocusSignal={handleFocusSignal} />
+                    {(workspaceMode === 'RESEARCH' || workspaceMode === 'REVIEW') && (isConnected || isDemoMode) && (
+                        <Box position="relative" zIndex={investigatingSignalId ? 10 : 1}>
+                            <ReplayTimeline 
+                                symbol={selectedSymbol} 
+                                onFocusSignal={handleFocusSignal} 
+                                investigatingSignalId={investigatingSignalId}
+                                onClearFocus={handleClearFocus}
+                            />
+                        </Box>
                     )}
                     
                     {workspaceMode === 'RESEARCH' && isConnected && (
-                        <Box p={4} borderRadius="md" bg={cardBg} borderWidth="1px" borderColor={borderColor} boxShadow="panel">
+                        <Box opacity={investigatingSignalId ? 0.3 : 1} transition="opacity 0.2s" pointerEvents={investigatingSignalId ? 'none' : 'auto'} p={4} borderRadius="md" bg={cardBg} borderWidth="1px" borderColor={borderColor} boxShadow="panel">
                         <TradingForm isTrading={isTrading} onStartTrading={handleStartTrading} onStopTrading={handleStopTrading} symbol={selectedSymbol} onSymbolChange={setSelectedSymbol} />
                         </Box>
                     )}
                     {workspaceMode === 'RESEARCH' && isConnected && (
-                        <Box p={4} borderRadius="md" bg={cardBg} borderWidth="1px" borderColor={borderColor} boxShadow="panel">
+                        <Box opacity={investigatingSignalId ? 0.3 : 1} transition="opacity 0.2s" pointerEvents={investigatingSignalId ? 'none' : 'auto'} p={4} borderRadius="md" bg={cardBg} borderWidth="1px" borderColor={borderColor} boxShadow="panel">
                         <RepeatTrading isConnected={isConnected} />
                         </Box>
                     )}
-                    {isConnected && (
-                        <SignalJournal workspaceMode={workspaceMode} />
+                    {(isConnected || isDemoMode) && (
+                        <Box opacity={investigatingSignalId ? 0.3 : 1} transition="opacity 0.2s" pointerEvents={investigatingSignalId ? 'none' : 'auto'}>
+                            <SignalJournal workspaceMode={workspaceMode} />
+                        </Box>
                     )}
-                    <ResearchJournal />
+                    <Box opacity={investigatingSignalId ? 1 : 0.8} transition="opacity 0.2s">
+                        <ResearchJournal />
+                    </Box>
                     </VStack>
                 </Box>
                 
@@ -489,6 +513,8 @@ const App: React.FC = () => {
                     h="100%" 
                     overflowY="auto" 
                     pr={1}
+                    opacity={investigatingSignalId ? 0.5 : 1}
+                    transition="opacity 0.2s"
                     sx={{
                         '&::-webkit-scrollbar': { width: '3px' },
                         '&::-webkit-scrollbar-thumb': { bg: 'whiteAlpha.100', borderRadius: 'full' }
@@ -497,23 +523,25 @@ const App: React.FC = () => {
                     <VStack spacing={5} align="stretch" pb={10}>
                         <SidebarSection title={t('sidebar.guidance')} defaultOpen={workspaceMode === 'TRAINING'}>
                             <VStack spacing={3} align="stretch">
-                            <LearningPathManager />
                             <ResearchWorkflowGuide onModeChange={setWorkspaceMode} />
                             <GuidedWalkthrough workspaceMode={workspaceMode} />
                             </VStack>
                         </SidebarSection>
 
-                        {workspaceMode === 'RESEARCH' && (
-                        <SidebarSection title={t('sidebar.experimentation')} defaultOpen={!isConnected}>
+                        <SidebarSection title={t('sidebar.experimentation')} defaultOpen={workspaceMode === 'RESEARCH'}>
                             <VStack spacing={3} align="stretch">
-                                <ExchangeSettings selectedExchange={selectedExchange} setSelectedExchange={setSelectedExchange} apiKey={apiKey} setApiKey={setApiKey} secretKey={secretKey} setSecretKey={setSecretKey} showApiInput={showApiInput} setShowApiInput={setShowApiInput} isConnected={isConnected} onConnect={handleConnect} onDisconnect={handleDisconnect} onTestConnection={async () => {}} onLoadEnvKeys={async () => {}} onSettingsUpdate={() => {}} isDeveloperMode={isDeveloperMode} testMode={testMode} setTestMode={setTestMode} />
+                                {workspaceMode === 'RESEARCH' && (
+                                    <ExchangeSettings selectedExchange={selectedExchange} setSelectedExchange={setSelectedExchange} apiKey={apiKey} setApiKey={setApiKey} secretKey={secretKey} setSecretKey={setSecretKey} showApiInput={showApiInput} setShowApiInput={setShowApiInput} isConnected={isConnected} onConnect={handleConnect} onDisconnect={handleDisconnect} onTestConnection={async () => {}} onLoadEnvKeys={async () => {}} onSettingsUpdate={() => {}} isDeveloperMode={isDeveloperMode} testMode={testMode} setTestMode={setTestMode} />
+                                )}
                                 <ResearchSessionManager />
+                                <HypothesisManager investigatingSignalId={investigatingSignalId} />
                                 <PersonaSandbox symbol={selectedSymbol} workspaceMode={workspaceMode} />
                             </VStack>
                         </SidebarSection>
-                        )}
+                        
                         <SidebarSection title={t('sidebar.knowledge')} defaultOpen={false}>
                             <VStack spacing={3} align="stretch">
+                                <LearningPathManager />
                                 <ResearchDiscovery />
                                 <ResearchCommentary />
                                 <MultiPerspectiveReview />

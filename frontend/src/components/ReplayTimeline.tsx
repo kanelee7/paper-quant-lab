@@ -1,52 +1,71 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   HStack,
   VStack,
   Text,
+  Button,
   IconButton,
   Slider,
   SliderTrack,
   SliderFilledTrack,
   SliderThumb,
   SliderMark,
-  Tooltip,
   Badge,
-  useColorModeValue,
+  Divider,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  PopoverBody,
+  PopoverArrow,
+  Icon,
+  Portal,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  useToast,
 } from '@chakra-ui/react';
 import { 
   ChevronLeftIcon, 
   ChevronRightIcon, 
   ArrowLeftIcon, 
   ArrowRightIcon,
-  SearchIcon 
+  SearchIcon,
+  TimeIcon,
+  LinkIcon,
 } from '@chakra-ui/icons';
 import { demoFetch } from "../demo/demoFetch";
+import { Hypothesis } from './HypothesisManager';
 
 interface Signal {
   id: string;
   timestamp: string;
-  action: string;
+  action: 'buy' | 'sell' | 'hold';
   persona_id?: string;
   market_regime?: string;
   price: number;
+  reason?: string;
+  reasoning_trace?: string;
+  strategy_name?: string;
 }
 
 interface ReplayTimelineProps {
   symbol: string;
   onFocusSignal: (signal: Signal) => void;
+  investigatingSignalId?: string | null;
+  onClearFocus?: () => void;
 }
 
-const ReplayTimeline: React.FC<ReplayTimelineProps> = ({ symbol, onFocusSignal }) => {
+const ReplayTimeline: React.FC<ReplayTimelineProps> = ({ symbol, onFocusSignal, investigatingSignalId, onClearFocus }) => {
   const [signals, setSignals] = useState<Signal[]>([]);
   const [currentIndex, setCurrentStepIndex] = useState(-1);
   const [sliderValue, setSliderValue] = useState(0);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [activeHypotheses, setActiveHypotheses] = useState<Hypothesis[]>([]);
+  const toast = useToast();
 
-  useEffect(() => {
-    fetchSignals();
-  }, [symbol]);
-
-  const fetchSignals = async () => {
+  const fetchSignals = useCallback(async () => {
     try {
       const response = await demoFetch(`http://localhost:8000/api/journal?limit=200`);
       const data = await response.json();
@@ -60,6 +79,36 @@ const ReplayTimeline: React.FC<ReplayTimelineProps> = ({ symbol, onFocusSignal }
       }
     } catch (error) {
       console.error('Failed to fetch signals for timeline:', error);
+    }
+  }, [symbol]);
+
+  useEffect(() => {
+    fetchSignals();
+    const saved = localStorage.getItem('pql_hypotheses');
+    if (saved) {
+        setActiveHypotheses(JSON.parse(saved).filter((h: Hypothesis) => h.status === 'active'));
+    }
+  }, [fetchSignals]);
+
+  const handleLinkHypothesis = (hypothesisId: string, signalId: string) => {
+    const saved = localStorage.getItem('pql_hypotheses');
+    if (saved) {
+        const all = JSON.parse(saved);
+        const updated = all.map((h: Hypothesis) => {
+            if (h.id === hypothesisId) {
+                return {
+                    ...h,
+                    linked_replay_checkpoint: signalId,
+                    evolution: [...h.evolution, {
+                        timestamp: new Date().toISOString(),
+                        note: `Linked to replay checkpoint: ${signalId.slice(0, 8)}`
+                    }]
+                };
+            }
+            return h;
+        });
+        localStorage.setItem('pql_hypotheses', JSON.stringify(updated));
+        toast({ title: 'Checkpoint Linked', description: 'Hypothesis updated with evidence link.', status: 'success' });
     }
   };
 
@@ -87,6 +136,15 @@ const ReplayTimeline: React.FC<ReplayTimelineProps> = ({ symbol, onFocusSignal }
 
   const currentSignal = signals[currentIndex];
 
+  const getPriceDelta = (index: number) => {
+    if (index <= 0) return null;
+    const prev = signals[index - 1];
+    const curr = signals[index];
+    const delta = curr.price - prev.price;
+    const pct = (delta / prev.price) * 100;
+    return { delta, pct };
+  };
+
   return (
     <Box 
         bg="background.surface" 
@@ -99,99 +157,232 @@ const ReplayTimeline: React.FC<ReplayTimelineProps> = ({ symbol, onFocusSignal }
       <VStack spacing={4} align="stretch">
         <HStack justifyContent="space-between" px={2}>
             <HStack spacing={4}>
-                <Text fontSize="10px" fontWeight="800" color="ui.muted" letterSpacing="widest">REPLAY TIMELINE</Text>
-                <HStack spacing={1}>
+                <VStack align="start" spacing={0}>
+                    <Text fontSize="10px" fontWeight="900" color="brand.500" letterSpacing="widest">EVIDENCE REPLAY</Text>
+                    <Text fontSize="9px" color="ui.muted">REPLAY TRACE</Text>
+                </VStack>
+                <HStack spacing={1} bg="blackAlpha.400" p={1} borderRadius="sm" border="1px solid" borderColor="ui.border">
                     <IconButton 
                         size="2xs" 
                         variant="ghost" 
                         icon={<ArrowLeftIcon w={2} h={2} />} 
-                        aria-label="First" 
+                        aria-label="Jump to Origin" 
                         onClick={() => handleSliderChange(0)} 
                     />
                     <IconButton 
                         size="2xs" 
                         variant="ghost" 
                         icon={<ChevronLeftIcon w={4} h={4} />} 
-                        aria-label="Prev" 
+                        aria-label="Previous Evidence" 
                         onClick={jumpToPrevious} 
                     />
-                    <Text fontSize="xs" fontWeight="bold" fontFamily="mono" minW="60px" textAlign="center">
-                        {currentIndex + 1} / {signals.length}
-                    </Text>
+                    <Box px={2} borderLeft="1px solid" borderRight="1px solid" borderColor="whiteAlpha.100">
+                        <Text fontSize="xs" fontWeight="bold" fontFamily="mono" color="gray.200">
+                            {String(currentIndex + 1).padStart(3, '0')} / {String(signals.length).padStart(3, '0')}
+                        </Text>
+                    </Box>
                     <IconButton 
-                        size="2xs" 
-                        variant="ghost" 
-                        icon={<ChevronRightIcon w={4} h={4} />} 
-                        aria-label="Next" 
-                        onClick={jumpToNext} 
+                      size="2xs" 
+                      variant="ghost" 
+                      icon={<ChevronRightIcon w={4} h={4} />} 
+                      aria-label="Next Evidence" 
+                      onClick={jumpToNext} 
                     />
                     <IconButton 
-                        size="2xs" 
-                        variant="ghost" 
-                        icon={<ArrowRightIcon w={2} h={2} />} 
-                        aria-label="Last" 
-                        onClick={() => handleSliderChange(signals.length - 1)} 
+                      size="2xs" 
+                      variant="ghost" 
+                      icon={<ArrowRightIcon w={2} h={2} />} 
+                      aria-label="Jump to Latest" 
+                      onClick={() => handleSliderChange((signals || []).length - 1)} 
                     />
-                </HStack>
-            </HStack>
+                    </HStack>
+                    </HStack>
 
-            {currentSignal && (
-                <HStack spacing={3}>
-                    <Badge colorScheme={currentSignal.action === 'buy' ? 'green' : 'red'} variant="subtle" fontSize="9px">
-                        {(currentSignal.action || 'SIGNAL').toUpperCase()} @ {currentSignal.price.toLocaleString()}
-                    </Badge>
-                    <Badge variant="outline" fontSize="9px" color="ui.muted">
-                        {new Date(currentSignal.timestamp).toLocaleTimeString()}
-                    </Badge>
+                    {currentSignal && (
+                    <HStack spacing={3}>
+                    <VStack align="end" spacing={0}>
+                      <Badge colorScheme={currentSignal.action === 'buy' ? 'green' : currentSignal.action === 'sell' ? 'red' : 'gray'} variant="subtle" fontSize="9px" px={2}>
+                          {(currentSignal.action || 'SIGNAL').toUpperCase()} @ {(currentSignal.price || 0).toLocaleString()}
+                      </Badge>
+                      <Text fontSize="8px" color="ui.muted" mt={0.5}>COORD: {(currentSignal.id || '').slice(0, 8)}</Text>
+                    </VStack>
+                    <Divider orientation="vertical" h="20px" borderColor="ui.border" />
+                    <VStack align="start" spacing={0}>
+                      <Text fontSize="9px" fontWeight="800" color="gray.300">{new Date(currentSignal.timestamp).toLocaleTimeString()}</Text>
+                      <Text fontSize="8px" color="ui.muted">TRACE CAPTURED</Text>
+                    </VStack>
                     <IconButton 
-                        size="2xs" 
-                        colorScheme="brand" 
-                        icon={<SearchIcon w={2} h={2} />} 
-                        aria-label="Inspect Detail" 
-                        onClick={() => {
-                            const event = new CustomEvent('open-signal-detail', { detail: { signalId: currentSignal.id } });
-                            window.dispatchEvent(event);
-                        }}
+                      size="xs" 
+                      colorScheme="brand" 
+                      variant="outline"
+                      icon={<SearchIcon w={3} h={3} />} 
+                      aria-label="Inspect Reasoning Trace" 
+                      onClick={() => {
+                          const event = new CustomEvent('open-signal-detail', { detail: { signalId: currentSignal.id } });
+                          window.dispatchEvent(event);
+                      }}
                     />
-                </HStack>
-            )}
-        </HStack>
+                    </HStack>
+                    )}
+                    </HStack>
 
-        <Box px={6} py={2}>
-            <Slider
-                aria-label="replay-scrubber"
-                min={0}
-                max={signals.length - 1}
-                step={1}
-                value={sliderValue}
-                onChange={handleSliderChange}
-                focusThumbOnChange={false}
-            >
-                <SliderTrack bg="blackAlpha.400" h="4px">
-                    <SliderFilledTrack bg="brand.500" />
-                </SliderTrack>
-                {(signals || []).map((s, idx) => (
-                    <SliderMark
-                        key={s.id}
-                        value={idx}
-                        mt='1'
-                        ml='-1'
-                        fontSize='xs'
+                    <Box px={6} pt={4} pb={2} position="relative">
+                    <Slider
+                    aria-label="evidence-scrubber"
+                    min={0}
+                    max={(signals || []).length - 1}
+                    step={1}
+                    value={sliderValue}
+                    onChange={handleSliderChange}
+                    focusThumbOnChange={false}
                     >
-                        <Box 
-                            w="2px" 
-                            h="6px" 
-                            bg={s.action === 'buy' ? 'status.success' : 'status.error'} 
-                            opacity={0.5}
-                            borderRadius="full"
-                        />
-                    </SliderMark>
-                ))}
-                <SliderThumb boxSize={4} bg="brand.500" borderWidth="2px" borderColor="background.deep" _focus={{ boxShadow: 'glow' }}>
-                    <Box color="background.deep" as={ChevronRightIcon} w={3} h={3} />
-                </SliderThumb>
-            </Slider>
-        </Box>
+                    <SliderTrack bg="blackAlpha.400" h="6px" borderRadius="full">
+                    <SliderFilledTrack bg="brand.500" />
+                    </SliderTrack>
+                    {(signals || []).map((s, idx) => {
+                    const deltaInfo = getPriceDelta(idx);
+                    return (
+                      <SliderMark
+                          key={s.id}
+                          value={idx}
+                          mt='1'
+                          ml='-0.5'
+                      >
+                          <Popover trigger="hover" placement="top" openDelay={200} isLazy>
+                              <PopoverTrigger>
+                                  <Box 
+                                      w={idx === currentIndex ? "3px" : "1.5px"} 
+                                      h={idx === currentIndex ? "12px" : "8px"} 
+                                      bg={s.action === 'buy' ? 'green.400' : s.action === 'sell' ? 'red.400' : 'gray.400'} 
+                                      opacity={idx === currentIndex ? 1 : hoveredIndex === idx ? 0.8 : 0.4}
+                                      borderRadius="full"
+                                      transition="all 0.2s"
+                                      transform={idx === currentIndex ? "translateY(-2px)" : "none"}
+                                      cursor="pointer"
+                                      onMouseEnter={() => setHoveredIndex(idx)}
+                                      onMouseLeave={() => setHoveredIndex(null)}
+                                      onClick={() => handleSliderChange(idx)}
+                                  />
+                              </PopoverTrigger>
+                              <Portal>
+                                  <PopoverContent 
+                                      bg="background.surface" 
+                                      borderColor="ui.border" 
+                                      boxShadow="panel" 
+                                      w="240px" 
+                                      p={3}
+                                      borderRadius="md"
+                                      _focus={{ boxShadow: 'panel' }}
+                                  >
+                                      <PopoverArrow bg="background.surface" />
+                                      <PopoverBody p={0}>
+                                          <VStack align="stretch" spacing={2}>
+                                              <HStack justify="space-between">
+                                                  <HStack spacing={1}>
+                                                      <Icon as={TimeIcon} w={2} h={2} color="brand.500" />
+                                                      <Text fontSize="9px" color="ui.muted" fontWeight="bold">
+                                                          {new Date(s.timestamp).toLocaleTimeString()}
+                                                      </Text>
+                                                  </HStack>
+                                                  <Badge fontSize="8px" colorScheme={s.action === 'buy' ? 'green' : s.action === 'sell' ? 'red' : 'gray'}>
+                                                      {(s.action || '').toUpperCase()}
+                                                  </Badge>
+                                              </HStack>
+
+                                              <VStack align="start" spacing={1}>
+                                                  <Text fontSize="10px" color="gray.200" fontWeight="bold">REASONING SNAPSHOT</Text>
+                                                  <Text fontSize="10px" color="gray.400" fontStyle="italic" noOfLines={2}>
+                                                      "{s.reasoning_trace || s.reason || 'Observation trace captured.'}"
+                                                  </Text>
+                                              </VStack>
+
+                                              <Divider borderColor="whiteAlpha.100" />
+
+                                              <HStack justify="space-between">
+                                                  <VStack align="start" spacing={0}>
+                                                      <Text fontSize="8px" color="ui.muted">STATE DELTA</Text>
+                                                      {deltaInfo ? (
+                                                          <Text fontSize="10px" color={deltaInfo.delta >= 0 ? "green.300" : "red.300"} fontWeight="bold">
+                                                              {deltaInfo.delta >= 0 ? '+' : ''}{deltaInfo.pct.toFixed(2)}%
+                                                          </Text>
+                                                      ) : (
+                                                          <Text fontSize="10px" color="ui.muted">ORIGIN</Text>
+                                                      )}
+                                                  </VStack>
+                                                  <VStack align="end" spacing={0}>
+                                                      <Menu>
+                                                          <MenuButton as={Button} size="2xs" variant="outline" colorScheme="brand" rightIcon={<LinkIcon w={2} h={2} />} fontSize="8px">
+                                                              LINK HYPOTHESIS
+                                                          </MenuButton>
+                                                          <MenuList bg="background.surface" borderColor="ui.border" p={1} boxShadow="panel" zIndex={2000}>
+                                                              {(activeHypotheses || []).length === 0 ? (
+                                                                  <MenuItem isDisabled fontSize="9px" bg="transparent">No active hypotheses</MenuItem>
+                                                              ) : (
+                                                                  (activeHypotheses || []).map(h => (
+                                                                      <MenuItem 
+                                                                          key={h.id} 
+                                                                          fontSize="9px" 
+                                                                          bg="transparent" 
+                                                                          _hover={{ bg: 'whiteAlpha.100' }}
+                                                                          onClick={() => handleLinkHypothesis(h.id, s.id)}
+                                                                      >
+                                                                          {h.title}
+                                                                      </MenuItem>
+                                                                  ))
+                                                              )}
+                                                          </MenuList>
+                                                      </Menu>
+                                                  </VStack>
+                                              </HStack>
+                                          </VStack>
+                                      </PopoverBody>
+                                  </PopoverContent>
+                              </Portal>
+                          </Popover>
+                      </SliderMark>
+                    );
+                    })}
+                    <SliderThumb boxSize={4} bg="brand.500" borderWidth="2px" borderColor="background.deep" _focus={{ boxShadow: 'none' }} _active={{ transform: 'scale(1.2)' }}>
+                    <Box color="background.deep" as={SearchIcon} w={2} h={2} />
+                    </SliderThumb>
+                    </Slider>
+                    <HStack justifyContent="space-between" mt={4}>
+                    <Text fontSize="8px" color="ui.muted" fontWeight="800">ORIGIN_TRACE</Text>
+                    <Text fontSize="8px" color="ui.muted" fontWeight="800">LATEST_STATE</Text>
+                    </HStack>
+                    </Box>
+
+                    {investigatingSignalId && currentSignal && investigatingSignalId === currentSignal.id && (
+                    <Box mt={2} p={4} bg="blackAlpha.300" borderRadius="md" borderWidth="1px" borderColor="brand.500" position="relative">
+                    <HStack justify="space-between" mb={3}>
+                    <HStack>
+                      <Badge colorScheme="brand" variant="solid" fontSize="10px">INSPECTION</Badge>
+                      <Text fontSize="10px" fontWeight="bold" color="gray.200">{currentSignal.strategy_name}</Text>
+                    </HStack>
+                    <Button size="xs" variant="ghost" colorScheme="red" onClick={onClearFocus} fontSize="9px">CLOSE INSPECTION</Button>
+                    </HStack>
+                    <VStack align="stretch" spacing={3}>
+                    <Box>
+                      <Text fontSize="8px" color="ui.muted" fontWeight="bold" mb={1}>REASONING TRACE</Text>
+                      <Text fontSize="xs" fontStyle="italic" color="blue.100" borderLeft="2px solid" borderColor="blue.500" pl={2}>
+                          {currentSignal.reasoning_trace || currentSignal.reason}
+                      </Text>
+                    </Box>
+                    <HStack justify="space-between" pt={2} borderTop="1px solid" borderColor="whiteAlpha.100">
+                      <HStack>
+                          <Text fontSize="8px" color="ui.muted" fontWeight="bold">LINKED HYPOTHESES:</Text>
+                          {(activeHypotheses || []).filter(h => h.linked_replay_checkpoint === currentSignal.id).length > 0 ? (
+                              (activeHypotheses || []).filter(h => h.linked_replay_checkpoint === currentSignal.id).map(h => (
+                                  <Badge key={h.id} variant="outline" colorScheme="blue" fontSize="8px">{h.title}</Badge>
+                              ))
+                          ) : (
+                              <Text fontSize="9px" color="gray.500">None</Text>
+                          )}
+                      </HStack>
+                    </HStack>
+                    </VStack>
+                    </Box>
+                    )}
       </VStack>
     </Box>
   );

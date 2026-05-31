@@ -9,11 +9,10 @@ import {
   StatHelpText,
   Text,
   HStack,
-  Icon,
   Divider,
   Progress,
+  VStack,
 } from '@chakra-ui/react';
-import { InfoOutlineIcon } from '@chakra-ui/icons';
 
 interface Metrics {
   total_trades?: number;
@@ -55,25 +54,25 @@ const PerformanceMetrics: React.FC = () => {
 
   return (
     <Box bg="background.surface" borderRadius="lg" p={4} borderWidth="1px" borderColor="ui.border" shadow="sm">
-      <HStack justify="space-between" mb={4}>
-        <Text fontSize="xs" fontWeight="bold" letterSpacing="tight" color="gray.400">RESEARCH PERFORMANCE</Text>
-        <Icon as={InfoOutlineIcon} w={3} h={3} color="ui.muted" />
-      </HStack>
+      <VStack align="start" spacing={0} mb={4}>
+        <Text fontSize="10px" fontWeight="900" color="brand.500" letterSpacing="widest">ANALYTICAL PERFORMANCE</Text>
+        <Text fontSize="9px" color="ui.muted">QUANTITATIVE RESEARCH METRICS</Text>
+      </VStack>
       
       <SimpleGrid columns={2} gap={4}>
         <Stat>
-          <StatLabel fontSize="10px" color="ui.muted" textTransform="uppercase">Decisions</StatLabel>
+          <StatLabel fontSize="9px" color="ui.muted" fontWeight="800">REASONING NODES</StatLabel>
           <StatNumber fontSize="md" fontWeight="800" color="gray.200">
             {Number(displayDecisions).toLocaleString()}
           </StatNumber>
-          <StatHelpText fontSize="9px" color="ui.muted" m={0}>{(metrics.mode || 'UNKNOWN').toUpperCase()} MODE</StatHelpText>
+          <StatHelpText fontSize="8px" color="ui.muted" m={0}>CAPTURED TRACES</StatHelpText>
         </Stat>
         <Stat>
-          <StatLabel fontSize="10px" color="ui.muted" textTransform="uppercase">Simulated PnL</StatLabel>
+          <StatLabel fontSize="9px" color="ui.muted" fontWeight="800">SIMULATED YIELD</StatLabel>
           <StatNumber fontSize="md" fontWeight="800" color={displayPnL >= 0 ? "status.success" : "status.error"}>
             ${Number(displayPnL).toLocaleString(undefined, { minimumFractionDigits: 2 })}
           </StatNumber>
-          <StatHelpText fontSize="9px" color="ui.muted" m={0}>UNREALIZED</StatHelpText>
+          <StatHelpText fontSize="8px" color="ui.muted" m={0}>UNREALIZED_EPS</StatHelpText>
         </Stat>
       </SimpleGrid>
 
@@ -81,16 +80,16 @@ const PerformanceMetrics: React.FC = () => {
 
       <SimpleGrid columns={2} gap={4}>
         <Box>
-            <Text fontSize="9px" color="ui.muted" textTransform="uppercase" mb={1}>Research Drift</Text>
+            <Text fontSize="9px" color="ui.muted" fontWeight="800" mb={1}>LOGICAL_DRIFT</Text>
             <HStack spacing={2}>
                 <Progress value={(metrics.research_drift || 0) * 100} size="2xs" colorScheme="orange" flex={1} bg="whiteAlpha.100" borderRadius="full" />
                 <Text fontSize="10px" fontWeight="bold" color="orange.300">{Math.round((metrics.research_drift || 0) * 100)}%</Text>
             </HStack>
         </Box>
         <Box>
-            <Text fontSize="9px" color="ui.muted" textTransform="uppercase" mb={1}>Last Audit</Text>
+            <Text fontSize="9px" color="ui.muted" fontWeight="800" mb={1}>LAST_AUDIT_OP</Text>
             <Text fontSize="10px" fontWeight="bold" color="brand.200">
-                {metrics.last_audit ? `${Math.floor((Date.now() - new Date(metrics.last_audit).getTime()) / 3600000)}h ago` : 'NEVER'}
+                {metrics.last_audit ? `${Math.floor((Date.now() - new Date(metrics.last_audit).getTime()) / 3600000)}h ago` : 'SYSTEM_INIT'}
             </Text>
         </Box>
       </SimpleGrid>

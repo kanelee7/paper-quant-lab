@@ -28,3 +28,7 @@ runtime/
 # OS
 .DS_Store
 Thumbs.db
+
+.agents/
+package-lock.json
+skills-lock.json

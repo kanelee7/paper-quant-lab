@@ -137,13 +137,27 @@ const PriceChart: React.FC<PriceChartProps> = ({ symbol, onSymbolChange }) => {
         const journal = await response.json();
         
         if (candleSeriesRef.current && journal.length > 0) {
-          const markers = (journal || []).map((signal: any) => ({
-            time: signal.timestamp / 1000 as Time,
-            position: signal.action === 'buy' ? 'belowBar' : 'aboveBar',
-            color: signal.action === 'buy' ? '#8F9A5B' : '#A84A4A',
-            shape: signal.action === 'buy' ? 'arrowUp' : 'arrowDown',
-            text: (signal.action || 'SIGNAL').toUpperCase(),
-            }));
+          const markers = (journal || []).map((signal: any) => {
+            const isBuy = signal.action === 'buy';
+            const isUnresolved = signal.verified === false;
+            const isLowQuality = signal.evaluation?.quality_score < 0.5;
+            
+            let color = isBuy ? '#8F9A5B' : '#A84A4A';
+            if (isUnresolved) color = '#ED8936'; // Orange for unresolved
+            if (isLowQuality) color = '#718096'; // Grey for degraded
+
+            let text = (signal.action || 'SIGNAL').toUpperCase();
+            if (isUnresolved) text = `[?] ${text}`;
+            if (isLowQuality) text = `[WARN] ${text}`;
+
+            return {
+              time: signal.timestamp / 1000 as Time,
+              position: isBuy ? 'belowBar' : 'aboveBar',
+              color: color,
+              shape: isUnresolved ? 'circle' : isBuy ? 'arrowUp' : 'arrowDown',
+              text: text,
+            };
+          });
           candleSeriesRef.current.setMarkers(markers);
         }
       } catch (error) {

@@ -239,10 +239,10 @@ const Landing: React.FC<{
               letterSpacing="tighter"
               fontWeight="800"
             >
-              AI Reasoning Research Workstation
+              Market Reasoning Workstation
             </Heading>
             <Text fontSize="lg" color="gray.200" maxW="640px" lineHeight="tall" opacity={0.9}>
-              Study AI market reasoning through replay, evidence traces, and research archives.
+              Replay market reasoning through evidence traces and research archives.
             </Text>
             <HStack spacing={4} pt={2}>
               <Button 

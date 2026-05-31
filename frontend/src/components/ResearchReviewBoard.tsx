@@ -215,7 +215,7 @@ const ResearchReviewBoard: React.FC = () => {
       )}
 
       <VStack align="stretch" spacing={3}>
-        {reviews.length === 0 ? (
+        {(reviews || []).length === 0 ? (
           <Text fontSize="11px" color="ui.muted" fontStyle="italic">No narratives synthesized yet.</Text>
         ) : (
           (reviews || []).map(review => (
@@ -250,7 +250,7 @@ const ResearchReviewBoard: React.FC = () => {
                     {review.last_synthesis && (
                         <Text fontSize="8px" color="brand.200" fontStyle="italic">Re-synth {Math.floor((Date.now() - new Date(review.last_synthesis).getTime()) / 3600000)}h ago</Text>
                     )}
-                    <Badge fontSize="8px" variant="solid" colorScheme="blue" borderRadius="full">{review.linked_sessions.length}</Badge>
+                    <Badge fontSize="8px" variant="solid" colorScheme="blue" borderRadius="full">{(review.linked_sessions || []).length}</Badge>
                 </HStack>
               </HStack>
             </Box>
@@ -270,7 +270,7 @@ const ResearchReviewBoard: React.FC = () => {
                 <HStack justifyContent="space-between" p={3} bg="blackAlpha.400" borderRadius="md" borderWidth="1px" borderColor="ui.border">
                     <VStack align="start" spacing={0}>
                         <Text fontSize="10px" color="ui.muted" fontWeight="bold">GOVERNANCE</Text>
-                        <Text fontSize="9px" color="gray.600">Audit v{selectedReview.governance?.audit_trail.version}</Text>
+                        <Text fontSize="9px" color="gray.600">Audit v{selectedReview.governance?.audit_trail?.version || 1}</Text>
                     </VStack>
                     {governanceReport && (
                         <HStack spacing={4}>
@@ -283,8 +283,8 @@ const ResearchReviewBoard: React.FC = () => {
                             <Divider orientation="vertical" h="20px" borderColor="ui.border" />
                             <VStack align="end" spacing={0}>
                                 <Text fontSize="9px" color="ui.muted">Status</Text>
-                                <Badge colorScheme={governanceReport.flags.length === 0 ? "green" : "red"} fontSize="9px" variant="solid">
-                                    {governanceReport.flags.length === 0 ? "STABLE" : "WEAK EVIDENCE"}
+                                <Badge colorScheme={(governanceReport.flags || []).length === 0 ? "green" : "red"} fontSize="9px" variant="solid">
+                                    {(governanceReport.flags || []).length === 0 ? "STABLE" : "WEAK EVIDENCE"}
                                 </Badge>
                             </VStack>
                         </HStack>

@@ -7,12 +7,10 @@ import {
   Badge,
   List,
   ListItem,
-  Icon,
   Button,
   useToast,
-  Tooltip,
 } from '@chakra-ui/react';
-import { WarningIcon, CheckCircleIcon, LinkIcon, RepeatIcon } from '@chakra-ui/icons';
+import { RepeatIcon } from '@chakra-ui/icons';
 import { demoFetch } from "../demo/demoFetch";
 
 interface ReproducibilityReport {
@@ -64,25 +62,19 @@ const ReliabilityDashboard: React.FC = () => {
 
   return (
     <Box bg="background.surface" borderRadius="lg" p={4} borderWidth="1px" borderColor="ui.border" shadow="sm">
-      <HStack justifyContent="space-between" mb={4}>
-        <Text fontSize="xs" fontWeight="bold" letterSpacing="tight" color="gray.400">DATA RELIABILITY</Text>
-        <HStack spacing={2}>
-          <Tooltip label="Research Engine Metadata">
-            <Badge variant="subtle" fontSize="9px" colorScheme="blue">v{report.schema_version}</Badge>
-          </Tooltip>
-          <Icon 
-            as={report.status === 'healthy' ? CheckCircleIcon : WarningIcon} 
-            color={report.status === 'healthy' ? 'status.success' : 'status.warning'} 
-            w={3} h={3}
-          />
-        </HStack>
-      </HStack>
+      <VStack align="start" spacing={0} mb={4}>
+        <Text fontSize="10px" fontWeight="900" color="brand.500" letterSpacing="widest">SYSTEM PROVENANCE</Text>
+        <Text fontSize="9px" color="ui.muted">DATASET INTEGRITY & RELIABILITY</Text>
+      </VStack>
 
       <VStack align="stretch" spacing={3}>
         <Box p={3} bg="blackAlpha.300" borderRadius="md" borderWidth="1px" borderColor="ui.border">
           <HStack justifyContent="space-between">
-            <Text fontSize="10px" color="ui.muted" fontWeight="bold">DATASET HEALTH</Text>
-            <Badge colorScheme={report.status === 'healthy' ? 'green' : 'orange'} fontSize="9px">
+            <VStack align="start" spacing={0}>
+                <Text fontSize="10px" color="ui.muted" fontWeight="800">SCHEMA_STATE</Text>
+                <Text fontSize="9px" color="gray.400">ENGINE_VERSION: v{report.schema_version}</Text>
+            </VStack>
+            <Badge colorScheme={report.status === 'healthy' ? 'green' : 'orange'} fontSize="9px" borderRadius="xs">
               {(report.status || 'UNKNOWN').toUpperCase()}
             </Badge>
           </HStack>
@@ -90,13 +82,13 @@ const ReliabilityDashboard: React.FC = () => {
 
         {report.broken_links.length > 0 && (
           <Box p={3} bg="red.900" borderRadius="md" borderLeft="4px solid" borderColor="red.500">
-            <Text fontSize="10px" fontWeight="800" color="red.100" mb={2}>
-              <LinkIcon mr={1} w={2} h={2} /> {report.broken_links.length} BROKEN LINKS
+            <Text fontSize="10px" fontWeight="900" color="red.100" mb={2} letterSpacing="widest">
+              PROVENANCE_FAILURES [{report.broken_links.length}]
             </Text>
-            <List spacing={1} maxH="80px" overflowY="auto">
+            <List spacing={1} maxH="80px" overflowY="auto" sx={{ '&::-webkit-scrollbar': { width: '2px' }, '&::-webkit-scrollbar-thumb': { bg: 'whiteAlpha.200' } }}>
               {(report.broken_links || []).map((link, idx) => (
-                <ListItem key={idx} fontSize="9px" color="red.200" fontFamily="mono">
-                  • {link.issue}
+                <ListItem key={idx} fontSize="8px" color="red.200" fontFamily="mono" lineHeight="short">
+                  ERR: {link.issue}
                 </ListItem>
               ))}
             </List>
@@ -104,7 +96,7 @@ const ReliabilityDashboard: React.FC = () => {
         )}
 
         <Box p={3} bg="blackAlpha.200" borderRadius="md">
-          <Text fontSize="10px" fontWeight="bold" color="ui.muted" mb={2}>MAINTENANCE</Text>
+          <Text fontSize="10px" fontWeight="800" color="ui.muted" mb={2}>MAINTENANCE_OP</Text>
           <VStack align="start" spacing={1.5}>
             {(report.recommendations.slice(0, 2) || []).map((rec, idx) => (
               <Text key={idx} fontSize="9px" color="gray.400" lineHeight="short">• {rec}</Text>
@@ -121,8 +113,9 @@ const ReliabilityDashboard: React.FC = () => {
           fontSize="10px"
           fontWeight="800"
           letterSpacing="wider"
+          borderRadius="sm"
         >
-          SNAPSHOT RESEARCH STATE
+          COMMIT STATE SNAPSHOT
         </Button>
       </VStack>
     </Box>

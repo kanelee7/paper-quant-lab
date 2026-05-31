@@ -14,16 +14,16 @@ export const translations = {
     'nav.vision': 'Vision',
     
     // Sidebar Sections
-    'sidebar.guidance': 'ANALYTICAL PROTOCOLS',
-    'sidebar.experimentation': 'SIMULATION CONTROL',
-    'sidebar.knowledge': 'SYNTHESIS ARCHIVE',
-    'sidebar.reliability': 'DETERMINISTIC REPLAY',
+    'sidebar.guidance': 'GUIDANCE',
+    'sidebar.experimentation': 'EXPERIMENT',
+    'sidebar.knowledge': 'KNOWLEDGE',
+    'sidebar.reliability': 'REPLAY',
     
     // Common Actions
-    'btn.initialize': 'Initialize Environment',
-    'btn.terminate': 'Terminate Environment',
-    'btn.start_run': 'START RESEARCH RUN',
-    'btn.stop_run': 'STOP RESEARCH RUN',
+    'btn.initialize': 'Initialize',
+    'btn.terminate': 'Terminate',
+    'btn.start_run': 'START RUN',
+    'btn.stop_run': 'STOP RUN',
     'btn.sync_replay': 'Sync Replay',
     'btn.audit_trace': 'Audit Trace',
     

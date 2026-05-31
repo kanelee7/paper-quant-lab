@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Renderer, Camera, Transform, Geometry, Program, Mesh, Vec2 } from 'ogl';
-import { Box, useToken, useBreakpointValue } from '@chakra-ui/react';
+import { Box, useToken } from '@chakra-ui/react';
 
 // Simple deterministic random
 const createRandom = (seed: number) => {
@@ -22,49 +22,41 @@ const vertex = `
   uniform float uTime;
   uniform float uPixelRatio;
   uniform vec2 uMouse;
-  uniform float uObjectScale;
-  uniform float uInstabilityBlend;
 
   varying float vType;
   varying float vAlpha;
 
+  float easeInOutCubic(float x) {
+      return x < 0.5 ? 4.0 * x * x * x : 1.0 - pow(-2.0 * x + 2.0, 3.0) / 2.0;
+  }
+
   void main() {
     vType = pointType;
-    
-    // Smooth interpolation
-    float t = smoothstep(0.0, 1.0, uMix);
-    vec3 pos = mix(position, target, t) * uObjectScale;
-    
-    // Continuous Analytical Instability
-    // Baseline is moving-state texture; settled state is only ~10% calmer
-    float driftSpeed = 0.18 + (uInstabilityBlend * 0.04);
-    float driftAmp = 0.09 + (uInstabilityBlend * 0.03);
-    float jitterAmp = 0.012 + (uInstabilityBlend * 0.008);
 
-    float driftX = sin(uTime * driftSpeed + position.z) * driftAmp;
-    float driftY = cos(uTime * driftSpeed + position.x) * driftAmp;
-    float jitter = sin(uTime * 1.5 + position.y * 10.0) * jitterAmp;
-    
-    pos.x += (driftX + jitter) * uObjectScale;
-    pos.y += (driftY + jitter) * uObjectScale;
+    // Smooth interpolation with eased curve
+    float t = easeInOutCubic(clamp(uMix, 0.0, 1.0));
+    vec3 currentBasePos = mix(position, target, t);
+    vec3 pos = currentBasePos;
 
-    // Mouse Interaction
+    // Continuous Micro-drift (No buffer-swap snap)
+    pos.x += sin(uTime * 0.12 + currentBasePos.z) * 0.04;
+    pos.y += cos(uTime * 0.12 + currentBasePos.x) * 0.04;
+
+    // Mouse Interaction: Subtle repulsion
     vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
     vec4 mouseInSpace = modelViewMatrix * vec4(uMouse.x * 5.0, uMouse.y * 5.0, 0.0, 1.0);
     float dist = distance(mvPosition.xy, mouseInSpace.xy);
-    float repulsion = smoothstep(1.2 * uObjectScale, 0.0, dist) * 0.15 * uObjectScale;
+    float repulsion = smoothstep(1.5, 0.0, dist) * 0.2;
     mvPosition.xy += normalize(mvPosition.xy - mouseInSpace.xy + 0.001) * repulsion;
 
     gl_Position = projectionMatrix * mvPosition;
-    
-    // Minimal Data Nodes (0.25px - 0.45px) - NO SETTLED GROWTH
-    // All oversized circles removed. 
-    float size = (vType > 0.5) ? 0.48 : 0.28;
-    
-    gl_PointSize = size * uPixelRatio * (400.0 / -mvPosition.z);
-    
+
+    // Ultrafine Data Points (0.45px - 0.9px)
+    float size = (vType > 0.5) ? 0.9 : 0.55;
+    gl_PointSize = size * uPixelRatio * (400.0 / -mvPosition.z);     
+
     // Stable depth-based alpha
-    vAlpha = smoothstep(-25.0, -1.0, mvPosition.z);
+    vAlpha = smoothstep(-22.0, -1.0, mvPosition.z);
   }
 `;
 
@@ -72,20 +64,21 @@ const fragment = `
   precision highp float;
   varying float vType;
   varying float vAlpha;
-  
-  uniform vec3 uColorA;
-  uniform vec3 uColorB;
+
+  uniform vec3 uColorWhite;
+  uniform vec3 uColorGold;
   uniform float uOpacity;
 
   void main() {
+    // Sharp pixel data points
     float d = distance(gl_PointCoord, vec2(0.5));
     if (d > 0.48) discard;
 
-    vec3 color = mix(uColorA, uColorB, vType * 0.4);
-    
-    // Raw texture baseline - NO ALPHA BOOST
+    vec3 color = mix(uColorWhite, uColorGold, vType);
+
+    // High-density crisp alpha
     float alpha = uOpacity * vAlpha;
-    if (vType > 0.5) alpha *= 1.1;
+    if (vType > 0.5) alpha *= 1.3;
 
     gl_FragColor = vec4(color, alpha);
   }
@@ -100,21 +93,23 @@ const lineVertex = `
   uniform float uMix;
   uniform float uTime;
   uniform vec2 uMouse;
-  uniform float uObjectScale;
-  uniform float uInstabilityBlend;
+
+  float easeInOutCubic(float x) {
+      return x < 0.5 ? 4.0 * x * x * x : 1.0 - pow(-2.0 * x + 2.0, 3.0) / 2.0;
+  }
 
   void main() {
-    float t = smoothstep(0.0, 1.0, uMix);
-    vec3 pos = mix(position, target, t) * uObjectScale;
-    
-    float driftAmp = 0.09 + (uInstabilityBlend * 0.03);
-    pos.x += sin(uTime * 0.18 + position.z) * driftAmp * uObjectScale;
-    pos.y += cos(uTime * 0.18 + position.x) * driftAmp * uObjectScale;
+    float t = easeInOutCubic(clamp(uMix, 0.0, 1.0));
+    vec3 currentBasePos = mix(position, target, t);
+    vec3 pos = currentBasePos;
+
+    pos.x += sin(uTime * 0.12 + currentBasePos.z) * 0.04;
+    pos.y += cos(uTime * 0.12 + currentBasePos.x) * 0.04;
 
     vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
     vec4 mouseInSpace = modelViewMatrix * vec4(uMouse.x * 5.0, uMouse.y * 5.0, 0.0, 1.0);
     float dist = distance(mvPosition.xy, mouseInSpace.xy);
-    float repulsion = smoothstep(1.0 * uObjectScale, 0.0, dist) * 0.08 * uObjectScale;
+    float repulsion = smoothstep(1.2, 0.0, dist) * 0.12;
     mvPosition.xy += normalize(mvPosition.xy - mouseInSpace.xy + 0.001) * repulsion;
 
     gl_Position = projectionMatrix * mvPosition;
@@ -127,30 +122,29 @@ const lineFragment = `
   uniform float uOpacity;
 
   void main() {
-    // Subtle lattice visibility - NO SETTLED FADE-IN
-    gl_FragColor = vec4(uColor, uOpacity * 0.85);
+    gl_FragColor = vec4(uColor, uOpacity);
   }
 `;
+
+const PARTICLE_COUNT = 5200; // Increased to high-density fabric     
+const LINE_COUNT = 800; // Strengthened scaffold for ultrafine particles
 
 export const QuantMorphField: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const mouse = useRef(new Vec2(0, 0));
   const targetMouse = useRef(new Vec2(0, 0));
-  const [colorA, colorB, borderColor] = useToken('colors', ['gray.50', 'gray.200', 'ui.border']);
-
-  // Responsive Configuration
-  const particleCount = useBreakpointValue({ base: 4000, md: 6500, lg: 8500 }) || 4000;
-  const lineCount = useBreakpointValue({ base: 500, md: 700, lg: 900 }) || 500;
-  const objectScale = useBreakpointValue({ base: 0.55, md: 0.8, lg: 1.0 }) || 0.55;
-  const cameraZ = useBreakpointValue({ base: 15, md: 13, lg: 12 }) || 15;
-  const baseOpacity = useBreakpointValue({ base: 0.4, md: 0.5, lg: 0.55 }) || 0.4;
-  const scaffoldOpacity = useBreakpointValue({ base: 0.06, md: 0.08, lg: 0.1 }) || 0.06;
+  const [whiteColor, goldColor, borderColor] = useToken('colors', ['gray.50', 'brand.500', 'ui.border']);
 
   useEffect(() => {
     if (!containerRef.current) return;
 
     const container = containerRef.current;
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const isMobile = window.innerWidth < 768;
+    
+    // Modest reduction in visual density for mobile
+    const particleCount = isMobile ? 3200 : 5200;
+    const lineCount = isMobile ? 400 : 800;
 
     const renderer = new Renderer({
       alpha: true,
@@ -161,7 +155,7 @@ export const QuantMorphField: React.FC = () => {
     container.appendChild(gl.canvas);
 
     const camera = new Camera(gl, { fov: 35 });
-    camera.position.set(0, 0, cameraZ);
+    // Camera position is managed in handleResize now
     camera.lookAt([0, 0, 0]);
 
     const scene = new Transform();
@@ -173,13 +167,73 @@ export const QuantMorphField: React.FC = () => {
       return [r, g, b];
     };
 
-    const cA = hexToVec3(colorA || '#ffffff');
-    const cB = hexToVec3(colorB || '#e2e8f0');
-    const cL = hexToVec3(borderColor || '#2d3748');
+    const colorWhite = hexToVec3(whiteColor || '#ffffff');
+    const colorGold = hexToVec3(goldColor || '#d4af37');
+    const colorLine = hexToVec3(borderColor || '#4A5568');
 
-    const random = createRandom(10101);
+    const random = createRandom(2026);
 
-    // --- CUBE ---
+    // Spatial sorting to enforce vertex identity during morphing
+    const sortPositions = (posArray: Float32Array) => {
+      const pts = [];
+      const count = posArray.length / 3;
+      for (let i = 0; i < count; i++) {
+          const x = posArray[i * 3];
+          const y = posArray[i * 3 + 1];
+          const z = posArray[i * 3 + 2];
+          const r = Math.sqrt(x*x + y*y + z*z);
+          const theta = Math.atan2(z, x);
+          const phi = Math.acos(y / (r > 0 ? r : 1));
+          pts.push({ x, y, z, theta, phi, r });
+      }
+      pts.sort((a, b) => {
+          if (Math.abs(a.theta - b.theta) > 0.1) return a.theta - b.theta;
+          if (Math.abs(a.phi - b.phi) > 0.1) return a.phi - b.phi;
+          return a.r - b.r;
+      });
+      for (let i = 0; i < count; i++) {
+          posArray[i * 3] = pts[i].x;
+          posArray[i * 3 + 1] = pts[i].y;
+          posArray[i * 3 + 2] = pts[i].z;
+      }
+      return posArray;
+    };
+
+    const sortLines = (posArray: Float32Array) => {
+      const segments = [];
+      const count = posArray.length / 6;
+      for (let i = 0; i < count; i++) {
+          const x1 = posArray[i * 6];
+          const y1 = posArray[i * 6 + 1];
+          const z1 = posArray[i * 6 + 2];
+          const x2 = posArray[i * 6 + 3];
+          const y2 = posArray[i * 6 + 4];
+          const z2 = posArray[i * 6 + 5];
+          const cx = (x1 + x2) / 2;
+          const cy = (y1 + y2) / 2;
+          const cz = (z1 + z2) / 2;
+          const r = Math.sqrt(cx*cx + cy*cy + cz*cz);
+          const theta = Math.atan2(cz, cx);
+          const phi = Math.acos(cy / (r > 0 ? r : 1));
+          segments.push({ x1, y1, z1, x2, y2, z2, theta, phi, r });
+      }
+      segments.sort((a, b) => {
+          if (Math.abs(a.theta - b.theta) > 0.1) return a.theta - b.theta;
+          if (Math.abs(a.phi - b.phi) > 0.1) return a.phi - b.phi;
+          return a.r - b.r;
+      });
+      for (let i = 0; i < count; i++) {
+          posArray[i * 6] = segments[i].x1;
+          posArray[i * 6 + 1] = segments[i].y1;
+          posArray[i * 6 + 2] = segments[i].z1;
+          posArray[i * 6 + 3] = segments[i].x2;
+          posArray[i * 6 + 4] = segments[i].y2;
+          posArray[i * 6 + 5] = segments[i].z2;
+      }
+      return posArray;
+    };
+
+    // --- CUBE (eb1577a) ---
     const generateCube = (count: number) => {
       const pos = new Float32Array(count * 3);
       for (let i = 0; i < count; i++) {
@@ -198,12 +252,16 @@ export const QuantMorphField: React.FC = () => {
         else if (edge === 9) { pos[i*3] = 2.2; pos[i*3+1] = -2.2; pos[i*3+2] = t*2.2; }
         else if (edge === 10) { pos[i*3] = -2.2; pos[i*3+1] = 2.2; pos[i*3+2] = t*2.2; }
         else { pos[i*3] = -2.2; pos[i*3+1] = -2.2; pos[i*3+2] = t*2.2; }
-        
-        if (random() > 0.4) {
+        if (random() > 0.5) { // Denser volume
+          const face = Math.floor(random() * 6);
           const u = random() * 2 - 1;
           const v = random() * 2 - 1;
-          const w = random() * 2 - 1;
-          pos[i*3] = u * 2.2; pos[i*3+1] = v * 2.2; pos[i*3+2] = w * 2.2;
+          if (face === 0) { pos[i*3] = 2.2; pos[i*3+1] = u*2.2; pos[i*3+2] = v*2.2; }
+          else if (face === 1) { pos[i*3] = -2.2; pos[i*3+1] = u*2.2; pos[i*3+2] = v*2.2; }
+          else if (face === 2) { pos[i*3] = u*2.2; pos[i*3+1] = 2.2; pos[i*3+2] = v*2.2; }
+          else if (face === 3) { pos[i*3] = u*2.2; pos[i*3+1] = -2.2; pos[i*3+2] = v*2.2; }
+          else if (face === 4) { pos[i*3] = u*2.2; pos[i*3+1] = v*2.2; pos[i*3+2] = 2.2; }
+          else { pos[i*3] = u*2.2; pos[i*3+1] = v*2.2; pos[i*3+2] = -2.2; }
         }
       }
       return pos;
@@ -219,51 +277,54 @@ export const QuantMorphField: React.FC = () => {
         ];
         for (let i = 0; i < count; i++) {
             const v = edges[i % edges.length];
-            pos[i*3] = v[0] + (random() > 0.8 ? (random()-0.5) : 0);
+            pos[i*3] = v[0];
             pos[i*3+1] = v[1];
             pos[i*3+2] = v[2];
         }
         return pos;
     };
 
-    // --- SHELL ---
-    const generateShell = (count: number) => {
+    // --- SPHERE (eb1577a) ---
+    const generateSphere = (count: number) => {
       const pos = new Float32Array(count * 3);
       for (let i = 0; i < count; i++) {
         const phi = Math.acos(-1 + (2 * i) / count);
         const theta = Math.sqrt(count * Math.PI) * phi;
-        const r = 3.3;
+        const r = 3.2;
         pos[i * 3] = r * Math.cos(theta) * Math.sin(phi);
-        pos[i * 3 + 1] = r * Math.sin(theta) * Math.sin(phi);
+        pos[i * 3 + 1] = r * Math.sin(theta) * Math.sin(phi);        
         pos[i * 3 + 2] = r * Math.cos(phi);
       }
       return pos;
     };
 
-    const generateShellLines = (count: number) => {
+    const generateSphereLines = (count: number) => {
         const pos = new Float32Array(count * 3);
         for (let i = 0; i < count; i++) {
-            const ring = Math.floor(i / (count / 6));
-            const angle = (i % (count / 6)) / (count / 6) * Math.PI * 2;
-            const r = 3.3;
+            const ring = Math.floor(i / (count / 8));
+            const angle = (i % (count / 8)) / (count / 8) * Math.PI * 2;
+            const r = 3.2;
             if (ring === 0) { pos[i*3] = r * Math.cos(angle); pos[i*3+1] = 0; pos[i*3+2] = r * Math.sin(angle); }
             else if (ring === 1) { pos[i*3] = r * Math.cos(angle); pos[i*3+1] = r * Math.sin(angle); pos[i*3+2] = 0; }
             else if (ring === 2) { pos[i*3] = 0; pos[i*3+1] = r * Math.cos(angle); pos[i*3+2] = r * Math.sin(angle); }
-            else { 
-              pos[i*3] = (random()-0.5)*1; pos[i*3+1] = (random()-0.5)*1; pos[i*3+2] = (random()-0.5)*1; 
+            else if (ring < 6) {
+                const y = (ring - 4) * 1.5;
+                const r2 = Math.sqrt(Math.max(0.1, r*r - y*y));
+                pos[i*3] = r2 * Math.cos(angle); pos[i*3+1] = y; pos[i*3+2] = r2 * Math.sin(angle);
             }
+            else { pos[i*3] = (random()-0.5)*0.5; pos[i*3+1] = (random()-0.5)*0.5; pos[i*3+2] = (random()-0.5)*0.5; }
         }
         return pos;
     };
 
-    // --- TOPOLOGY ---
-    const generateTopology = (count: number) => {
+    // --- SURFACE (eb1577a) ---
+    const generateSurface = (count: number) => {
       const pos = new Float32Array(count * 3);
       const size = Math.floor(Math.sqrt(count));
       for (let i = 0; i < count; i++) {
-        const x = (i % size) / size * 10 - 5;
-        const z = Math.floor(i / size) / size * 8 - 4;
-        const y = Math.sin(x * 1.2) * Math.cos(z * 1.2) * 1.5 + Math.sin(x * 3.0) * 0.2;
+        const x = (i % size) / size * 9 - 4.5;
+        const z = Math.floor(i / size) / size * 7 - 3.5;
+        const y = Math.sin(x * 1.4) * Math.cos(z * 1.4) * 1.4;       
         pos[i * 3] = x;
         pos[i * 3 + 1] = y;
         pos[i * 3 + 2] = z;
@@ -271,9 +332,9 @@ export const QuantMorphField: React.FC = () => {
       return pos;
     };
 
-    const generateTopologyLines = (count: number) => {
+    const generateSurfaceLines = (count: number) => {
         const pos = new Float32Array(count * 3);
-        const rows = 16;
+        const rows = 14;
         const cols = Math.floor(count / 2 / rows);
         for (let i = 0; i < count; i++) {
             const isRow = i < count / 2;
@@ -281,29 +342,29 @@ export const QuantMorphField: React.FC = () => {
             const r = Math.floor(idx / cols);
             const c = idx % cols;
             let x, z;
-            if (isRow) { x = (c / cols) * 10 - 5; z = (r / rows) * 8 - 4; }
-            else { x = (r / rows) * 10 - 5; z = (c / cols) * 8 - 4; }
-            const y = Math.sin(x * 1.2) * Math.cos(z * 1.2) * 1.5 + Math.sin(x * 3.0) * 0.2;
+            if (isRow) { x = (c / cols) * 9 - 4.5; z = (r / rows) * 7 - 3.5; }
+            else { x = (r / rows) * 9 - 4.5; z = (c / cols) * 7 - 3.5; }
+            const y = Math.sin(x * 1.4) * Math.cos(z * 1.4) * 1.4;   
             pos[i*3] = x; pos[i*3+1] = y; pos[i*3+2] = z;
         }
         return pos;
     };
 
     const pointStates = [
-      generateCube(particleCount),
-      generateShell(particleCount),
-      generateTopology(particleCount),
+      sortPositions(generateCube(PARTICLE_COUNT)),
+      sortPositions(generateSphere(PARTICLE_COUNT)),
+      sortPositions(generateSurface(PARTICLE_COUNT)),
     ];
 
     const lineStates = [
-      generateCubeLines(lineCount),
-      generateShellLines(lineCount),
-      generateTopologyLines(lineCount),
+      sortLines(generateCubeLines(LINE_COUNT)),
+      sortLines(generateSphereLines(LINE_COUNT)),
+      sortLines(generateSurfaceLines(LINE_COUNT)),
     ];
 
-    const pointTypes = new Float32Array(particleCount);
-    for (let i = 0; i < particleCount; i++) {
-      pointTypes[i] = random() > 0.98 ? 1.0 : 0.0;
+    const pointTypes = new Float32Array(PARTICLE_COUNT);
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      pointTypes[i] = random() > 0.98 ? 1.0 : 0.0; // Minimal tiny gold anchors
     }
 
     const geometry = new Geometry(gl, {
@@ -319,12 +380,10 @@ export const QuantMorphField: React.FC = () => {
         uMix: { value: 0 },
         uTime: { value: 0 },
         uPixelRatio: { value: renderer.dpr },
-        uColorA: { value: cA },
-        uColorB: { value: cB },
-        uOpacity: { value: baseOpacity },
+        uColorWhite: { value: colorWhite },
+        uColorGold: { value: colorGold },
+        uOpacity: { value: 0.55 }, // High-density opacity
         uMouse: { value: mouse.current },
-        uObjectScale: { value: objectScale },
-        uInstabilityBlend: { value: 0.0 },
       },
       transparent: true,
       depthTest: false,
@@ -344,11 +403,9 @@ export const QuantMorphField: React.FC = () => {
         uniforms: {
             uMix: { value: 0 },
             uTime: { value: 0 },
-            uColor: { value: cL },
-            uOpacity: { value: scaffoldOpacity },
+            uColor: { value: colorLine },
+            uOpacity: { value: 0.22 }, // Slightly stronger scaffold for ultrafine points
             uMouse: { value: mouse.current },
-            uObjectScale: { value: objectScale },
-            uInstabilityBlend: { value: 0.0 },
         },
         transparent: true,
     });
@@ -359,12 +416,9 @@ export const QuantMorphField: React.FC = () => {
     let currentState = 0;
     let nextState = 1;
     let transitionTime = 0;
-    const transitionDuration = prefersReducedMotion ? 1000000 : 7.0;
-    const waitDuration = 5.0;
+    const transitionDuration = prefersReducedMotion ? 1000000 : 8.0; 
+    const waitDuration = 4.0;
     let waitTime = 0;
-
-    // Smoothed Instability Blend
-    let instabilityBlend = 0.0;
 
     let requestID: number;
     const update = (t: number) => {
@@ -376,49 +430,35 @@ export const QuantMorphField: React.FC = () => {
       if (!prefersReducedMotion) {
         if (waitTime < waitDuration) {
           waitTime += 0.016;
-          
-          // Settled state is only ~10% calmer than morphing state
-          instabilityBlend = Math.max(instabilityBlend - 0.008, 0.0);
         } else {
           transitionTime += 0.016;
-          
-          // Morphing state instability
-          instabilityBlend = Math.min(instabilityBlend + 0.015, 1.0);
-
-          const mixVal = Math.min(transitionTime / transitionDuration, 1.0);
-          program.uniforms.uMix.value = mixVal;
-          lineProgram.uniforms.uMix.value = mixVal;
+          const mixValue = Math.min(transitionTime / transitionDuration, 1.0);
+          program.uniforms.uMix.value = mixValue;
+          lineProgram.uniforms.uMix.value = mixValue;
 
           if (transitionTime >= transitionDuration) {
             currentState = nextState;
-            nextState = (nextState + 1) % pointStates.length;
+            nextState = (nextState + 1) % pointStates.length;        
             transitionTime = 0;
             waitTime = 0;
-            
-            // Seamless Buffer Swap
             geometry.attributes.position.data = pointStates[currentState];
             geometry.attributes.target.data = pointStates[nextState];
             geometry.attributes.position.needsUpdate = true;
             geometry.attributes.target.needsUpdate = true;
-            
             lineGeometry.attributes.position.data = lineStates[currentState];
             lineGeometry.attributes.target.data = lineStates[nextState];
-            lineGeometry.attributes.position.needsUpdate = true;
-            lineGeometry.attributes.target.needsUpdate = true;
-            
+            lineGeometry.attributes.position.needsUpdate = true;     
+            lineGeometry.attributes.target.needsUpdate = true;       
             program.uniforms.uMix.value = 0;
             lineProgram.uniforms.uMix.value = 0;
           }
         }
       }
 
-      program.uniforms.uInstabilityBlend.value = instabilityBlend;
-      lineProgram.uniforms.uInstabilityBlend.value = instabilityBlend;
-
       program.uniforms.uTime.value = time;
       lineProgram.uniforms.uTime.value = time;
-      
-      const rotY = time * 0.03;
+
+      const rotY = time * 0.035;
       const rotX = Math.sin(time * 0.05) * 0.08;
       particles.rotation.y = rotY;
       particles.rotation.x = rotX;
@@ -431,10 +471,18 @@ export const QuantMorphField: React.FC = () => {
     requestID = requestAnimationFrame(update);
 
     const handleResize = () => {
-      const width = container.clientWidth || window.innerWidth;
-      const height = container.clientHeight || window.innerHeight;
+      const width = container.clientWidth || window.innerWidth;      
+      const height = container.clientHeight || window.innerHeight;   
       renderer.setSize(width, height);
       camera.perspective({ aspect: gl.canvas.width / gl.canvas.height });
+      
+      if (width < 768) {
+          camera.position.set(0, 0, 16.5);
+          scene.scale.set(0.65, 0.65, 0.65);
+      } else {
+          camera.position.set(0, 0, 12);
+          scene.scale.set(1, 1, 1);
+      }
     };
 
     const handleMouseMove = (e: MouseEvent) => {
@@ -451,14 +499,14 @@ export const QuantMorphField: React.FC = () => {
 
     return () => {
       window.removeEventListener('resize', handleResize);
-      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mousemove', handleMouseMove);      
       cancelAnimationFrame(requestID);
       if (container && gl.canvas.parentElement) {
         container.removeChild(gl.canvas);
       }
       gl.getExtension('WEBGL_lose_context')?.loseContext();
     };
-  }, [colorA, colorB, borderColor, particleCount, lineCount, objectScale, cameraZ, baseOpacity, scaffoldOpacity]);
+  }, [whiteColor, goldColor, borderColor]);
 
   return (
     <Box
@@ -470,7 +518,7 @@ export const QuantMorphField: React.FC = () => {
       h="100%"
       zIndex={0}
       pointerEvents="none"
-      opacity={0.85}
+      opacity={0.8}
       bg="transparent"
     />
   );

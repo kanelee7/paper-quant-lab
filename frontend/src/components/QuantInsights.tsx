@@ -100,7 +100,7 @@ const QuantInsights: React.FC = () => {
                   <Badge colorScheme="blue">{(name || 'STRATEGY').toUpperCase()}</Badge>
                   {stat.persona_id && evolution[stat.persona_id] && (
                     <Text fontSize="2xs" color="gray.600">
-                      Ver: {evolution[stat.persona_id].drift_history.slice(-1)[0]?.version || 'v1.0'}
+                      Ver: {(evolution[stat.persona_id].drift_history || []).slice(-1)[0]?.version || 'v1.0'}
                     </Text>
                   )}
                 </VStack>
@@ -108,7 +108,7 @@ const QuantInsights: React.FC = () => {
                   <HStack>
                     <Text fontSize="xs" color="gray.400">Consistency:</Text>
                     <Badge colorScheme="purple" variant="solid">
-                      {(evals[stat.persona_id].consistency.consistency_score * 100).toFixed(0)}%
+                      {((evals[stat.persona_id].consistency?.consistency_score || 0) * 100).toFixed(0)}%
                     </Badge>
                   </HStack>
                 )}
@@ -118,19 +118,19 @@ const QuantInsights: React.FC = () => {
                 <Stat size="sm">
                   <StatLabel fontSize="xs">Buy/Sell Signals</StatLabel>
                   <StatNumber fontSize="sm">
-                    <Text as="span" color="green.400">{stat.buy}</Text> / <Text as="span" color="red.400">{stat.sell}</Text>
+                    <Text as="span" color="green.400">{stat.buy || 0}</Text> / <Text as="span" color="red.400">{stat.sell || 0}</Text>
                   </StatNumber>
                 </Stat>
                 <Stat size="sm">
                   <StatLabel fontSize="xs">Avg Return (5m)</StatLabel>
-                  <StatNumber fontSize="sm" color={stat.avg_return_5m >= 0 ? "green.300" : "red.300"}>
-                    {stat.avg_return_5m > 0 ? '+' : ''}{stat.avg_return_5m}%
+                  <StatNumber fontSize="sm" color={(stat.avg_return_5m || 0) >= 0 ? "green.300" : "red.300"}>
+                    {(stat.avg_return_5m || 0) > 0 ? '+' : ''}{stat.avg_return_5m || 0}%
                   </StatNumber>
                 </Stat>
                 <Stat size="sm">
                   <StatLabel fontSize="xs">Win Rate (5m)</StatLabel>
                   <StatNumber fontSize="sm" color="blue.300">
-                    {stat.win_rate_5m}%
+                    {stat.win_rate_5m || 0}%
                   </StatNumber>
                 </Stat>
               </HStack>
@@ -164,7 +164,7 @@ const QuantInsights: React.FC = () => {
                 <Box mt={3} pt={2} borderTop="1px" borderColor="gray.700">
                   <Text fontSize="xs" fontWeight="bold" color="gray.500" mb={1}>REASONING DRIFT HISTORY</Text>
                   <HStack spacing={1} overflowX="auto" py={1}>
-                    {(evolution[stat.persona_id].drift_history.slice(-20) || []).map((d: any, idx: number) => (
+                    {(evolution[stat.persona_id].drift_history || []).slice(-20).map((d: any, idx: number) => (
                       <Box 
                         key={idx} 
                         w="8px" 
