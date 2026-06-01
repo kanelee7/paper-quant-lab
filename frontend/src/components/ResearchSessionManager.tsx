@@ -290,7 +290,9 @@ const ResearchSessionManager: React.FC = () => {
               </HStack>
               <List spacing={1.5}>
                 {marketSessions.map(s => {
-                  const isRelated = activeSession && (s.market === activeSession.market || s.tags.some(t => activeSession.tags.includes(t)));
+                  const sTags = Array.isArray(s.tags) ? s.tags : [];
+                  const activeTags = activeSession && Array.isArray(activeSession.tags) ? activeSession.tags : [];
+                  const isRelated = activeSession && (s.market === activeSession.market || sTags.some(t => activeTags.includes(t)));
                   return (
                     <ListItem 
                       key={s.session_id} 
@@ -331,10 +333,10 @@ const ResearchSessionManager: React.FC = () => {
                         </HStack>
                         
                         <HStack wrap="wrap" spacing={1} mt={1}>
-                            {(s.tags || []).slice(0, 3).map(tag => (
+                            {sTags.slice(0, 3).map(tag => (
                                 <Badge key={tag} variant="outline" fontSize="7px" px={1} colorScheme="gray" borderRadius="xs">{tag}</Badge>
                             ))}
-                            {s.tags.length > 3 && <Text fontSize="7px" color="ui.muted">+{s.tags.length - 3}</Text>}
+                            {sTags.length > 3 && <Text fontSize="7px" color="ui.muted">+{sTags.length - 3}</Text>}
                         </HStack>
                       </VStack>
                     </ListItem>

@@ -103,7 +103,7 @@ const CollaborativeGovernance: React.FC = () => {
             ))}
           </VStack>
 
-          {conflicts.length === 0 && (
+          {Array.isArray(conflicts) && conflicts.length === 0 && (
               <Box p={4} textAlign="center" borderRadius="md" border="1px dashed" borderColor="green.600" bg="green.900">
                   <CheckCircleIcon color="green.300" mb={2} />
                   <Text fontSize="xs" color="green.100">No collaborative conflicts detected.</Text>

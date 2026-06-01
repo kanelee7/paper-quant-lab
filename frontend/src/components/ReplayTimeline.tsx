@@ -70,7 +70,8 @@ const ReplayTimeline: React.FC<ReplayTimelineProps> = ({ symbol, onFocusSignal, 
     try {
       const response = await demoFetch(`http://localhost:8000/api/journal?limit=200`);
       const data = await response.json();
-      const filtered = data.filter((s: any) => s.symbol === symbol).sort((a: any, b: any) => 
+      const list = Array.isArray(data) ? data : [];
+      const filtered = list.filter((s: any) => s.symbol === symbol).sort((a: any, b: any) => 
         new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
       );
       setSignals(filtered);
@@ -87,7 +88,12 @@ const ReplayTimeline: React.FC<ReplayTimelineProps> = ({ symbol, onFocusSignal, 
     fetchSignals();
     const saved = localStorage.getItem('pql_hypotheses');
     if (saved) {
-        setActiveHypotheses(JSON.parse(saved).filter((h: Hypothesis) => h.status === 'active'));
+        try {
+            const hList = JSON.parse(saved);
+            setActiveHypotheses((Array.isArray(hList) ? hList : []).filter((h: Hypothesis) => h.status === 'active'));
+        } catch (e) {
+            setActiveHypotheses([]);
+        }
     }
   }, [fetchSignals]);
 

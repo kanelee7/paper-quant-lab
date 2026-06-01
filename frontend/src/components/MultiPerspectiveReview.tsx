@@ -102,7 +102,7 @@ const MultiPerspectiveReview: React.FC = () => {
                         <HStack justifyContent="space-between">
                             <HStack spacing={1}>
                                 <Icon as={RepeatIcon} w={2} h={2} color="ui.muted" />
-                                <Text fontSize="9px" color="ui.muted">{p.key_evidence_ids.length} Evidence Links</Text>
+                                <Text fontSize="9px" color="ui.muted">{(Array.isArray(p.key_evidence_ids) ? p.key_evidence_ids.length : 0)} Evidence Links</Text>
                             </HStack>
                             <Button size="2xs" variant="ghost" colorScheme="blue" leftIcon={<ViewIcon />}>Sync Replay</Button>
                         </HStack>

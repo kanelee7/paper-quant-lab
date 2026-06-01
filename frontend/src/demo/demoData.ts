@@ -207,7 +207,8 @@ export const demoSessions = [
       drift_score: 0.312,
       success_rate: 0.428
     },
-    last_reviewed: new Date(Date.now() - 7200000).toISOString()
+    last_reviewed: new Date(Date.now() - 7200000).toISOString(),
+    tags: []
   },
   {
     session_id: "demo-session-old",
@@ -222,7 +223,8 @@ export const demoSessions = [
       drift_score: 0.52,
       success_rate: 0.35
     },
-    last_reviewed: new Date(Date.now() - 1296000000).toISOString() // 15 days ago
+    last_reviewed: new Date(Date.now() - 1296000000).toISOString(), // 15 days ago
+    tags: []
   },
   {
     session_id: "demo-session-stale",

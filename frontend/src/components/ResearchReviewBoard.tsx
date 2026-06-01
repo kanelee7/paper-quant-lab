@@ -123,13 +123,13 @@ const ResearchReviewBoard: React.FC = () => {
   }, []);
 
   const handleCreateReview = async () => {
-    if (!newReview.title || newReview.linked_sessions.length === 0) {
+    if (!newReview.title || (Array.isArray(newReview.linked_sessions) && newReview.linked_sessions.length === 0)) {
       toast({ title: 'Title and at least one session required', status: 'warning' });
       return;
     }
     
     try {
-      const sessionIds = newReview.linked_sessions.join(',');
+      const sessionIds = (Array.isArray(newReview.linked_sessions) ? newReview.linked_sessions : []).join(',');
       const synthRes = await demoFetch(`http://localhost:8000/api/reviews/synthesis?session_ids=${sessionIds}`);
       const synthData = await synthRes.json();
       

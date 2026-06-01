@@ -349,7 +349,7 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
             </Tr>
           </Thead>
           <Tbody>
-            {filteredSignals.length === 0 ? (
+            {(!Array.isArray(filteredSignals) || filteredSignals.length === 0) ? (
                 <Tr>
                     <Td colSpan={7} py={16} textAlign="center">
                         <VStack spacing={3}>

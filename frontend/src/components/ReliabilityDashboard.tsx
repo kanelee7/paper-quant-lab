@@ -80,7 +80,7 @@ const ReliabilityDashboard: React.FC = () => {
           </HStack>
         </Box>
 
-        {report.broken_links.length > 0 && (
+        {Array.isArray(report.broken_links) && report.broken_links.length > 0 && (
           <Box p={3} bg="red.900" borderRadius="md" borderLeft="4px solid" borderColor="red.500">
             <Text fontSize="10px" fontWeight="900" color="red.100" mb={2} letterSpacing="widest">
               PROVENANCE_FAILURES [{report.broken_links.length}]
@@ -98,7 +98,7 @@ const ReliabilityDashboard: React.FC = () => {
         <Box p={3} bg="blackAlpha.200" borderRadius="md">
           <Text fontSize="10px" fontWeight="800" color="ui.muted" mb={2}>MAINTENANCE_OP</Text>
           <VStack align="start" spacing={1.5}>
-            {(report.recommendations.slice(0, 2) || []).map((rec, idx) => (
+            {(Array.isArray(report.recommendations) ? report.recommendations.slice(0, 2) : []).map((rec, idx) => (
               <Text key={idx} fontSize="9px" color="gray.400" lineHeight="short">• {rec}</Text>
             ))}
           </VStack>

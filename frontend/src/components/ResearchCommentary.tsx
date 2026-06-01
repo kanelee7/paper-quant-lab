@@ -105,7 +105,7 @@ const ResearchCommentary: React.FC<ResearchCommentaryProps> = ({ signal_id, repl
       <HStack justifyContent="space-between" mb={2}>
         <HStack spacing={2}>
             <Heading size="xs" color="brand.500" letterSpacing="widest" textTransform="uppercase">Analytical Commentary</Heading>
-            <Badge variant="subtle" fontSize="9px">{comments.length} THREADS</Badge>
+            <Badge variant="subtle" fontSize="9px">{(Array.isArray(comments) ? comments.length : 0)} THREADS</Badge>
         </HStack>
         <IconButton 
           size="xs" 
@@ -121,7 +121,7 @@ const ResearchCommentary: React.FC<ResearchCommentaryProps> = ({ signal_id, repl
           <Text fontSize="11px" color="ui.muted">Evidence-linked interpretations and peer analytical debate.</Text>
           
           <VStack align="stretch" spacing={3} maxH="400px" overflowY="auto" pr={2}>
-            {comments.length === 0 ? (
+            {(!Array.isArray(comments) || comments.length === 0) ? (
                 <Box p={4} textAlign="center" borderRadius="md" bg="blackAlpha.200" border="1px dashed" borderColor="ui.border">
                     <Text fontSize="11px" color="ui.muted">No collaborative interpretations yet.</Text>
                 </Box>
