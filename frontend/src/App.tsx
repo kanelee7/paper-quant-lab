@@ -43,21 +43,17 @@ import ExchangeSettings from './components/ExchangeSettings';
 import theme from './theme';
 import RepeatTrading from './components/RepeatTrading';
 import SignalJournal from './components/SignalJournal';
-import ResearchJournal from './components/ResearchJournal';
+import ResearchNotebook from './components/ResearchNotebook';
 import PerformanceMetrics from './components/PerformanceMetrics';
-import QuantInsights from './components/QuantInsights';
 import PersonaSandbox from './components/PersonaSandbox';
 import ResearchSessionManager from './components/ResearchSessionManager';
 import HypothesisManager from './components/HypothesisManager';
-import ResearchKnowledgeBase from './components/ResearchKnowledgeBase';
-import ResearchDiscovery from './components/ResearchDiscovery';
 import ResearchCommentary from './components/ResearchCommentary';
 import ReliabilityDashboard from './components/ReliabilityDashboard';
 import CollaborativeGovernance from './components/CollaborativeGovernance';
 import ResearchArchiveManager from './components/ResearchArchiveManager';
 import ResearchReviewBoard from './components/ResearchReviewBoard';
 import ResearchWorkflowGuide from './components/ResearchWorkflowGuide';
-import ComparativeStudyBoard from './components/ComparativeStudyBoard';
 import MultiPerspectiveReview from './components/MultiPerspectiveReview';
 import ReplayTimeline from './components/ReplayTimeline';
 import ReplaySnapshotManager from './components/ReplaySnapshotManager';
@@ -428,13 +424,19 @@ const App: React.FC = () => {
         </Box>
 
         {/* Main Workspace Area */}
-        <Box flex={1} overflow="hidden" position="relative">
+        <Box flex={1} overflow="hidden" position="relative" zIndex={1}>
           <Container maxW="container.2xl" h="100%" py={3}>
             {!isConnected && !isDemoMode ? (
                 <WorkspaceWelcome 
                     onImportDemo={handleToggleDemoMode}
-                    onNewResearch={() => setWorkspaceMode('RESEARCH')}
-                    onReviewEvidence={() => setWorkspaceMode('REVIEW')}
+                    onNewResearch={() => {
+                        setWorkspaceMode('RESEARCH');
+                        setIsConnected(true);
+                    }}
+                    onReviewEvidence={() => {
+                        setWorkspaceMode('REVIEW');
+                        setIsConnected(true);
+                    }}
                 />
             ) : (
                 <Grid 
@@ -502,7 +504,7 @@ const App: React.FC = () => {
                         </Box>
                     )}
                     <Box opacity={investigatingSignalId ? 1 : 0.8} transition="opacity 0.2s">
-                        <ResearchJournal />
+                        <ResearchNotebook />
                     </Box>
                     </VStack>
                 </Box>
@@ -523,12 +525,13 @@ const App: React.FC = () => {
                     <VStack spacing={5} align="stretch" pb={10}>
                         <SidebarSection title={t('sidebar.guidance')} defaultOpen={workspaceMode === 'TRAINING'}>
                             <VStack spacing={3} align="stretch">
-                            <ResearchWorkflowGuide onModeChange={setWorkspaceMode} />
-                            <GuidedWalkthrough workspaceMode={workspaceMode} />
+                                <ResearchWorkflowGuide onModeChange={setWorkspaceMode} />
+                                {workspaceMode === 'TRAINING' && <GuidedWalkthrough workspaceMode={workspaceMode} />}
+                                {workspaceMode === 'TRAINING' && <LearningPathManager />}
                             </VStack>
                         </SidebarSection>
 
-                        <SidebarSection title={t('sidebar.experimentation')} defaultOpen={workspaceMode === 'RESEARCH'}>
+                        <SidebarSection title="INVESTIGATION" defaultOpen={workspaceMode === 'RESEARCH'}>
                             <VStack spacing={3} align="stretch">
                                 {workspaceMode === 'RESEARCH' && (
                                     <ExchangeSettings selectedExchange={selectedExchange} setSelectedExchange={setSelectedExchange} apiKey={apiKey} setApiKey={setApiKey} secretKey={secretKey} setSecretKey={setSecretKey} showApiInput={showApiInput} setShowApiInput={setShowApiInput} isConnected={isConnected} onConnect={handleConnect} onDisconnect={handleDisconnect} onTestConnection={async () => {}} onLoadEnvKeys={async () => {}} onSettingsUpdate={() => {}} isDeveloperMode={isDeveloperMode} testMode={testMode} setTestMode={setTestMode} />
@@ -539,29 +542,22 @@ const App: React.FC = () => {
                             </VStack>
                         </SidebarSection>
                         
-                        <SidebarSection title={t('sidebar.knowledge')} defaultOpen={false}>
+                        <SidebarSection title="KNOWLEDGE" defaultOpen={true}>
                             <VStack spacing={3} align="stretch">
-                                <LearningPathManager />
-                                <ResearchDiscovery />
-                                <ResearchCommentary />
-                                <MultiPerspectiveReview />
-                                <ResearchKnowledgeBase />
-                                <ResearchReviewBoard />
-                                <ComparativeStudyBoard />
-                                <QuantInsights />
+                                <ResearchNotebook />
+                                {workspaceMode === 'REVIEW' && <ResearchCommentary />}
+                                {workspaceMode === 'REVIEW' && <MultiPerspectiveReview />}
+                                {workspaceMode === 'REVIEW' && <ResearchReviewBoard />}
                             </VStack>
                         </SidebarSection>
-                        <SidebarSection title={t('sidebar.reliability')} defaultOpen={workspaceMode === 'REVIEW'}>
+
+                        <SidebarSection title="ARCHIVES & SAFETY" defaultOpen={workspaceMode === 'REVIEW'}>
                             <VStack spacing={3} align="stretch">
-                            <ReplaySnapshotManager symbol={selectedSymbol} />
-                            <CollaborativeGovernance />
-                            <ReliabilityDashboard />
-                            {workspaceMode === 'RESEARCH' && (
-                                <>
-                                    <ResearchArchiveManager />
-                                    <PerformanceMetrics />
-                                </>
-                            )}
+                                <ResearchArchiveManager />
+                                {workspaceMode === 'REVIEW' && <ReplaySnapshotManager symbol={selectedSymbol} />}
+                                {workspaceMode === 'REVIEW' && <CollaborativeGovernance />}
+                                {workspaceMode === 'REVIEW' && <ReliabilityDashboard />}
+                                {workspaceMode === 'RESEARCH' && <PerformanceMetrics />}
                             </VStack>
                         </SidebarSection>
                     </VStack>

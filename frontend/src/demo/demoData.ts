@@ -523,6 +523,42 @@ export const demoPersonaEvolution = {
   }
 };
 
+export const demoFindings = [
+  {
+    id: "finding-1",
+    timestamp: new Date(Date.now() - 3600000).toISOString(),
+    title: "VWAP Rejection Pattern in Volatile Regimes",
+    observation: "Momentum Trader consistently fails when price approaches VWAP from below during high ATR periods. The 'Trend Following' logic misinterprets local noise as breakout confirmation, leading to immediate whipsaws.",
+    related_signal_ids: ["demo-sig-2", "demo-sig-5"],
+    confidence: 0.85,
+    related_session_ids: ["demo-session-volatility"],
+    status: "active",
+    tags: ["VWAP", "failure-mode", "high-volatility"]
+  },
+  {
+    id: "finding-2",
+    timestamp: new Date(Date.now() - 86400000).toISOString(),
+    title: "Risk Manager Alpha in Sideways Markets",
+    observation: "The Risk Manager persona successfully filtered out 85% of non-profitable signals during the May 15th sideways grind. Its kurtosis-based entry filter is a primary alpha driver in low-liquidity states.",
+    related_signal_ids: ["demo-sig-3", "demo-sig-6"],
+    confidence: 0.92,
+    related_session_ids: ["demo-session-sideways"],
+    status: "active",
+    tags: ["RiskManager", "alpha", "sideways"]
+  },
+  {
+    id: "finding-3",
+    timestamp: new Date(Date.now() - 604800000).toISOString(),
+    title: "Stale Logic Decay (V1.2 Patch)",
+    observation: "Observation confirmed: Breakout strategies exhibited 22% higher decay rate after the V1.2 liquidity filter update. The filter is too aggressive on large-cap pairs like BTC.",
+    related_signal_ids: ["demo-sig-4", "demo-sig-7"],
+    confidence: 0.78,
+    related_session_ids: ["demo-session-old"],
+    status: "contradicted",
+    tags: ["alpha-decay", "patch-v1.2", "stale"]
+  }
+];
+
 export const demoPersonaEvaluation = {
   conservative_analyst: {
     consistency: { consistency_score: 0.92 },

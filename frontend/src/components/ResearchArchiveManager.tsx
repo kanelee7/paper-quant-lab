@@ -73,13 +73,13 @@ const ResearchArchiveManager: React.FC = () => {
         body: JSON.stringify(newArchive)
       });
       if (response.ok) {
-        toast({ title: 'Archive Frozen', status: 'success' });
+        toast({ title: 'State Archived', status: 'success' });
         fetchArchives();
         onClose();
         setNewArchive({ title: '', description: '' });
       }
     } catch (error) {
-      toast({ title: 'Freeze failed', status: 'error' });
+      toast({ title: 'Archiving failed', status: 'error' });
     }
   };
 
@@ -103,18 +103,18 @@ const ResearchArchiveManager: React.FC = () => {
     <Box bg="background.surface" borderRadius="lg" p={4} borderWidth="1px" borderColor="ui.border" shadow="sm">
       <HStack justifyContent="space-between" mb={4}>
         <VStack align="start" spacing={0}>
-            <Text fontSize="10px" fontWeight="900" color="brand.500" letterSpacing="widest">LONGITUDINAL REPOSITORIES</Text>
-            <Text fontSize="9px" color="ui.muted">IMMUTABLE STATE ARCHIVES</Text>
+            <Text fontSize="10px" fontWeight="900" color="brand.500" letterSpacing="widest">RESEARCH ARCHIVES</Text>
+            <Text fontSize="9px" color="ui.muted">SAVED STATE HISTORY</Text>
         </VStack>
         <Button size="xs" variant="ghost" colorScheme="brand" leftIcon={<DownloadIcon />} onClick={onOpen} fontSize="9px" borderRadius="xs">
-          FREEZE STATE
+          FREEZE
         </Button>
       </HStack>
 
       <List spacing={2}>
         {(archives || []).length === 0 ? (
           <Box py={4} textAlign="center" borderRadius="sm" border="1px dashed" borderColor="ui.border" bg="blackAlpha.100">
-            <Text fontSize="9px" color="ui.muted" fontWeight="800">NO PERSISTENT ARCHIVES</Text>
+            <Text fontSize="9px" color="ui.muted" fontWeight="800">NO SAVED ARCHIVES</Text>
           </Box>
         ) : (
           (archives || []).map(archive => (
@@ -133,9 +133,6 @@ const ResearchArchiveManager: React.FC = () => {
                   <HStack spacing={2}>
                     <Text fontSize="9px" color="ui.muted">{new Date(archive.created_at).toLocaleDateString()}</Text>
                     <Badge fontSize="8px" variant="ghost" color="brand.200" borderRadius="xs">{archive.session_count || 0} SESSIONS</Badge>
-                    {new Date(archive.created_at).getTime() < Date.now() - 7776000000 && (
-                      <Badge fontSize="8px" colorScheme="orange" variant="outline" borderRadius="xs">STALE</Badge>
-                    )}
                   </HStack>
                 </VStack>
                 <HStack>
@@ -161,7 +158,7 @@ const ResearchArchiveManager: React.FC = () => {
           <ModalBody pb={6}>
             <VStack spacing={4}>
               <Input 
-                placeholder="Repository Title..." 
+                placeholder="Archive Title..." 
                 fontSize="xs"
                 bg="blackAlpha.300"
                 borderColor="ui.border"
@@ -177,7 +174,7 @@ const ResearchArchiveManager: React.FC = () => {
                 onChange={(e) => setNewArchive({ ...newArchive, description: e.target.value })}
               />
               <Text fontSize="9px" color="ui.muted">
-                This creates an immutable, multi-layered package of all current sessions, signals, and governance traces.
+                This creates an immutable, multi-layered package of all current sessions, signals, and evidence traces.
               </Text>
             </VStack>
           </ModalBody>
@@ -190,19 +187,19 @@ const ResearchArchiveManager: React.FC = () => {
       <Modal isOpen={isDetailOpen} onClose={onDetailClose} size="lg">
         <ModalOverlay backdropFilter="blur(4px)" />
         <ModalContent bg="background.surface" color="white" borderWidth="1px" borderColor="ui.border">
-          <ModalHeader fontSize="md" fontWeight="bold">Repository Explorer</ModalHeader>
+          <ModalHeader fontSize="md" fontWeight="bold">Archive Explorer</ModalHeader>
           <ModalCloseButton />
           <ModalBody pb={6}>
             {selectedArchive && (
               <VStack align="stretch" spacing={5}>
                 <Box>
-                  <Text fontSize="9px" color="ui.muted" fontWeight="bold" mb={1}>ARCHIVE IDENTIFIER</Text>
+                  <Text fontSize="9px" color="ui.muted" fontWeight="bold" mb={1}>ARCHIVE ID</Text>
                   <Text fontSize="xs" color="brand.200" fontFamily="mono">{selectedArchive.archive_id}</Text>
                 </Box>
                 <Box>
                   <Text fontSize="9px" color="ui.muted" fontWeight="bold" mb={2}>BUNDLED LAYERS</Text>
                   <HStack spacing={2} wrap="wrap">
-                    {['SESSIONS', 'SIGNALS', 'COMMENTS', 'REPLAYS', 'GOVERNANCE'].map(c => (
+                    {['SESSIONS', 'SIGNALS', 'FINDINGS', 'COMMENTS', 'REPLAYS', 'GOVERNANCE'].map(c => (
                       <Badge key={c} colorScheme="green" variant="subtle" fontSize="8px">{c}</Badge>
                     ))}
                   </HStack>
@@ -219,6 +216,27 @@ const ResearchArchiveManager: React.FC = () => {
                       <Text fontSize="xs" fontWeight="bold">{selectedArchive.replay_version || 'v2-compat'}</Text>
                     </VStack>
                   </HStack>
+                </Box>
+
+                <Box>
+                    <HStack justify="space-between" mb={2}>
+                        <Text fontSize="10px" color="brand.200" fontWeight="bold">KEY FINDINGS IN ARCHIVE</Text>
+                        <Badge fontSize="8px" variant="outline" colorScheme="brand">AUTO-SURFACED</Badge>
+                    </HStack>
+                    <VStack align="stretch" spacing={2}>
+                        {(JSON.parse(localStorage.getItem('pql_research_findings') || '[]') as any[]).slice(0, 3).map(f => (
+                            <Box key={f.id} p={2} bg="whiteAlpha.50" borderRadius="sm" borderLeft="2px solid" borderColor={f.status === 'contradicted' ? 'orange.500' : 'brand.500'}>
+                                <HStack justify="space-between">
+                                    <Text fontSize="xs" fontWeight="bold" color="gray.200">{f.title}</Text>
+                                    <Badge fontSize="8px" colorScheme={f.status === 'contradicted' ? 'orange' : 'brand'}>{f.status.toUpperCase()}</Badge>
+                                </HStack>
+                                <Text fontSize="9px" color="ui.muted" noOfLines={1}>{f.observation}</Text>
+                            </Box>
+                        ))}
+                        {(JSON.parse(localStorage.getItem('pql_research_findings') || '[]') as any[]).length === 0 && (
+                             <Text fontSize="10px" color="ui.muted" fontStyle="italic">No findings discovered in this archive.</Text>
+                        )}
+                    </VStack>
                 </Box>
                 
                 <Box pt={2}>

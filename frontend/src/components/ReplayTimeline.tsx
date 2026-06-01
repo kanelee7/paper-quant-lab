@@ -24,6 +24,7 @@ import {
   MenuButton,
   MenuList,
   MenuItem,
+  MenuDivider,
   useToast,
 } from '@chakra-ui/react';
 import { 
@@ -110,6 +111,25 @@ const ReplayTimeline: React.FC<ReplayTimelineProps> = ({ symbol, onFocusSignal, 
         localStorage.setItem('pql_hypotheses', JSON.stringify(updated));
         toast({ title: 'Checkpoint Linked', description: 'Hypothesis updated with evidence link.', status: 'success' });
     }
+  };
+
+  const handleExtractFinding = (signal: Signal) => {
+    const finding = {
+        id: `finding-${Date.now()}`,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        title: `Observation: ${signal.strategy_name || 'Manual Extract'}`,
+        observation: signal.reasoning_trace || signal.reason || 'Evidence extracted from replay trace.',
+        related_signal_ids: [signal.id],
+        related_session_ids: [],
+        confidence: 0.7,
+        status: 'active',
+        supporting_evidence: `Replay checkpoint trace at ${new Date(signal.timestamp).toLocaleTimeString()}.`,
+        tags: ['extracted', signal.market_regime || 'unknown']
+    };
+    
+    const event = new CustomEvent('pql-add-finding', { detail: { type: 'FINDING', finding } });
+    window.dispatchEvent(event);
   };
 
   const handleSliderChange = (val: number) => {
@@ -330,8 +350,19 @@ const ReplayTimeline: React.FC<ReplayTimelineProps> = ({ symbol, onFocusSignal, 
                                                                       </MenuItem>
                                                                   ))
                                                               )}
+                                                              <MenuDivider borderColor="whiteAlpha.100" />
+                                                              <MenuItem 
+                                                                  fontSize="9px" 
+                                                                  bg="transparent" 
+                                                                  color="brand.500"
+                                                                  fontWeight="bold"
+                                                                  _hover={{ bg: 'whiteAlpha.100' }}
+                                                                  onClick={() => handleExtractFinding(s)}
+                                                              >
+                                                                  EXTRACT FINDING
+                                                              </MenuItem>
                                                           </MenuList>
-                                                      </Menu>
+                                                          </Menu>
                                                   </VStack>
                                               </HStack>
                                           </VStack>
@@ -368,6 +399,29 @@ const ReplayTimeline: React.FC<ReplayTimelineProps> = ({ symbol, onFocusSignal, 
                           {currentSignal.reasoning_trace || currentSignal.reason}
                       </Text>
                     </Box>
+
+                    {/* Related Findings Surface */}
+                    <Box pt={2} borderTop="1px dashed" borderColor="whiteAlpha.100">
+                      <Text fontSize="8px" color="brand.200" fontWeight="bold" mb={2}>RELATED FINDINGS</Text>
+                      <VStack align="stretch" spacing={2}>
+                          {(JSON.parse(localStorage.getItem('pql_research_findings') || '[]') as any[])
+                            .filter(f => (f.related_signal_ids || []).includes(currentSignal.id))
+                            .map(f => (
+                              <HStack key={f.id} p={2} bg="blackAlpha.400" borderRadius="sm" borderWidth="1px" borderColor="ui.border" justify="space-between">
+                                  <VStack align="start" spacing={0}>
+                                      <Text fontSize="10px" fontWeight="bold" color="gray.200">{f.title}</Text>
+                                      <Text fontSize="9px" color="ui.muted" noOfLines={1}>{f.observation}</Text>
+                                  </VStack>
+                                  <Badge colorScheme={f.status === 'contradicted' ? 'orange' : 'brand'} fontSize="8px">{f.status.toUpperCase()}</Badge>
+                              </HStack>
+                          ))}
+                          {(JSON.parse(localStorage.getItem('pql_research_findings') || '[]') as any[])
+                            .filter(f => (f.related_signal_ids || []).includes(currentSignal.id)).length === 0 && (
+                              <Text fontSize="9px" color="gray.600" fontStyle="italic">No directly linked findings.</Text>
+                          )}
+                      </VStack>
+                    </Box>
+
                     <HStack justify="space-between" pt={2} borderTop="1px solid" borderColor="whiteAlpha.100">
                       <HStack>
                           <Text fontSize="8px" color="ui.muted" fontWeight="bold">LINKED HYPOTHESES:</Text>

@@ -617,6 +617,33 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
 
                 <ResearchCommentary signal_id={selectedSignal.id} />
 
+                {/* Related Findings Section */}
+                <Box>
+                  <Text fontSize="xs" fontWeight="bold" color="ui.muted" mb={2} textTransform="uppercase">Related Findings</Text>
+                  <VStack align="stretch" spacing={2}>
+                    {(JSON.parse(localStorage.getItem('pql_research_findings') || '[]') as any[]).filter(f => 
+                        (f.evidence_ids || []).includes(selectedSignal.id) || 
+                        (f.tags || []).some((t: string) => (selectedSignal.tags || []).includes(t)) ||
+                        (f.tags || []).some((t: string) => (selectedSignal.market_regime === t))
+                    ).slice(0, 3).map(f => (
+                        <Box key={f.id} p={2} bg="brand.900" borderRadius="md" borderLeft="3px solid" borderColor="brand.500">
+                            <HStack justify="space-between">
+                                <Text fontSize="10px" fontWeight="bold" color="brand.100">{f.title}</Text>
+                                <Badge fontSize="8px" colorScheme={f.status === 'stale' ? 'orange' : 'brand'}>{f.status.toUpperCase()}</Badge>
+                            </HStack>
+                            <Text fontSize="10px" color="brand.200" noOfLines={1} mt={1}>{f.observation}</Text>
+                        </Box>
+                    ))}
+                    {(JSON.parse(localStorage.getItem('pql_research_findings') || '[]') as any[]).filter(f => 
+                        (f.evidence_ids || []).includes(selectedSignal.id) || 
+                        (f.tags || []).some((t: string) => (selectedSignal.tags || []).includes(t)) ||
+                        (f.tags || []).some((t: string) => (selectedSignal.market_regime === t))
+                    ).length === 0 && (
+                        <Text fontSize="10px" color="ui.muted" fontStyle="italic">No linked findings found.</Text>
+                    )}
+                  </VStack>
+                </Box>
+
                 <Box p={3} bg="blue.900" borderRadius="md" borderLeft="4px solid" borderColor="blue.400">
                     <Text fontSize="10px" fontWeight="800" color="blue.100" mb={1}>REFLECTIONS</Text>
                     <VStack align="stretch" spacing={1}>

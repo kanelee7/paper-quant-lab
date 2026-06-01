@@ -37,6 +37,7 @@ export interface Hypothesis {
   description: string;
   status: 'active' | 'resolved' | 'unresolved' | 'invalidated';
   confidence: number;
+  tags: string[];
   linked_session_id?: string;
   linked_replay_checkpoint?: string;
   evolution: {
@@ -91,6 +92,7 @@ const HypothesisManager: React.FC<HypothesisManagerProps> = ({ investigatingSign
       description: newDesc,
       status: 'active',
       confidence: 0.5,
+      tags: [], // Initialize tags
       linked_session_id: linkedSession || undefined,
       evolution: [{ timestamp: new Date().toISOString(), note: "Hypothesis established." }],
     };
@@ -118,6 +120,27 @@ const HypothesisManager: React.FC<HypothesisManagerProps> = ({ investigatingSign
     });
     saveHypotheses(updated);
     toast({ title: `Hypothesis ${status}`, status: status === 'resolved' ? 'success' : 'info' });
+  };
+
+  const handlePromoteToFinding = (h: Hypothesis) => {
+    const finding = {
+        id: `finding-${Date.now()}`,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        title: `Finding: ${h.title}`,
+        observation: h.description,
+        related_signal_ids: h.linked_replay_checkpoint ? [h.linked_replay_checkpoint] : [],
+        related_session_ids: h.linked_session_id ? [h.linked_session_id] : [],
+        confidence: h.confidence,
+        status: h.status === 'resolved' ? 'active' : 'contradicted',
+        supporting_evidence: `Promoted from hypothesis: "${h.title}". Resolution: ${h.status.toUpperCase()}.`,
+        tags: ['promoted', 'hypothesis-backed']
+    };
+    
+    const event = new CustomEvent('pql-add-finding', { detail: { type: 'FINDING', finding } });
+    window.dispatchEvent(event);
+    
+    toast({ title: 'Hypothesis Promoted', description: 'Finding established in research notebook.', status: 'success' });
   };
 
   const getStatusColor = (status: Hypothesis['status']) => {
@@ -237,10 +260,44 @@ const HypothesisManager: React.FC<HypothesisManagerProps> = ({ investigatingSign
                                         </Tooltip>
                                     </>
                                 )}
+                                {h.status === 'resolved' && (
+                                    <Tooltip label="Promote to established finding" fontSize="9px">
+                                        <IconButton 
+                                            size="2xs" 
+                                            variant="ghost" 
+                                            colorScheme="brand" 
+                                            icon={<ArrowForwardIcon w={2} h={2} />} 
+                                            onClick={() => handlePromoteToFinding(h)} 
+                                            aria-label="Promote" 
+                                        />
+                                    </Tooltip>
+                                )}
                             </HStack>
                         </HStack>
                         
                         <Text fontSize="11px" color="gray.400" lineHeight="1.6">{h.description}</Text>
+
+                        {/* Related Findings Surface */}
+                        <Box pt={2} borderTop="1px dashed" borderColor="whiteAlpha.100">
+                          <Text fontSize="8px" color="brand.200" fontWeight="bold" mb={2}>RELATED FINDINGS</Text>
+                          <VStack align="stretch" spacing={2}>
+                              {(JSON.parse(localStorage.getItem('pql_research_findings') || '[]') as any[])
+                                .filter(f => (f.tags || []).some((t: string) => (h.tags || []).includes(t)) || h.title.includes(f.title) || f.title.includes(h.title))
+                                .map(f => (
+                                  <HStack key={f.id} p={1.5} bg="blackAlpha.300" borderRadius="xs" borderWidth="1px" borderColor="ui.border" justify="space-between">
+                                      <VStack align="start" spacing={0}>
+                                          <Text fontSize="9px" fontWeight="bold" color="gray.300">{f.title}</Text>
+                                          <Text fontSize="8px" color="ui.muted" noOfLines={1}>{f.observation}</Text>
+                                      </VStack>
+                                      <Badge colorScheme={f.status === 'contradicted' ? 'orange' : 'brand'} fontSize="7px">{f.status.toUpperCase()}</Badge>
+                                  </HStack>
+                              ))}
+                              {(JSON.parse(localStorage.getItem('pql_research_findings') || '[]') as any[])
+                                .filter(f => (f.tags || []).some((t: string) => (h.tags || []).includes(t)) || h.title.includes(f.title) || f.title.includes(h.title)).length === 0 && (
+                                  <Text fontSize="8px" color="gray.600" fontStyle="italic">No relevant findings found.</Text>
+                              )}
+                          </VStack>
+                        </Box>
                         
                         <Box pt={1}>
                             <HStack justify="space-between" mb={1}>

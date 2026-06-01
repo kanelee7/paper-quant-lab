@@ -126,8 +126,10 @@ class InsightCreateRequest(BaseModel):
     linked_sessions: Optional[List[str]] = []
     linked_personas: Optional[List[str]] = []
     supporting_signals: Optional[List[str]] = []
+    conflicting_signals: Optional[List[str]] = []
     market_regimes: Optional[List[str]] = []
     failure_tags: Optional[List[str]] = []
+    status: Optional[str] = "active"
 
 @app.get("/api/reliability/status")
 async def get_reliability_status():
@@ -315,6 +317,26 @@ async def get_longitudinal_synthesis(session_ids: List[str] = Query(...)):
     
     return review_manager.generate_longitudinal_summary(session_ids, signals)
 
+@app.get("/api/insights/related")
+async def get_related_insights(
+    signal_id: Optional[str] = Query(None),
+    session_id: Optional[str] = Query(None),
+    tags: Optional[str] = Query(None),
+    market_regime: Optional[str] = Query(None)
+):
+    tag_list = tags.split(",") if tags else None
+    return insight_manager.get_related_insights(
+        signal_id=signal_id,
+        session_id=session_id,
+        tags=tag_list,
+        market_regime=market_regime
+    )
+
+@app.get("/api/insights/compression")
+async def get_knowledge_compression():
+    """지식 압축: 반복되는 패턴 및 모순 요약 조회"""
+    return insight_manager.get_knowledge_compression()
+
 @app.get("/api/insights")
 async def list_insights():
     return insight_manager.list_insights()
@@ -327,8 +349,10 @@ async def create_insight(request: InsightCreateRequest):
         linked_sessions=request.linked_sessions,
         linked_personas=request.linked_personas,
         supporting_signals=request.supporting_signals,
+        conflicting_signals=request.conflicting_signals,
         market_regimes=request.market_regimes,
-        failure_tags=request.failure_tags
+        failure_tags=request.failure_tags,
+        status=request.status
     )
 
 @app.get("/api/taxonomy/failures")

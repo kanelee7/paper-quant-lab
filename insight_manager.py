@@ -24,7 +24,9 @@ class InsightManager:
 
     def create_insight(self, title: str, summary: str, linked_sessions: List[str] = None, 
                        linked_personas: List[str] = None, supporting_signals: List[str] = None, 
-                       market_regimes: List[str] = None, failure_tags: List[str] = None) -> Dict:
+                       conflicting_signals: List[str] = None,
+                       market_regimes: List[str] = None, failure_tags: List[str] = None,
+                       status: str = "active") -> Dict:
         insights = self._load_insights()
         
         new_insight = {
@@ -34,9 +36,11 @@ class InsightManager:
             "linked_sessions": linked_sessions or [],
             "linked_personas": linked_personas or [],
             "supporting_signals": supporting_signals or [],
+            "conflicting_signals": conflicting_signals or [],
             "market_regimes": market_regimes or [],
             "failure_tags": failure_tags or [],
             "created_at": datetime.now().isoformat(),
+            "status": status, # active, archived, contradicted
             "confidence": "heuristic",
             "reproducibility": {
                 "replay_version": "v1",
@@ -51,6 +55,81 @@ class InsightManager:
     def list_insights(self) -> List[Dict]:
         return self._load_insights()
 
+    def get_related_insights(self, signal_id: Optional[str] = None, 
+                             session_id: Optional[str] = None, 
+                             tags: List[str] = None,
+                             market_regime: Optional[str] = None) -> List[Dict]:
+        """시그널, 세션, 태그 등을 기반으로 연관된 인사이트 검색"""
+        all_insights = self._load_insights()
+        related = []
+        
+        for i in all_insights:
+            score = 0
+            if signal_id and (signal_id in i.get("supporting_signals", []) or signal_id in i.get("conflicting_signals", [])):
+                score += 10
+            if session_id and session_id in i.get("linked_sessions", []):
+                score += 5
+            if market_regime and market_regime in i.get("market_regimes", []):
+                score += 3
+            
+            if tags:
+                matching_tags = set(tags) & set(i.get("failure_tags", []))
+                score += len(matching_tags) * 2
+            
+            if score > 0:
+                i["relevance_score"] = score
+                related.append(i)
+        
+        return sorted(related, key=lambda x: x["relevance_score"], reverse=True)
+
+    def get_knowledge_compression(self) -> List[Dict]:
+        """지식 압축: 반복되는 패턴, 관찰, 모순 요약 생성"""
+        insights = self._load_insights()
+        summaries = []
+        
+        # 1. 반복되는 실패 패턴 (Repeated failure pattern)
+        from collections import Counter
+        all_failures = []
+        for i in insights:
+            all_failures.extend(i.get("failure_tags", []))
+        
+        counts = Counter(all_failures)
+        for tag, count in counts.items():
+            if count >= 2:
+                summaries.append({
+                    "type": "repeated_failure",
+                    "label": f"Repeated Failure: {tag}",
+                    "content": f"Detected in {count} separate findings. This pattern suggests a systemic logic gap.",
+                    "severity": "high" if count > 3 else "medium"
+                })
+        
+        # 2. 해결되지 않은 모순 (Unresolved contradiction)
+        contradicted = [i for i in insights if i.get("status") == "contradicted"]
+        if contradicted:
+            summaries.append({
+                "type": "unresolved_contradiction",
+                "label": "Evidence Contradiction",
+                "content": f"{len(contradicted)} findings have been flagged as contradicted by new evidence. Review required to refine logic.",
+                "severity": "medium"
+            })
+            
+        # 3. 빈번한 관찰 (Recurring observation)
+        regimes = []
+        for i in insights:
+            regimes.extend(i.get("market_regimes", []))
+        
+        regime_counts = Counter(regimes)
+        for regime, count in regime_counts.items():
+            if count >= 3:
+                summaries.append({
+                    "type": "recurring_observation",
+                    "label": f"Regime Insight: {regime}",
+                    "content": f"Accumulated {count} findings specifically for {regime} regime.",
+                    "severity": "low"
+                })
+                
+        return summaries
+
     def update_insight(self, insight_id: str, updates: Dict) -> Optional[Dict]:
         insights = self._load_insights()
         updated_insight = None
@@ -58,7 +137,8 @@ class InsightManager:
             if i["insight_id"] == insight_id:
                 for key, value in updates.items():
                     if key in ["title", "summary", "linked_sessions", "linked_personas", 
-                              "supporting_signals", "market_regimes", "failure_tags"]:
+                              "supporting_signals", "conflicting_signals", "market_regimes", 
+                              "failure_tags", "status"]:
                         i[key] = value
                 updated_insight = i
                 break

@@ -71,7 +71,7 @@ const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
   onReviewEvidence 
 }) => {
   return (
-    <Box h="100%" display="flex" alignItems="center" justifyContent="center">
+    <Box h="100%" display="flex" alignItems="center" justifyContent="center" position="relative" zIndex={5}>
       <VStack spacing={8} maxW="container.lg" w="100%" py={12}>
         <VStack spacing={2} textAlign="center">
           <Heading size="md" letterSpacing="tight" fontWeight="700" color="gray.100">
