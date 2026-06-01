@@ -404,21 +404,28 @@ const ReplayTimeline: React.FC<ReplayTimelineProps> = ({ symbol, onFocusSignal, 
                     <Box pt={2} borderTop="1px dashed" borderColor="whiteAlpha.100">
                       <Text fontSize="8px" color="brand.200" fontWeight="bold" mb={2}>RELATED FINDINGS</Text>
                       <VStack align="stretch" spacing={2}>
-                          {(JSON.parse(localStorage.getItem('pql_research_findings') || '[]') as any[])
-                            .filter(f => (f.related_signal_ids || []).includes(currentSignal.id))
-                            .map(f => (
-                              <HStack key={f.id} p={2} bg="blackAlpha.400" borderRadius="sm" borderWidth="1px" borderColor="ui.border" justify="space-between">
-                                  <VStack align="start" spacing={0}>
-                                      <Text fontSize="10px" fontWeight="bold" color="gray.200">{f.title}</Text>
-                                      <Text fontSize="9px" color="ui.muted" noOfLines={1}>{f.observation}</Text>
-                                  </VStack>
-                                  <Badge colorScheme={f.status === 'contradicted' ? 'orange' : 'brand'} fontSize="8px">{f.status.toUpperCase()}</Badge>
-                              </HStack>
-                          ))}
-                          {(JSON.parse(localStorage.getItem('pql_research_findings') || '[]') as any[])
-                            .filter(f => (f.related_signal_ids || []).includes(currentSignal.id)).length === 0 && (
-                              <Text fontSize="9px" color="gray.600" fontStyle="italic">No directly linked findings.</Text>
-                          )}
+                          {(() => {
+                              try {
+                                  const raw = localStorage.getItem('pql_research_findings');
+                                  const findings = JSON.parse(raw || '[]');
+                                  const list = Array.isArray(findings) ? findings : [];
+                                  const related = list.filter(f => Array.isArray(f.related_signal_ids) && f.related_signal_ids.includes(currentSignal.id));
+                                  
+                                  if (related.length === 0) return <Text fontSize="9px" color="gray.600" fontStyle="italic">No directly linked findings.</Text>;
+
+                                  return related.map(f => (
+                                      <HStack key={f.id} p={2} bg="blackAlpha.400" borderRadius="sm" borderWidth="1px" borderColor="ui.border" justify="space-between">
+                                          <VStack align="start" spacing={0}>
+                                              <Text fontSize="10px" fontWeight="bold" color="gray.200">{f.title || 'Untitled Finding'}</Text>
+                                              <Text fontSize="9px" color="ui.muted" noOfLines={1}>{f.observation || 'No observation.'}</Text>
+                                          </VStack>
+                                          <Badge colorScheme={f.status === 'contradicted' ? 'orange' : 'brand'} fontSize="8px">{(f.status || 'ACTIVE').toUpperCase()}</Badge>
+                                      </HStack>
+                                  ));
+                              } catch (e) {
+                                  return <Text fontSize="9px" color="gray.600" fontStyle="italic">Unable to load findings.</Text>;
+                              }
+                          })()}
                       </VStack>
                     </Box>
 

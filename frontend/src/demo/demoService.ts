@@ -5,9 +5,10 @@ import {
   demoPatterns, 
   demoGovernance, 
   demoStrategyStats, 
-  demoPersonaEvolution, 
-  demoPersonaEvaluation,
+  demoPersonaEvolution,
+  demoPersonaEvaluationData as demoPersonaEvaluation,
   demoWorkflowPresets,
+
   demoWalkthroughPresets,
   demoPersonas,
   demoComments,

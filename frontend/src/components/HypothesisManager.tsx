@@ -281,21 +281,32 @@ const HypothesisManager: React.FC<HypothesisManagerProps> = ({ investigatingSign
                         <Box pt={2} borderTop="1px dashed" borderColor="whiteAlpha.100">
                           <Text fontSize="8px" color="brand.200" fontWeight="bold" mb={2}>RELATED FINDINGS</Text>
                           <VStack align="stretch" spacing={2}>
-                              {(JSON.parse(localStorage.getItem('pql_research_findings') || '[]') as any[])
-                                .filter(f => (f.tags || []).some((t: string) => (h.tags || []).includes(t)) || h.title.includes(f.title) || f.title.includes(h.title))
-                                .map(f => (
-                                  <HStack key={f.id} p={1.5} bg="blackAlpha.300" borderRadius="xs" borderWidth="1px" borderColor="ui.border" justify="space-between">
-                                      <VStack align="start" spacing={0}>
-                                          <Text fontSize="9px" fontWeight="bold" color="gray.300">{f.title}</Text>
-                                          <Text fontSize="8px" color="ui.muted" noOfLines={1}>{f.observation}</Text>
-                                      </VStack>
-                                      <Badge colorScheme={f.status === 'contradicted' ? 'orange' : 'brand'} fontSize="7px">{f.status.toUpperCase()}</Badge>
-                                  </HStack>
-                              ))}
-                              {(JSON.parse(localStorage.getItem('pql_research_findings') || '[]') as any[])
-                                .filter(f => (f.tags || []).some((t: string) => (h.tags || []).includes(t)) || h.title.includes(f.title) || f.title.includes(h.title)).length === 0 && (
-                                  <Text fontSize="8px" color="gray.600" fontStyle="italic">No relevant findings found.</Text>
-                              )}
+                              {(() => {
+                                  try {
+                                      const raw = localStorage.getItem('pql_research_findings');
+                                      const findings = JSON.parse(raw || '[]');
+                                      const list = Array.isArray(findings) ? findings : [];
+                                      const related = list.filter(f => 
+                                          (Array.isArray(f.tags) && f.tags.some((t: string) => (h.tags || []).includes(t))) || 
+                                          (h.title || '').includes(f.title || '') || 
+                                          (f.title || '').includes(h.title || '')
+                                      );
+
+                                      if (related.length === 0) return <Text fontSize="8px" color="gray.600" fontStyle="italic">No relevant findings found.</Text>;
+
+                                      return related.map(f => (
+                                          <HStack key={f.id} p={1.5} bg="blackAlpha.300" borderRadius="xs" borderWidth="1px" borderColor="ui.border" justify="space-between">
+                                              <VStack align="start" spacing={0}>
+                                                  <Text fontSize="9px" fontWeight="bold" color="gray.300">{f.title || 'Untitled Finding'}</Text>
+                                                  <Text fontSize="8px" color="ui.muted" noOfLines={1}>{f.observation || 'No observation recorded.'}</Text>
+                                              </VStack>
+                                              <Badge colorScheme={f.status === 'contradicted' ? 'orange' : 'brand'} fontSize="7px">{(f.status || 'ACTIVE').toUpperCase()}</Badge>
+                                          </HStack>
+                                      ));
+                                  } catch (e) {
+                                      return <Text fontSize="8px" color="gray.600" fontStyle="italic">Unable to load related findings.</Text>;
+                                  }
+                              })()}
                           </VStack>
                         </Box>
                         

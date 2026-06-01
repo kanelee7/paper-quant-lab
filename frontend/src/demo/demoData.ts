@@ -559,7 +559,7 @@ export const demoFindings = [
   }
 ];
 
-export const demoPersonaEvaluation = {
+export const demoPersonaEvaluationData = {
   conservative_analyst: {
     consistency: { consistency_score: 0.92 },
     outcome_correlations: [

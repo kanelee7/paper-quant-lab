@@ -224,18 +224,32 @@ const ResearchArchiveManager: React.FC = () => {
                         <Badge fontSize="8px" variant="outline" colorScheme="brand">AUTO-SURFACED</Badge>
                     </HStack>
                     <VStack align="stretch" spacing={2}>
-                        {(JSON.parse(localStorage.getItem('pql_research_findings') || '[]') as any[]).slice(0, 3).map(f => (
-                            <Box key={f.id} p={2} bg="whiteAlpha.50" borderRadius="sm" borderLeft="2px solid" borderColor={f.status === 'contradicted' ? 'orange.500' : 'brand.500'}>
-                                <HStack justify="space-between">
-                                    <Text fontSize="xs" fontWeight="bold" color="gray.200">{f.title}</Text>
-                                    <Badge fontSize="8px" colorScheme={f.status === 'contradicted' ? 'orange' : 'brand'}>{f.status.toUpperCase()}</Badge>
-                                </HStack>
-                                <Text fontSize="9px" color="ui.muted" noOfLines={1}>{f.observation}</Text>
-                            </Box>
-                        ))}
-                        {(JSON.parse(localStorage.getItem('pql_research_findings') || '[]') as any[]).length === 0 && (
-                             <Text fontSize="10px" color="ui.muted" fontStyle="italic">No findings discovered in this archive.</Text>
-                        )}
+                        {(() => {
+                            try {
+                                const findings = JSON.parse(localStorage.getItem('pql_research_findings') || '[]');
+                                const list = Array.isArray(findings) ? findings : [];
+                                return list.slice(0, 3).map(f => (
+                                    <Box key={f.id} p={2} bg="whiteAlpha.50" borderRadius="sm" borderLeft="2px solid" borderColor={f.status === 'contradicted' ? 'orange.500' : 'brand.500'}>
+                                        <HStack justify="space-between">
+                                            <Text fontSize="xs" fontWeight="bold" color="gray.200">{f.title || 'Untitled Finding'}</Text>
+                                            <Badge fontSize="8px" colorScheme={f.status === 'contradicted' ? 'orange' : 'brand'}>{(f.status || 'ACTIVE').toUpperCase()}</Badge>
+                                        </HStack>
+                                        <Text fontSize="9px" color="ui.muted" noOfLines={1}>{f.observation || 'No observation recorded.'}</Text>
+                                    </Box>
+                                ));
+                            } catch (e) {
+                                return <Text fontSize="10px" color="ui.muted" fontStyle="italic">Unable to load findings.</Text>;
+                            }
+                        })()}
+                        {(() => {
+                            try {
+                                const findings = JSON.parse(localStorage.getItem('pql_research_findings') || '[]');
+                                if (!Array.isArray(findings) || findings.length === 0) {
+                                    return <Text fontSize="10px" color="ui.muted" fontStyle="italic">No findings discovered in this archive.</Text>;
+                                }
+                                return null;
+                            } catch (e) { return null; }
+                        })()}
                     </VStack>
                 </Box>
                 

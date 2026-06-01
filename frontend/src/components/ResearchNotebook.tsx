@@ -169,8 +169,8 @@ const ResearchNotebook: React.FC = () => {
       }
   };
 
-  const activeFindings = (findings || []).filter(f => f.status === 'active');
-  const unresolvedItems = (findings || []).filter(f => f.status === 'contradicted').length + (notes || []).length;
+  const activeFindings = Array.isArray(findings) ? findings.filter(f => f.status === 'active') : [];
+  const unresolvedItems = (Array.isArray(findings) ? findings.filter(f => f.status === 'contradicted').length : 0) + (Array.isArray(notes) ? notes.length : 0);
 
   return (
     <Box bg="background.surface" borderRadius="md" p={4} borderWidth="1px" borderColor="ui.border" shadow="sm">
@@ -184,13 +184,23 @@ const ResearchNotebook: React.FC = () => {
             <Box p={2} bg="blackAlpha.300" borderRadius="xs" textAlign="center" borderWidth="1px" borderColor="whiteAlpha.100">
                 <Text fontSize="8px" color="ui.muted" fontWeight="bold">QUESTIONS</Text>
                 <Text fontSize="md" fontWeight="900" color="blue.400">
-                    {JSON.parse(localStorage.getItem('pql_hypotheses') || '[]').filter((h: any) => h.status === 'active').length}
+                    {(() => {
+                        try {
+                            const h = JSON.parse(localStorage.getItem('pql_hypotheses') || '[]');
+                            return (Array.isArray(h) ? h.filter((x: any) => x.status === 'active').length : 0);
+                        } catch (e) { return 0; }
+                    })()}
                 </Text>
             </Box>
             <Box p={2} bg="blackAlpha.300" borderRadius="xs" textAlign="center" borderWidth="1px" borderColor="whiteAlpha.100">
                 <Text fontSize="8px" color="ui.muted" fontWeight="bold">SESSIONS</Text>
                 <Text fontSize="md" fontWeight="900" color="gray.200">
-                    {JSON.parse(localStorage.getItem('pql_sessions') || '[]').length}
+                    {(() => {
+                        try {
+                            const s = JSON.parse(localStorage.getItem('pql_sessions') || '[]');
+                            return (Array.isArray(s) ? s.length : 0);
+                        } catch (e) { return 0; }
+                    })()}
                 </Text>
             </Box>
             <Box p={2} bg="blackAlpha.300" borderRadius="xs" textAlign="center" borderWidth="1px" borderColor="whiteAlpha.100">
@@ -307,7 +317,7 @@ const ResearchNotebook: React.FC = () => {
                                             <HStack justify="space-between" mb={1}>
                                                 <Text fontSize="xs" fontWeight="bold" color="gray.200">{ck.label}</Text>
                                                 <Badge fontSize="8px" colorScheme={ck.severity === 'high' ? 'red' : 'orange'}>
-                                                    {ck.type.replace('_', ' ').toUpperCase()}
+                                                    {(ck.type || '').replace('_', ' ').toUpperCase()}
                                                 </Badge>
                                             </HStack>
                                             <Text fontSize="10px" color="ui.muted">{ck.content}</Text>
