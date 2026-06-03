@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { isDemoModeActive } from '../demo/demoService';
+import { WS_BASE_URL } from '../config/api';
 
 interface WebSocketMessage {
   type: 'price' | 'orderbook' | 'kline' | 'trade';
@@ -48,6 +49,13 @@ export const useWebSocket = (symbol: string = 'BTC/USDT') => {
       return;
     }
 
+    // Backend가 구성되어 있지 않으면 연결 시도 안 함
+    if (!WS_BASE_URL) {
+      console.log('WS_BASE_URL not configured: WebSocket disabled');
+      setIsConnected(false);
+      return;
+    }
+
     const connectWebSocket = () => {
       console.log('웹소켓 연결 시도...', reconnectAttempts.current);
 
@@ -58,7 +66,7 @@ export const useWebSocket = (symbol: string = 'BTC/USDT') => {
 
       // 새 연결 생성
       try {
-        ws.current = new WebSocket('ws://localhost:8000/ws');
+        ws.current = new WebSocket(WS_BASE_URL);
 
         ws.current.onopen = () => {
           console.log('웹소켓 연결 성공');

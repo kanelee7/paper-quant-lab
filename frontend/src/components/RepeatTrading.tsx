@@ -24,6 +24,7 @@ import {
   HStack,
 } from '@chakra-ui/react';
 import { demoFetch } from "../demo/demoFetch";
+import { API_BASE_URL } from '../config/api';
 
 interface RepeatTradingProps {
   isConnected: boolean;
@@ -45,7 +46,7 @@ const RepeatTrading: React.FC<RepeatTradingProps> = ({ isConnected }) => {
 
     const fetchStatus = async () => {
       try {
-        const response = await demoFetch('http://localhost:8000/repeat-trading/status');
+        const response = await demoFetch(`${API_BASE_URL}/repeat-trading/status`);
         const data = await response.json();
         setIsRunning(data.is_running);
         setTradeCount(data.trade_count);
@@ -73,7 +74,7 @@ const RepeatTrading: React.FC<RepeatTradingProps> = ({ isConnected }) => {
 
   const handleStart = async () => {
     try {
-      const response = await demoFetch('http://localhost:8000/repeat-trading/start', {
+      const response = await demoFetch(`${API_BASE_URL}/repeat-trading/start`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -120,7 +121,7 @@ const RepeatTrading: React.FC<RepeatTradingProps> = ({ isConnected }) => {
 
   const handleStop = async () => {
     try {
-      const response = await demoFetch('http://localhost:8000/repeat-trading/stop', {
+      const response = await demoFetch(`${API_BASE_URL}/repeat-trading/stop`, {
         method: 'POST',
       });
 

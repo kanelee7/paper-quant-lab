@@ -17,6 +17,7 @@ import {
   ArrowForwardIcon,
   TimeIcon
 } from '@chakra-ui/icons';
+import { useI18n } from '../i18n';
 
 interface WorkspaceWelcomeProps {
   onImportDemo: () => void;
@@ -70,38 +71,40 @@ const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
   onNewResearch, 
   onReviewEvidence 
 }) => {
+  const { lang } = useI18n();
+
   return (
     <Box h="100%" display="flex" alignItems="center" justifyContent="center" position="relative" zIndex={5}>
       <VStack spacing={8} maxW="container.lg" w="100%" py={12}>
         <VStack spacing={2} textAlign="center">
           <Heading size="md" letterSpacing="tight" fontWeight="700" color="gray.100">
-            Select a Starting Point
+            {lang === 'ko' ? "시작점 선택" : "Select a Starting Point"}
           </Heading>
           <Text fontSize="sm" color="ui.muted">
-            Load an existing archive or initialize a new research session to begin.
+            {lang === 'ko' ? "기존 기록을 불러오거나 새로운 연구 세션을 시작하여 연구를 시작하세요." : "Load an existing archive or initialize a new research session to begin."}
           </Text>
         </VStack>
 
         <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6} w="100%">
           <WelcomeCard
-            title="Load Historical Archive"
-            description="Load a seeded research archive to explore replay, evidence traces, and AI reasoning behavior. Recommended for first-time use."
+            title={lang === 'ko' ? "과거 기록 불러오기" : "Load Historical Archive"}
+            description={lang === 'ko' ? "연구용 기록 데이터를 불러와 리플레이, 근거 추적, AI 판단 방식을 살펴봅니다. 처음 사용 시 권장됩니다." : "Load a seeded research archive to explore replay, evidence traces, and AI reasoning behavior. Recommended for first-time use."}
             icon={TimeIcon}
-            actionLabel="LOAD ARCHIVE"
+            actionLabel={lang === 'ko' ? "기록 데이터 로드" : "LOAD ARCHIVE"}
             onClick={onImportDemo}
           />
           <WelcomeCard
-            title="Start Research Session"
-            description="Initialize a fresh simulation for active analytical experimentation and signal capture."
+            title={lang === 'ko' ? "새 연구 세션 시작" : "Start Research Session"}
+            description={lang === 'ko' ? "실시간 분석 실험 및 신호 기록을 위한 새로운 시뮬레이션을 시작합니다." : "Initialize a fresh simulation for active analytical experimentation and signal capture."}
             icon={SearchIcon}
-            actionLabel="NEW RESEARCH RUN"
+            actionLabel={lang === 'ko' ? "새 연구 시작" : "NEW RESEARCH RUN"}
             onClick={onNewResearch}
           />
           <WelcomeCard
-            title="Open Evidence Archive"
-            description="Access your local research archives to review replay evidence, governance traces, and longitudinal findings."
+            title={lang === 'ko' ? "연구 결과 아카이브 열기" : "Open Evidence Archive"}
+            description={lang === 'ko' ? "로컬 연구 기록에 접속하여 리플레이 근거, 감사 기록, 기간별 연구 결과를 검토합니다." : "Access your local research archives to review replay evidence, governance traces, and longitudinal findings."}
             icon={ViewIcon}
-            actionLabel="OPEN REVIEW WORKSPACE"
+            actionLabel={lang === 'ko' ? "리뷰 워크스페이스 열기" : "OPEN REVIEW WORKSPACE"}
             onClick={onReviewEvidence}
             colorScheme="pink"
           />
@@ -110,12 +113,13 @@ const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
         <VStack spacing={3} p={4} bg="blackAlpha.300" borderRadius="sm" border="1px dashed" borderColor="ui.border" maxW="600px">
             <HStack spacing={2}>
                 <Box w={2} h={2} bg="brand.500" borderRadius="full" />
-                <Text fontSize="10px" fontWeight="800" letterSpacing="widest">SIMULATION MANDATE</Text>
+                <Text fontSize="10px" fontWeight="800" letterSpacing="widest">{lang === 'ko' ? "시뮬레이션 전용 안내" : "SIMULATION MANDATE"}</Text>
             </HStack>
             <Text fontSize="10px" color="ui.muted" textAlign="center" lineHeight="tall">
-                PaperQuantLab is an observability platform for AI reasoning research. 
-                It does not execute live trades. All market data is utilized for research, 
-                replay, and evidence synthesis within a simulation environment.
+                {lang === 'ko' 
+                    ? "PaperQuantLab은 AI 판단 연구를 위한 관찰 플랫폼입니다. 실제 거래를 수행하지 않으며, 모든 시장 데이터는 연구, 리플레이, 근거 종합을 위해 시뮬레이션 환경 내에서만 활용됩니다."
+                    : "PaperQuantLab is an observability platform for AI reasoning research. It does not execute live trades. All market data is utilized for research, replay, and evidence synthesis within a simulation environment."
+                }
             </Text>
         </VStack>
 
@@ -124,15 +128,15 @@ const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
         <HStack spacing={6} fontSize="xs" color="ui.muted">
             <HStack spacing={1}>
                 <Icon as={RepeatIcon} w={3} h={3} />
-                <Text fontWeight="700">Deterministic Replay</Text>
+                <Text fontWeight="700">{lang === 'ko' ? "결정론적 리플레이" : "Deterministic Replay"}</Text>
             </HStack>
             <HStack spacing={1}>
                 <Icon as={SearchIcon} w={3} h={3} />
-                <Text fontWeight="700">Reasoning Observability</Text>
+                <Text fontWeight="700">{lang === 'ko' ? "판단 과정 관찰" : "Reasoning Observability"}</Text>
             </HStack>
             <HStack spacing={1}>
                 <Icon as={ViewIcon} w={3} h={3} />
-                <Text fontWeight="700">Local-First Archive</Text>
+                <Text fontWeight="700">{lang === 'ko' ? "로컬 중심 기록" : "Local-First Archive"}</Text>
             </HStack>
         </HStack>
       </VStack>

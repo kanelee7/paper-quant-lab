@@ -20,6 +20,7 @@ import {
   ChevronRightIcon,
 } from '@chakra-ui/icons';
 import { demoFetch } from '../demo/demoFetch';
+import { API_BASE_URL } from '../config/api';
 
 interface GovernanceConflict {
   id: string;
@@ -38,7 +39,7 @@ const CollaborativeGovernance: React.FC = () => {
 
   const fetchGovernance = async () => {
     try {
-      const response = await demoFetch('http://localhost:8000/api/reliability/reproducibility');
+      const response = await demoFetch(`${API_BASE_URL}/api/reliability/reproducibility`);
       const data = await response.json();
       if (data.broken_links) {
         setConflicts(data.broken_links);

@@ -29,6 +29,8 @@ import {
   ArrowForwardIcon,
 } from '@chakra-ui/icons';
 import { demoFetch } from "../demo/demoFetch";
+import { API_BASE_URL } from '../config/api';
+import { useI18n } from '../i18n';
 
 export interface Hypothesis {
   id: string;
@@ -51,6 +53,7 @@ interface HypothesisManagerProps {
 }
 
 const HypothesisManager: React.FC<HypothesisManagerProps> = ({ investigatingSignalId }) => {
+  const { lang, t } = useI18n();
   const { isOpen, onToggle } = useDisclosure({ defaultIsOpen: true });
   const [hypotheses, setHypotheses] = useState<Hypothesis[]>([]);
   const [isAdding, setIsAdding] = useState(false);
@@ -71,7 +74,7 @@ const HypothesisManager: React.FC<HypothesisManagerProps> = ({ investigatingSign
 
   const fetchSessions = async () => {
     try {
-      const response = await demoFetch('http://localhost:8000/api/sessions');
+      const response = await demoFetch(`${API_BASE_URL}/api/sessions`);
       const data = await response.json();
       setSessions(data);
     } catch (e) { }
@@ -94,14 +97,14 @@ const HypothesisManager: React.FC<HypothesisManagerProps> = ({ investigatingSign
       confidence: 0.5,
       tags: [], // Initialize tags
       linked_session_id: linkedSession || undefined,
-      evolution: [{ timestamp: new Date().toISOString(), note: "Hypothesis established." }],
+      evolution: [{ timestamp: new Date().toISOString(), note: lang === 'ko' ? "가설이 수립되었습니다." : "Hypothesis established." }],
     };
     
     saveHypotheses([h, ...hypotheses]);
     setNewTitle('');
     setNewDesc('');
     setIsAdding(false);
-    toast({ title: 'Hypothesis Established', status: 'success', duration: 2000 });
+    toast({ title: lang === 'ko' ? '가설 수립됨' : 'Hypothesis Established', status: 'success', duration: 2000 });
   };
 
   const handleResolve = (id: string, status: Hypothesis['status']) => {
@@ -112,14 +115,14 @@ const HypothesisManager: React.FC<HypothesisManagerProps> = ({ investigatingSign
                 status, 
                 evolution: [...h.evolution, { 
                     timestamp: new Date().toISOString(), 
-                    note: `Status updated to ${status}.` 
+                    note: lang === 'ko' ? `상태가 ${status}로 업데이트되었습니다.` : `Status updated to ${status}.` 
                 }] 
             };
         }
         return h;
     });
     saveHypotheses(updated);
-    toast({ title: `Hypothesis ${status}`, status: status === 'resolved' ? 'success' : 'info' });
+    toast({ title: lang === 'ko' ? `가설 ${status}` : `Hypothesis ${status}`, status: status === 'resolved' ? 'success' : 'info' });
   };
 
   const handlePromoteToFinding = (h: Hypothesis) => {
@@ -127,7 +130,7 @@ const HypothesisManager: React.FC<HypothesisManagerProps> = ({ investigatingSign
         id: `finding-${Date.now()}`,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        title: `Finding: ${h.title}`,
+        title: lang === 'ko' ? `연구 결과: ${h.title}` : `Finding: ${h.title}`,
         observation: h.description,
         related_signal_ids: h.linked_replay_checkpoint ? [h.linked_replay_checkpoint] : [],
         related_session_ids: h.linked_session_id ? [h.linked_session_id] : [],
@@ -140,7 +143,7 @@ const HypothesisManager: React.FC<HypothesisManagerProps> = ({ investigatingSign
     const event = new CustomEvent('pql-add-finding', { detail: { type: 'FINDING', finding } });
     window.dispatchEvent(event);
     
-    toast({ title: 'Hypothesis Promoted', description: 'Finding established in research notebook.', status: 'success' });
+    toast({ title: lang === 'ko' ? '연구 결과로 승격됨' : 'Hypothesis Promoted', description: lang === 'ko' ? '노트북에 새로운 연구 결과가 추가되었습니다.' : 'Finding established in research notebook.', status: 'success' });
   };
 
   const getStatusColor = (status: Hypothesis['status']) => {
@@ -157,18 +160,18 @@ const HypothesisManager: React.FC<HypothesisManagerProps> = ({ investigatingSign
       <HStack justifyContent="space-between" mb={2}>
         <HStack spacing={2}>
             <VStack align="start" spacing={0}>
-                <Text fontSize="10px" fontWeight="900" color="brand.500" letterSpacing="widest">HYPOTHESIS TRACKING</Text>
-                <Text fontSize="9px" color="ui.muted">EVOLVING RESEARCH QUESTIONS</Text>
+                <Text fontSize="10px" fontWeight="900" color="brand.500" letterSpacing="widest">{lang === 'ko' ? "가설 추적" : "HYPOTHESIS TRACKING"}</Text>
+                <Text fontSize="9px" color="ui.muted">{lang === 'ko' ? "연구 질문 관리" : "EVOLVING RESEARCH QUESTIONS"}</Text>
             </VStack>
             {(hypotheses || []).filter(h => h.status === 'active').length > 0 && (
                 <Badge variant="subtle" colorScheme="blue" fontSize="9px" borderRadius="xs">
-                    {(hypotheses || []).filter(h => h.status === 'active').length} ACTIVE
+                    {(hypotheses || []).filter(h => h.status === 'active').length} {lang === 'ko' ? "활성" : "ACTIVE"}
                 </Badge>
             )}
         </HStack>
         <HStack spacing={2}>
             <Button size="2xs" leftIcon={isAdding ? <ChevronRightIcon /> : <AddIcon />} colorScheme="brand" variant="ghost" onClick={() => setIsAdding(!isAdding)} fontSize="10px" borderRadius="xs">
-                {isAdding ? 'DISCARD' : 'NEW QUESTION'}
+                {isAdding ? (lang === 'ko' ? '취소' : 'DISCARD') : (lang === 'ko' ? '새 질문' : 'NEW QUESTION')}
             </Button>
             <IconButton 
                 size="xs" 
@@ -185,15 +188,15 @@ const HypothesisManager: React.FC<HypothesisManagerProps> = ({ investigatingSign
           <Collapse in={isAdding}>
             <VStack align="stretch" spacing={3} p={3} bg="blackAlpha.300" borderRadius="sm" borderWidth="1px" borderColor="brand.500" mb={4}>
                 <Select size="xs" bg="background.deep" borderColor="ui.border" value={linkedSession} onChange={(e) => setLinkedSession(e.target.value)} fontSize="10px" borderRadius="xs">
-                    <option value="">Link to Session (Optional)</option>
+                    <option value="">{lang === 'ko' ? "세션 연결 (선택 사항)" : "Link to Session (Optional)"}</option>
                     {(sessions || []).map(s => (
                         <option key={s.session_id} value={s.session_id}>{s.title}</option>
                     ))}
                 </Select>
                 <Box>
-                    <Text fontSize="9px" color="ui.muted" mb={1} fontWeight="800" textTransform="uppercase">Hypothesis Title</Text>
+                    <Text fontSize="9px" color="ui.muted" mb={1} fontWeight="800" textTransform="uppercase">{lang === 'ko' ? "가설 제목" : "Hypothesis Title"}</Text>
                     <Input 
-                        placeholder="e.g., Breakout continuation likely weakening" 
+                        placeholder={lang === 'ko' ? "예: 돌파 추세의 약화 가능성" : "e.g., Breakout continuation likely weakening"} 
                         size="sm" 
                         fontSize="xs" 
                         value={newTitle}
@@ -204,9 +207,9 @@ const HypothesisManager: React.FC<HypothesisManagerProps> = ({ investigatingSign
                     />
                 </Box>
                 <Box>
-                    <Text fontSize="9px" color="ui.muted" mb={1} fontWeight="800" textTransform="uppercase">Logic</Text>
+                    <Text fontSize="9px" color="ui.muted" mb={1} fontWeight="800" textTransform="uppercase">{lang === 'ko' ? "판단 논리" : "Logic"}</Text>
                     <Textarea 
-                        placeholder="Explain the logic or triggers for this hypothesis..." 
+                        placeholder={lang === 'ko' ? "이 가설의 근거 또는 트리거를 설명하세요..." : "Explain the logic or triggers for this hypothesis..."} 
                         size="sm" 
                         fontSize="xs" 
                         rows={3}
@@ -217,7 +220,9 @@ const HypothesisManager: React.FC<HypothesisManagerProps> = ({ investigatingSign
                         borderRadius="xs"
                     />
                 </Box>
-                <Button size="xs" colorScheme="brand" rightIcon={<ArrowForwardIcon />} onClick={handleAddHypothesis} fontWeight="800" letterSpacing="wider" borderRadius="xs">ESTABLISH HYPOTHESIS</Button>
+                <Button size="xs" colorScheme="brand" rightIcon={<ArrowForwardIcon />} onClick={handleAddHypothesis} fontWeight="800" letterSpacing="wider" borderRadius="xs">
+                    {lang === 'ko' ? "가설 수립" : "ESTABLISH HYPOTHESIS"}
+                </Button>
             </VStack>
           </Collapse>
 
@@ -225,7 +230,7 @@ const HypothesisManager: React.FC<HypothesisManagerProps> = ({ investigatingSign
             {(hypotheses || []).length === 0 && !isAdding && (
                 <Box py={8} px={4} textAlign="center" borderRadius="sm" border="1px dashed" borderColor="ui.border" bg="blackAlpha.100">
                     <Text fontSize="10px" color="ui.muted" lineHeight="tall">
-                        Establish active research questions to track your analytical evolution.
+                        {lang === 'ko' ? "활성 연구 질문을 수립하여 분석 과정의 진화를 추적하세요." : "Establish active research questions to track your analytical evolution."}
                     </Text>
                 </Box>
             )}
@@ -252,16 +257,16 @@ const HypothesisManager: React.FC<HypothesisManagerProps> = ({ investigatingSign
                             <HStack spacing={1}>
                                 {h.status === 'active' && (
                                     <>
-                                        <Tooltip label="Resolve as Validated" fontSize="9px">
+                                        <Tooltip label={lang === 'ko' ? "검증 완료" : "Resolve as Validated"} fontSize="9px">
                                             <IconButton size="2xs" variant="ghost" colorScheme="green" icon={<CheckIcon w={2} h={2} />} onClick={() => handleResolve(h.id, 'resolved')} aria-label="Resolve" />
                                         </Tooltip>
-                                        <Tooltip label="Mark as Unresolved" fontSize="9px">
+                                        <Tooltip label={lang === 'ko' ? "미해결로 표시" : "Mark as Unresolved"} fontSize="9px">
                                             <IconButton size="2xs" variant="ghost" colorScheme="orange" icon={<InfoOutlineIcon w={2} h={2} />} onClick={() => handleResolve(h.id, 'unresolved')} aria-label="Unresolved" />
                                         </Tooltip>
                                     </>
                                 )}
                                 {h.status === 'resolved' && (
-                                    <Tooltip label="Promote to established finding" fontSize="9px">
+                                    <Tooltip label={lang === 'ko' ? "연구 결과로 승격" : "Promote to established finding"} fontSize="9px">
                                         <IconButton 
                                             size="2xs" 
                                             variant="ghost" 
@@ -279,7 +284,7 @@ const HypothesisManager: React.FC<HypothesisManagerProps> = ({ investigatingSign
 
                         {/* Related Findings Surface */}
                         <Box pt={2} borderTop="1px dashed" borderColor="whiteAlpha.100">
-                          <Text fontSize="8px" color="brand.200" fontWeight="bold" mb={2}>RELATED FINDINGS</Text>
+                          <Text fontSize="8px" color="brand.200" fontWeight="bold" mb={2}>{lang === 'ko' ? "관련 연구 결과" : "RELATED FINDINGS"}</Text>
                           <VStack align="stretch" spacing={2}>
                               {(() => {
                                   try {
@@ -292,7 +297,7 @@ const HypothesisManager: React.FC<HypothesisManagerProps> = ({ investigatingSign
                                           (f.title || '').includes(h.title || '')
                                       );
 
-                                      if (related.length === 0) return <Text fontSize="8px" color="gray.600" fontStyle="italic">No relevant findings found.</Text>;
+                                      if (related.length === 0) return <Text fontSize="8px" color="gray.600" fontStyle="italic">관련된 연구 결과가 없습니다.</Text>;
 
                                       return related.map(f => (
                                           <HStack key={f.id} p={1.5} bg="blackAlpha.300" borderRadius="xs" borderWidth="1px" borderColor="ui.border" justify="space-between">
@@ -304,7 +309,7 @@ const HypothesisManager: React.FC<HypothesisManagerProps> = ({ investigatingSign
                                           </HStack>
                                       ));
                                   } catch (e) {
-                                      return <Text fontSize="8px" color="gray.600" fontStyle="italic">Unable to load related findings.</Text>;
+                                      return <Text fontSize="8px" color="gray.600" fontStyle="italic">데이터를 불러올 수 없습니다.</Text>;
                                   }
                               })()}
                           </VStack>
@@ -312,7 +317,7 @@ const HypothesisManager: React.FC<HypothesisManagerProps> = ({ investigatingSign
                         
                         <Box pt={1}>
                             <HStack justify="space-between" mb={1}>
-                                <Text fontSize="8px" color="ui.muted">CONFIDENCE</Text>
+                                <Text fontSize="8px" color="ui.muted">{lang === 'ko' ? "신뢰도" : "CONFIDENCE"}</Text>
                                 <Text fontSize="8px" color="ui.muted">{Math.round(h.confidence * 100)}%</Text>
                             </HStack>
                             <Progress value={h.confidence * 100} size="2xs" colorScheme={getStatusColor(h.status)} bg="blackAlpha.500" borderRadius="full" />
@@ -329,7 +334,9 @@ const HypothesisManager: React.FC<HypothesisManagerProps> = ({ investigatingSign
                                 {h.linked_session_id && (
                                     <HStack spacing={1}>
                                         <Icon as={LinkIcon} w={2.5} h={2.5} color="brand.500" />
-                                        <Text fontSize="9px" color="brand.500" fontWeight="bold" letterSpacing="tighter">LINKED SESSION</Text>
+                                        <Text fontSize="9px" color="brand.500" fontWeight="bold" letterSpacing="tighter">
+                                            {lang === 'ko' ? "연결된 세션" : "LINKED SESSION"}
+                                        </Text>
                                     </HStack>
                                 )}
                             </HStack>

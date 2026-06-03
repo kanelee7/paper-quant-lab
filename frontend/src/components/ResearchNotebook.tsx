@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { demoFetch } from "../demo/demoFetch";
+import { API_BASE_URL } from '../config/api';
+import { useI18n } from '../i18n';
 import {
   Box,
   VStack,
@@ -61,6 +63,7 @@ export interface ObservationNote {
 }
 
 const ResearchNotebook: React.FC = () => {
+  const { t } = useI18n();
   const { isOpen, onToggle } = useDisclosure({ defaultIsOpen: true });
   const [findings, setFindings] = useState<Finding[]>([]);
   const [notes, setNotes] = useState<ObservationNote[]>([]);
@@ -73,7 +76,7 @@ const ResearchNotebook: React.FC = () => {
 
   const fetchCompressedKnowledge = async () => {
     try {
-      const response = await demoFetch('http://localhost:8000/api/insights/compression');
+      const response = await demoFetch(`${API_BASE_URL}/api/insights/compression`);
       const data = await response.json();
       setCompressedKnowledge(data);
     } catch (e) {
@@ -178,7 +181,7 @@ const ResearchNotebook: React.FC = () => {
         {/* Workspace Scorecard */}
         <SimpleGrid columns={4} spacing={2}>
             <Box p={2} bg="blackAlpha.300" borderRadius="xs" textAlign="center" borderWidth="1px" borderColor="whiteAlpha.100">
-                <Text fontSize="8px" color="ui.muted" fontWeight="bold">FINDINGS</Text>
+                <Text fontSize="8px" color="ui.muted" fontWeight="bold">RESEARCH</Text>
                 <Text fontSize="md" fontWeight="900" color="brand.500">{activeFindings.length}</Text>
             </Box>
             <Box p={2} bg="blackAlpha.300" borderRadius="xs" textAlign="center" borderWidth="1px" borderColor="whiteAlpha.100">
@@ -212,7 +215,7 @@ const ResearchNotebook: React.FC = () => {
         <HStack justifyContent="space-between">
             <HStack spacing={2}>
                 <VStack align="start" spacing={0}>
-                    <Text fontSize="10px" fontWeight="900" color="brand.500" letterSpacing="widest">RESEARCH NOTEBOOK</Text>
+                    <Text fontSize="10px" fontWeight="900" color="brand.500" letterSpacing="widest">{t('label.knowledge_archive')}</Text>
                     <Text fontSize="9px" color="ui.muted">KNOWLEDGE ANCHOR</Text>
                 </VStack>
             </HStack>
@@ -233,7 +236,7 @@ const ResearchNotebook: React.FC = () => {
         <Collapse in={isOpen}>
             <Tabs variant="unstyled" size="sm">
                 <TabList bg="blackAlpha.400" p={0.5} borderRadius="sm" mb={4}>
-                    {['FINDINGS', 'OBSERVATIONS', 'DISCOVERY'].map((label) => (
+                    {['FINDINGS', 'NOTES', 'DISCOVERY'].map((label) => (
                         <Tab 
                             key={label}
                             flex={1}
@@ -244,7 +247,7 @@ const ResearchNotebook: React.FC = () => {
                             _selected={{ bg: 'whiteAlpha.100', color: 'brand.500' }}
                             py={1.5}
                         >
-                            {label}
+                            {label === 'FINDINGS' ? t('label.research_findings') : label === 'NOTES' ? t('label.research_notes') : '분석 결과'}
                         </Tab>
                     ))}
                 </TabList>
@@ -254,7 +257,7 @@ const ResearchNotebook: React.FC = () => {
                     <TabPanel p={0}>
                         <VStack align="stretch" spacing={3}>
                             {activeFindings.length === 0 && (
-                                <Text fontSize="10px" color="ui.muted" fontStyle="italic" textAlign="center" py={4}>No established findings yet.</Text>
+                                <Text fontSize="10px" color="ui.muted" fontStyle="italic" textAlign="center" py={4}>{t('empty.no_findings')}</Text>
                             )}
                             {activeFindings.map(f => (
                                 <Box key={f.id} p={3} bg="blackAlpha.200" borderRadius="sm" borderLeft="3px solid" borderColor={getStatusColor(f.status) + '.500'}>

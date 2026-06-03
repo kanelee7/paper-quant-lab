@@ -21,6 +21,8 @@ import { useI18n } from '../i18n';
 import { RepeatIcon } from '@chakra-ui/icons';
 import { isDemoModeActive } from '../demo/demoService';
 
+import { API_BASE_URL } from '../config/api';
+
 interface OrderBookProps {
   symbol: string;
 }
@@ -31,7 +33,7 @@ interface OrderBookData {
 }
 
 const OrderBook: React.FC<OrderBookProps> = ({ symbol }) => {
-  const { t } = useI18n();
+  const { lang, t } = useI18n();
   const [orderBook, setOrderBook] = useState<OrderBookData>({ bids: [], asks: [] });
   const [isLoading, setIsLoading] = useState(true);
   const { isConnected, lastMessage } = useWebSocket(symbol);
@@ -49,7 +51,7 @@ const OrderBook: React.FC<OrderBookProps> = ({ symbol }) => {
   useEffect(() => {
     const fetchOrderBook = async () => {
       try {
-        const response = await demoFetch(`http://localhost:8000/orderbook?symbol=${symbol}`);
+        const response = await demoFetch(`${API_BASE_URL}/orderbook?symbol=${symbol}`);
         const data = await response.json();
         if (data.status === 'success') {
           setOrderBook(data.data as OrderBookData);
@@ -59,6 +61,7 @@ const OrderBook: React.FC<OrderBookProps> = ({ symbol }) => {
         console.error('Failed to fetch order book:', error);
       }
     };
+
 
     fetchOrderBook();
     const interval = setInterval(fetchOrderBook, 5000);
@@ -122,15 +125,21 @@ const OrderBook: React.FC<OrderBookProps> = ({ symbol }) => {
         <Center h="100%" flex={1} bg="blackAlpha.200" borderRadius="sm" border="1px dashed" borderColor="ui.border">
             <VStack spacing={2} opacity={0.6}>
                 <Icon as={RepeatIcon} w={4} h={4} color="ui.muted" />
-                <Text fontSize="9px" color="ui.muted" letterSpacing="widest" fontWeight="bold">LEDGER OFFLINE</Text>
-                <Text fontSize="8px" color="ui.muted">AWAITING RESEARCH FEED INITIALIZATION</Text>
+                <Text fontSize="9px" color="ui.muted" letterSpacing="widest" fontWeight="bold">
+                    {lang === 'ko' ? "장부 오프라인" : "LEDGER OFFLINE"}
+                </Text>
+                <Text fontSize="8px" color="ui.muted">
+                    {lang === 'ko' ? "연구용 피드 시작 대기 중" : "AWAITING RESEARCH FEED INITIALIZATION"}
+                </Text>
             </VStack>
         </Center>
       ) : isLoading ? (
         <Center h="100%" flex={1}>
             <VStack spacing={2}>
                 <Spinner size="xs" color="brand.500" thickness="1px" />
-                <Text fontSize="9px" color="ui.muted" letterSpacing="widest">SYNCING L2 LEDGER</Text>
+                <Text fontSize="9px" color="ui.muted" letterSpacing="widest">
+                    {lang === 'ko' ? "L2 장부 동기화 중" : "SYNCING L2 LEDGER"}
+                </Text>
             </VStack>
         </Center>
       ) : (
@@ -138,8 +147,12 @@ const OrderBook: React.FC<OrderBookProps> = ({ symbol }) => {
             <Table variant="unstyled" size="xs">
                 <Thead>
                     <Tr borderBottom="1px" borderColor="ui.border">
-                        <Th fontSize="8px" color="ui.muted" pb={1}>PRICE</Th>
-                        <Th fontSize="8px" color="ui.muted" isNumeric pb={1}>AMOUNT</Th>
+                        <Th fontSize="8px" color="ui.muted" pb={1}>
+                            {lang === 'ko' ? "가격" : "PRICE"}
+                        </Th>
+                        <Th fontSize="8px" color="ui.muted" isNumeric pb={1}>
+                            {lang === 'ko' ? "수량" : "AMOUNT"}
+                        </Th>
                     </Tr>
                 </Thead>
                 <Tbody>

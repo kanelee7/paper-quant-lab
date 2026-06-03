@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { demoFetch } from "../demo/demoFetch";
+import { API_BASE_URL } from '../config/api';
+import { useI18n } from '../i18n';
 import {
   Box,
   VStack,
@@ -36,6 +38,7 @@ interface ReflectionEntry {
 }
 
 const ResearchJournal: React.FC = () => {
+  const { t } = useI18n();
   const { isOpen, onToggle } = useDisclosure({ defaultIsOpen: true });
   const [entries, setEntries] = useState<ReflectionEntry[]>([]);
   const [resolvedHypotheses, setResolvedHypotheses] = useState<any[]>([]);
@@ -70,7 +73,7 @@ const ResearchJournal: React.FC = () => {
 
   const fetchSessions = async () => {
     try {
-      const response = await demoFetch('http://localhost:8000/api/sessions');
+      const response = await demoFetch(`${API_BASE_URL}/api/sessions`);
       const data = await response.json();
       setSessions(data);
     } catch (e) { }
@@ -125,7 +128,7 @@ const ResearchJournal: React.FC = () => {
       <HStack justifyContent="space-between" mb={2}>
         <HStack spacing={2}>
             <VStack align="start" spacing={0}>
-                <Text fontSize="10px" fontWeight="900" color="brand.500" letterSpacing="widest">RESEARCH NOTES</Text>
+                <Text fontSize="10px" fontWeight="900" color="brand.500" letterSpacing="widest">{t('label.research_notes')}</Text>
                 <Text fontSize="9px" color="ui.muted">ARCHIVE</Text>
             </VStack>
             {(entries || []).length > 0 && <Badge variant="subtle" fontSize="9px" borderRadius="xs">{(entries || []).length} RECORDS</Badge>}
@@ -204,7 +207,7 @@ const ResearchJournal: React.FC = () => {
                         <VStack spacing={1}>
                             <Text fontSize="xs" color="gray.300" fontWeight="800" letterSpacing="widest">NO RESEARCH NOTES</Text>
                             <Text fontSize="10px" color="ui.muted" maxW="240px" lineHeight="tall">
-                                Qualitative observations are critical for longitudinal synthesis. Add your first note to begin building the research context.
+                                {t('empty.no_notes')}
                             </Text>
                         </VStack>
                         <Button 
@@ -264,7 +267,7 @@ const ResearchJournal: React.FC = () => {
             {(resolvedHypotheses || []).length > 0 && (
                 <>
                     <HStack spacing={2} pt={2}>
-                        <Text fontSize="9px" fontWeight="800" color="ui.muted" letterSpacing="widest">FINDINGS</Text>
+                        <Text fontSize="9px" fontWeight="800" color="ui.muted" letterSpacing="widest">{t('label.research_findings')}</Text>
                         <Divider flex={1} borderColor="whiteAlpha.100" />
                     </HStack>
                     {(resolvedHypotheses || []).map(h => (

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { demoFetch } from "../demo/demoFetch";
+import { API_BASE_URL } from '../config/api';
+import { useI18n } from '../i18n';
 import {
   Box,
   VStack,
@@ -55,6 +57,7 @@ interface Review {
 }
 
 const ResearchReviewBoard: React.FC = () => {
+  const { t } = useI18n();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [sessions, setSessions] = useState<any[]>([]);
   const [insights, setInsights] = useState<any[]>([]);
@@ -77,7 +80,7 @@ const ResearchReviewBoard: React.FC = () => {
 
   const fetchReviews = async () => {
     try {
-      const response = await demoFetch('http://localhost:8000/api/reviews');
+      const response = await demoFetch(`${API_BASE_URL}/api/reviews`);
       const data = await response.json();
       setReviews(data);
     } catch (error) {
@@ -87,7 +90,7 @@ const ResearchReviewBoard: React.FC = () => {
 
   const fetchContradictions = async () => {
     try {
-      const response = await demoFetch('http://localhost:8000/api/reviews/contradictions');
+      const response = await demoFetch(`${API_BASE_URL}/api/reviews/contradictions`);
       const data = await response.json();
       setContradictions(data);
     } catch (error) {
@@ -97,7 +100,7 @@ const ResearchReviewBoard: React.FC = () => {
 
   const fetchSessions = async () => {
     try {
-      const response = await demoFetch('http://localhost:8000/api/sessions');
+      const response = await demoFetch(`${API_BASE_URL}/api/sessions`);
       const data = await response.json();
       setSessions(data);
     } catch (error) {
@@ -107,7 +110,7 @@ const ResearchReviewBoard: React.FC = () => {
 
   const fetchInsights = async () => {
     try {
-      const response = await demoFetch('http://localhost:8000/api/insights');
+      const response = await demoFetch(`${API_BASE_URL}/api/insights`);
       const data = await response.json();
       setInsights(data);
     } catch (error) {
@@ -124,16 +127,16 @@ const ResearchReviewBoard: React.FC = () => {
 
   const handleCreateReview = async () => {
     if (!newReview.title || (Array.isArray(newReview.linked_sessions) && newReview.linked_sessions.length === 0)) {
-      toast({ title: 'Title and at least one session required', status: 'warning' });
+      toast({ title: '제목과 최소 하나 이상의 세션 선택이 필요합니다.', status: 'warning' });
       return;
     }
     
     try {
       const sessionIds = (Array.isArray(newReview.linked_sessions) ? newReview.linked_sessions : []).join(',');
-      const synthRes = await demoFetch(`http://localhost:8000/api/reviews/synthesis?session_ids=${sessionIds}`);
+      const synthRes = await demoFetch(`${API_BASE_URL}/api/reviews/synthesis?session_ids=${sessionIds}`);
       const synthData = await synthRes.json();
       
-      const response = await demoFetch('http://localhost:8000/api/reviews', {
+      const response = await demoFetch(`${API_BASE_URL}/api/reviews`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -147,14 +150,14 @@ const ResearchReviewBoard: React.FC = () => {
       });
       
       if (response.ok) {
-        toast({ title: 'Research Review Created', status: 'success' });
+        toast({ title: '연구 보고서가 생성되었습니다.', status: 'success' });
         fetchReviews();
         fetchContradictions();
         onClose();
         setNewReview({ title: '', summary: '', linked_sessions: [], linked_insights: [] });
       }
     } catch (error) {
-      toast({ title: 'Failed to create review', status: 'error' });
+      toast({ title: '보고서 생성에 실패했습니다.', status: 'error' });
     }
   };
 
@@ -166,11 +169,11 @@ const ResearchReviewBoard: React.FC = () => {
     
     try {
       const sessionIds = review.linked_sessions.join(',');
-      const response = await demoFetch(`http://localhost:8000/api/reviews/synthesis?session_ids=${sessionIds}`);
+      const response = await demoFetch(`${API_BASE_URL}/api/reviews/synthesis?session_ids=${sessionIds}`);
       const data = await response.json();
       setSynthesisData(data);
       
-      const govRes = await demoFetch(`http://localhost:8000/api/reviews/${review.review_id}/governance`);
+      const govRes = await demoFetch(`${API_BASE_URL}/api/reviews/${review.review_id}/governance`);
       const govData = await govRes.json();
       setGovernanceReport(govData);
     } catch (error) {
@@ -189,7 +192,7 @@ const ResearchReviewBoard: React.FC = () => {
   return (
     <Box bg="background.surface" borderRadius="lg" p={4} borderWidth="1px" borderColor="ui.border" shadow="sm">
       <HStack justifyContent="space-between" mb={4}>
-        <Heading size="xs" color="gray.400" letterSpacing="widest" textTransform="uppercase">Research Narratives</Heading>
+        <Heading size="xs" color="gray.400" letterSpacing="widest" textTransform="uppercase">{t('label.analysis_report')}</Heading>
         <IconButton 
           size="xs" 
           variant="ghost"
@@ -206,9 +209,9 @@ const ResearchReviewBoard: React.FC = () => {
                 <WarningIcon color="orange.300" w={3} h={3} />
                 <VStack align="start" spacing={0}>
                     <Text fontSize="10px" fontWeight="bold" color="orange.100">
-                        {contradictions.length} Analytical Contradictions
+                        {contradictions.length}개의 분석 모순 발견
                     </Text>
-                    <Text fontSize="8px" color="orange.200">Continuous governance scan active.</Text>
+                    <Text fontSize="8px" color="orange.200">실시간 품질 스캔 활성화 중.</Text>
                 </VStack>
             </HStack>
         </Box>
@@ -216,7 +219,7 @@ const ResearchReviewBoard: React.FC = () => {
 
       <VStack align="stretch" spacing={3}>
         {(reviews || []).length === 0 ? (
-          <Text fontSize="11px" color="ui.muted" fontStyle="italic">No narratives synthesized yet.</Text>
+          <Text fontSize="11px" color="ui.muted" fontStyle="italic">아직 생성된 보고서가 없습니다.</Text>
         ) : (
           (reviews || []).map(review => (
             <Box 
@@ -239,16 +242,16 @@ const ResearchReviewBoard: React.FC = () => {
               <Text fontSize="10px" color="ui.muted" mb={2} noOfLines={2}>{review.summary}</Text>
               <HStack justifyContent="space-between">
                 <HStack spacing={2}>
-                    <Text fontSize="9px" color="gray.600">Audit: {new Date(review.created_at).toLocaleDateString()}</Text>
+                    <Text fontSize="9px" color="gray.600">감사: {new Date(review.created_at).toLocaleDateString()}</Text>
                     {review.governance && (
                         <Badge variant="ghost" colorScheme={review.governance.evidence_coverage_score > 0.7 ? "green" : "orange"} fontSize="8px">
-                            Reliability: {Math.round(review.governance.evidence_coverage_score * 100)}%
+                            신뢰도: {Math.round(review.governance.evidence_coverage_score * 100)}%
                         </Badge>
                     )}
                 </HStack>
                 <HStack spacing={1}>
                     {review.last_synthesis && (
-                        <Text fontSize="8px" color="brand.200" fontStyle="italic">Re-synth {Math.floor((Date.now() - new Date(review.last_synthesis).getTime()) / 3600000)}h ago</Text>
+                        <Text fontSize="8px" color="brand.200" fontStyle="italic">{Math.floor((Date.now() - new Date(review.last_synthesis).getTime()) / 3600000)}시간 전 업데이트됨</Text>
                     )}
                     <Badge fontSize="8px" variant="solid" colorScheme="blue" borderRadius="full">{(review.linked_sessions || []).length}</Badge>
                 </HStack>
@@ -262,27 +265,27 @@ const ResearchReviewBoard: React.FC = () => {
       <Modal isOpen={isDetailOpen} onClose={onDetailClose} size="xl">
         <ModalOverlay backdropFilter="blur(4px)" />
         <ModalContent bg="background.surface" color="white" borderWidth="1px" borderColor="ui.border" borderRadius="xl">
-          <ModalHeader fontSize="md" fontWeight="bold" borderBottomWidth="1px" borderColor="ui.border">Narrative Synthesis</ModalHeader>
+          <ModalHeader fontSize="md" fontWeight="bold" borderBottomWidth="1px" borderColor="ui.border">종합 분석 보고서</ModalHeader>
           <ModalCloseButton />
           <ModalBody py={6}>
             {selectedReview && (
               <VStack align="stretch" spacing={6}>
                 <HStack justifyContent="space-between" p={3} bg="blackAlpha.400" borderRadius="md" borderWidth="1px" borderColor="ui.border">
                     <VStack align="start" spacing={0}>
-                        <Text fontSize="10px" color="ui.muted" fontWeight="bold">GOVERNANCE</Text>
+                        <Text fontSize="10px" color="ui.muted" fontWeight="bold">품질 관리</Text>
                         <Text fontSize="9px" color="gray.600">Audit v{selectedReview.governance?.audit_trail?.version || 1}</Text>
                     </VStack>
                     {governanceReport && (
                         <HStack spacing={4}>
                             <VStack align="end" spacing={0}>
-                                <Text fontSize="9px" color="ui.muted">Coverage</Text>
+                                <Text fontSize="9px" color="ui.muted">커버리지</Text>
                                 <Text fontSize="xs" fontWeight="bold" color={governanceReport.coverage_score > 0.7 ? "green.300" : "orange.300"}>
                                     {Math.round(governanceReport.coverage_score * 100)}%
                                 </Text>
                             </VStack>
                             <Divider orientation="vertical" h="20px" borderColor="ui.border" />
                             <VStack align="end" spacing={0}>
-                                <Text fontSize="9px" color="ui.muted">Status</Text>
+                                <Text fontSize="9px" color="ui.muted">상태</Text>
                                 <Badge colorScheme={(governanceReport.flags || []).length === 0 ? "green" : "red"} fontSize="9px" variant="solid">
                                     {(governanceReport.flags || []).length === 0 ? "STABLE" : "WEAK EVIDENCE"}
                                 </Badge>
@@ -292,25 +295,25 @@ const ResearchReviewBoard: React.FC = () => {
                 </HStack>
 
                 <Box>
-                  <Text fontSize="10px" color="ui.muted" fontWeight="bold" mb={2} textTransform="uppercase">Executive Summary</Text>
+                  <Text fontSize="10px" color="ui.muted" fontWeight="bold" mb={2} textTransform="uppercase">핵심 요약</Text>
                   <Text fontSize="sm" lineHeight="relaxed" color="gray.200">{selectedReview.summary}</Text>
                 </Box>
 
                 {synthesisData && (
                   <>
                     <Box>
-                      <Text fontSize="10px" color="ui.muted" fontWeight="bold" mb={3} textTransform="uppercase">Longitudinal Performance</Text>
+                      <Text fontSize="10px" color="ui.muted" fontWeight="bold" mb={3} textTransform="uppercase">기간별 분석 성과</Text>
                       <SimpleGrid columns={2} spacing={4}>
                         {(Object.entries(synthesisData.persona_stats || {}) || []).map(([pid, stats]: any) => (
                           <Box key={pid} p={3} bg="blackAlpha.300" borderRadius="md" borderTop="2px solid" borderTopColor="blue.500" borderWidth="1px" borderColor="ui.border">
                             <Text fontWeight="bold" fontSize="xs" mb={2} color="gray.100">{pid}</Text>
                             <HStack spacing={6}>
                               <Stat size="sm">
-                                <StatLabel fontSize="9px" color="ui.muted">Win Rate</StatLabel>
+                                <StatLabel fontSize="9px" color="ui.muted">승률</StatLabel>
                                 <StatNumber fontSize="xs" color="green.300">{stats.win_rate}%</StatNumber>
                               </Stat>
                               <Stat size="sm">
-                                <StatLabel fontSize="9px" color="ui.muted">Avg Return</StatLabel>
+                                <StatLabel fontSize="9px" color="ui.muted">평균 수익</StatLabel>
                                 <StatNumber fontSize="xs" color="blue.300">{stats.avg_return}%</StatNumber>
                               </Stat>
                             </HStack>
@@ -322,13 +325,13 @@ const ResearchReviewBoard: React.FC = () => {
                 )}
 
                 <Box>
-                  <Text fontSize="10px" color="ui.muted" fontWeight="bold" mb={2} textTransform="uppercase">Evidence Traceability</Text>
+                  <Text fontSize="10px" color="ui.muted" fontWeight="bold" mb={2} textTransform="uppercase">근거 추적</Text>
                   <HStack wrap="wrap" spacing={2}>
                     {(selectedReview.linked_sessions || []).map(sid => (
-                      <Badge key={sid} colorScheme="blue" variant="outline" fontSize="9px">Session: {sid.slice(-8)}</Badge>
+                      <Badge key={sid} colorScheme="blue" variant="outline" fontSize="9px">세션: {sid.slice(-8)}</Badge>
                     ))}
                     {(selectedReview.linked_insights || []).map(iid => (
-                      <Badge key={iid} colorScheme="purple" variant="outline" fontSize="9px">Insight: {iid.slice(-8)}</Badge>
+                      <Badge key={iid} colorScheme="purple" variant="outline" fontSize="9px">인사이트: {iid.slice(-8)}</Badge>
                     ))}
                   </HStack>
                 </Box>
@@ -336,7 +339,7 @@ const ResearchReviewBoard: React.FC = () => {
             )}
           </ModalBody>
           <ModalFooter borderTopWidth="1px" borderColor="ui.border">
-            <Button size="sm" variant="ghost" onClick={onDetailClose}>Close Review</Button>
+            <Button size="sm" variant="ghost" onClick={onDetailClose}>{t('btn.close')}</Button>
           </ModalFooter>
         </ModalContent>
       </Modal>
@@ -345,12 +348,12 @@ const ResearchReviewBoard: React.FC = () => {
       <Modal isOpen={isOpen} onClose={onClose} size="lg">
         <ModalOverlay backdropFilter="blur(4px)" />
         <ModalContent bg="background.surface" color="white" borderWidth="1px" borderColor="ui.border">
-          <ModalHeader fontSize="md">Synthesize Narrative</ModalHeader>
+          <ModalHeader fontSize="md">보고서 생성</ModalHeader>
           <ModalCloseButton />
           <ModalBody pb={6}>
             <VStack spacing={4} align="stretch">
               <Input 
-                placeholder="Review Title..." 
+                placeholder="보고서 제목..." 
                 fontSize="sm"
                 bg="blackAlpha.300"
                 borderColor="ui.border"
@@ -360,7 +363,7 @@ const ResearchReviewBoard: React.FC = () => {
               />
               
               <Box>
-                <Text fontSize="10px" fontWeight="bold" mb={2} color="ui.muted" textTransform="uppercase">Select Sessions</Text>
+                <Text fontSize="10px" fontWeight="bold" mb={2} color="ui.muted" textTransform="uppercase">세션 선택</Text>
                 <Box maxH="150px" overflowY="auto" bg="blackAlpha.400" p={2} borderRadius="md" borderWidth="1px" borderColor="ui.border">
                   <List spacing={2}>
                     {(sessions || []).map(s => (
@@ -379,7 +382,7 @@ const ResearchReviewBoard: React.FC = () => {
               </Box>
 
               <Textarea 
-                placeholder="Synthesis summary (auto-generated if empty)..." 
+                placeholder="분석 요약 (공란일 경우 자동 생성됨)..." 
                 fontSize="sm"
                 bg="blackAlpha.300"
                 borderColor="ui.border"
@@ -390,7 +393,7 @@ const ResearchReviewBoard: React.FC = () => {
             </VStack>
           </ModalBody>
           <ModalFooter borderTopWidth="1px" borderColor="ui.border">
-            <Button size="sm" colorScheme="brand" onClick={handleCreateReview}>Synthesize</Button>
+            <Button size="sm" colorScheme="brand" onClick={handleCreateReview}>생성하기</Button>
           </ModalFooter>
         </ModalContent>
       </Modal>

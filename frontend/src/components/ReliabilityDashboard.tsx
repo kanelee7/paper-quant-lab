@@ -12,6 +12,8 @@ import {
 } from '@chakra-ui/react';
 import { RepeatIcon } from '@chakra-ui/icons';
 import { demoFetch } from "../demo/demoFetch";
+import { API_BASE_URL } from '../config/api';
+import { useI18n } from '../i18n';
 
 interface ReproducibilityReport {
   status: 'healthy' | 'degraded';
@@ -27,12 +29,13 @@ interface ReproducibilityReport {
 }
 
 const ReliabilityDashboard: React.FC = () => {
+  const { lang } = useI18n();
   const [report, setReport] = useState<ReproducibilityReport | null>(null);
   const toast = useToast();
 
   const fetchReport = async () => {
     try {
-      const response = await demoFetch('http://localhost:8000/api/reliability/reproducibility');
+      const response = await demoFetch(`${API_BASE_URL}/api/reliability/reproducibility`);
       const data = await response.json();
       setReport(data);
     } catch (error) {
@@ -48,9 +51,13 @@ const ReliabilityDashboard: React.FC = () => {
 
   const handleCreateBackup = async () => {
     try {
-      const response = await demoFetch('http://localhost:8000/api/reliability/backup', { method: 'POST' });
+      const response = await demoFetch(`${API_BASE_URL}/api/reliability/backup`, { method: 'POST' });
       if (response.ok) {
-        toast({ title: 'Research State Snapshot Created', status: 'success', duration: 2000 });
+        toast({ 
+            title: lang === 'ko' ? '시스템 상태 스냅샷이 생성되었습니다.' : 'Research State Snapshot Created', 
+            status: 'success', 
+            duration: 2000 
+        });
         fetchReport();
       }
     } catch (error) {
@@ -63,8 +70,12 @@ const ReliabilityDashboard: React.FC = () => {
   return (
     <Box bg="background.surface" borderRadius="lg" p={4} borderWidth="1px" borderColor="ui.border" shadow="sm">
       <VStack align="start" spacing={0} mb={4}>
-        <Text fontSize="10px" fontWeight="900" color="brand.500" letterSpacing="widest">SYSTEM PROVENANCE</Text>
-        <Text fontSize="9px" color="ui.muted">DATASET INTEGRITY & RELIABILITY</Text>
+        <Text fontSize="10px" fontWeight="900" color="brand.500" letterSpacing="widest">
+            {lang === 'ko' ? "시스템 무결성" : "SYSTEM PROVENANCE"}
+        </Text>
+        <Text fontSize="9px" color="ui.muted">
+            {lang === 'ko' ? "데이터셋 안정성 관리" : "DATASET INTEGRITY & RELIABILITY"}
+        </Text>
       </VStack>
 
       <VStack align="stretch" spacing={3}>
@@ -96,7 +107,9 @@ const ReliabilityDashboard: React.FC = () => {
         )}
 
         <Box p={3} bg="blackAlpha.200" borderRadius="md">
-          <Text fontSize="10px" fontWeight="800" color="ui.muted" mb={2}>MAINTENANCE_OP</Text>
+          <Text fontSize="10px" fontWeight="800" color="ui.muted" mb={2}>
+              {lang === 'ko' ? "유지보수 작업" : "MAINTENANCE_OP"}
+          </Text>
           <VStack align="start" spacing={1.5}>
             {(Array.isArray(report.recommendations) ? report.recommendations.slice(0, 2) : []).map((rec, idx) => (
               <Text key={idx} fontSize="9px" color="gray.400" lineHeight="short">• {rec}</Text>
@@ -115,7 +128,7 @@ const ReliabilityDashboard: React.FC = () => {
           letterSpacing="wider"
           borderRadius="sm"
         >
-          COMMIT STATE SNAPSHOT
+          {lang === 'ko' ? "현재 상태 스냅샷 저장" : "COMMIT STATE SNAPSHOT"}
         </Button>
       </VStack>
     </Box>

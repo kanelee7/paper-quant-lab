@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { demoFetch } from "../demo/demoFetch";
+import { API_BASE_URL } from '../config/api';
 import {
   Box,
   Button,
@@ -55,7 +56,7 @@ const ExchangeSettings: React.FC<ExchangeSettingsProps> = ({
   testMode,
   setTestMode,
 }) => {
-  const { t } = useI18n();
+  const { lang, t } = useI18n();
   const [isLoading, setIsLoading] = useState(false);
   const [assetType, setAssetType] = useState('CRYPTO');
   const toast = useToast();
@@ -63,7 +64,7 @@ const ExchangeSettings: React.FC<ExchangeSettingsProps> = ({
   const handleConnect = async () => {
     setIsLoading(true);
     try {
-      const response = await demoFetch('http://localhost:8000/select-market', {
+      const response = await demoFetch(`${API_BASE_URL}/select-market`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -79,7 +80,7 @@ const ExchangeSettings: React.FC<ExchangeSettingsProps> = ({
       const data = await response.json();
       if (data.status === 'success') {
         toast({
-          title: 'Research Environment Ready',
+          title: lang === 'ko' ? '연구 환경이 준비되었습니다.' : 'Research Environment Ready',
           description: data.message,
           status: 'success',
           duration: 3000,
@@ -88,7 +89,7 @@ const ExchangeSettings: React.FC<ExchangeSettingsProps> = ({
         onSettingsUpdate();
       } else {
         toast({
-          title: 'Initialization Failed',
+          title: lang === 'ko' ? '초기화 실패' : 'Initialization Failed',
           description: data.message,
           status: 'error',
           duration: 3000,
@@ -112,7 +113,7 @@ const ExchangeSettings: React.FC<ExchangeSettingsProps> = ({
   const handleTestConnection = async () => {
     setIsLoading(true);
     try {
-      const response = await demoFetch('http://localhost:8000/test-connection', {
+      const response = await demoFetch(`${API_BASE_URL}/test-connection`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -126,7 +127,7 @@ const ExchangeSettings: React.FC<ExchangeSettingsProps> = ({
 
       const data = await response.json();
       toast({
-        title: data.status === 'success' ? 'Access Validated' : 'Validation Failed',
+        title: data.status === 'success' ? (lang === 'ko' ? '인증 성공' : 'Access Validated') : (lang === 'ko' ? '인증 실패' : 'Validation Failed'),
         description: data.message,
         status: data.status === 'success' ? 'success' : 'error',
         duration: 3000,
@@ -142,7 +143,7 @@ const ExchangeSettings: React.FC<ExchangeSettingsProps> = ({
   const handleDisconnect = async () => {
     setIsLoading(true);
     try {
-      const response = await demoFetch('http://localhost:8000/disconnect-exchange', {
+      const response = await demoFetch(`${API_BASE_URL}/disconnect-exchange`, {
         method: 'POST',
       });
 
@@ -152,7 +153,7 @@ const ExchangeSettings: React.FC<ExchangeSettingsProps> = ({
         setSecretKey('');
         setShowApiInput(false);
         toast({
-          title: 'Data Feed Detached',
+          title: lang === 'ko' ? '데이터 피드 연결이 해제되었습니다.' : 'Data Feed Detached',
           status: 'info',
           duration: 3000,
           isClosable: true,
@@ -181,14 +182,16 @@ const ExchangeSettings: React.FC<ExchangeSettingsProps> = ({
             borderRadius="xs"
             fontSize="11px"
           >
-            <option value="CRYPTO">Crypto Assets (CCXT)</option>
-            <option value="STOCK">Equities (Simulated)</option>
-            <option value="ETF">Global ETFs (Simulated)</option>
+            <option value="CRYPTO">{lang === 'ko' ? "가상자산 (CCXT)" : "Crypto Assets (CCXT)"}</option>
+            <option value="STOCK">{lang === 'ko' ? "주식 (시뮬레이션)" : "Equities (Simulated)"}</option>
+            <option value="ETF">{lang === 'ko' ? "글로벌 ETF (시뮬레이션)" : "Global ETFs (Simulated)"}</option>
           </Select>
         </FormControl>
 
         <FormControl>
-          <FormLabel fontSize="10px" color="ui.muted" fontWeight="800" textTransform="uppercase" letterSpacing="widest">Research Data Provider</FormLabel>
+          <FormLabel fontSize="10px" color="ui.muted" fontWeight="800" textTransform="uppercase" letterSpacing="widest">
+              {lang === 'ko' ? "연구용 데이터 소스" : "Research Data Provider"}
+          </FormLabel>
           <Select
             value={selectedExchange}
             onChange={(e) => setSelectedExchange(e.target.value)}
@@ -218,18 +221,20 @@ const ExchangeSettings: React.FC<ExchangeSettingsProps> = ({
             fontWeight="800"
             borderRadius="xs"
           >
-            CONFIGURE DATA ACCESS
+            {lang === 'ko' ? "데이터 연동 설정" : "CONFIGURE DATA ACCESS"}
           </Button>
         ) : null}
 
         {showApiInput && (
           <>
             <FormControl>
-              <FormLabel fontSize="10px" color="ui.muted" fontWeight="800" textTransform="uppercase" letterSpacing="widest">READ-ONLY ACCESS KEY</FormLabel>
+              <FormLabel fontSize="10px" color="ui.muted" fontWeight="800" textTransform="uppercase" letterSpacing="widest">
+                  {lang === 'ko' ? "API 키 (읽기 전용)" : "READ-ONLY ACCESS KEY"}
+              </FormLabel>
               <Input
                 type="password"
                 value={apiKey}
-                placeholder="Optional for public feeds"
+                placeholder={lang === 'ko' ? "공개 피드의 경우 선택 사항" : "Optional for public feeds"}
                 onChange={(e) => setApiKey(e.target.value)}
                 isDisabled={isConnected}
                 bg="background.deep"
@@ -241,11 +246,13 @@ const ExchangeSettings: React.FC<ExchangeSettingsProps> = ({
             </FormControl>
 
             <FormControl>
-              <FormLabel fontSize="10px" color="ui.muted" fontWeight="800" textTransform="uppercase" letterSpacing="widest">READ-ONLY TOKEN</FormLabel>
+              <FormLabel fontSize="10px" color="ui.muted" fontWeight="800" textTransform="uppercase" letterSpacing="widest">
+                  {lang === 'ko' ? "시크릿 키 (읽기 전용)" : "READ-ONLY TOKEN"}
+              </FormLabel>
               <Input
                 type="password"
                 value={secretKey}
-                placeholder="Secure analytical token"
+                placeholder={lang === 'ko' ? "분석용 보안 토큰" : "Secure analytical token"}
                 onChange={(e) => setSecretKey(e.target.value)}
                 isDisabled={isConnected}
                 bg="background.deep"
@@ -257,9 +264,12 @@ const ExchangeSettings: React.FC<ExchangeSettingsProps> = ({
             </FormControl>
 
             <VStack align="start" spacing={1} p={2} bg="blackAlpha.400" borderRadius="xs" border="1px solid" borderColor="ui.border">
-              <Text fontSize="9px" color="brand.500" fontWeight="800">SIMULATION MANDATE</Text>
+              <Text fontSize="9px" color="brand.500" fontWeight="800">{lang === 'ko' ? "시뮬레이션 원칙" : "SIMULATION MANDATE"}</Text>
               <Text fontSize="9px" color="ui.muted" fontStyle="italic" lineHeight="short">
-                PaperQuantLab does not execute live trades. Market data access is for research and replay only.
+                {lang === 'ko' 
+                    ? "PaperQuantLab은 실제 거래를 수행하지 않습니다. 모든 시장 데이터 연동은 연구 및 리플레이를 위해서만 사용됩니다."
+                    : "PaperQuantLab does not execute live trades. Market data access is for research and replay only."
+                }
               </Text>
             </VStack>
 
@@ -276,7 +286,7 @@ const ExchangeSettings: React.FC<ExchangeSettingsProps> = ({
                 letterSpacing="wider"
                 borderRadius="xs"
               >
-                {isLoading ? <Spinner size="2xs" /> : "ATTACH READ-ONLY DATA SOURCE"}
+                {isLoading ? <Spinner size="2xs" /> : (lang === 'ko' ? "연구 피드 연결" : "ATTACH READ-ONLY DATA SOURCE")}
               </Button>
 
               <Button
@@ -289,7 +299,7 @@ const ExchangeSettings: React.FC<ExchangeSettingsProps> = ({
                 fontSize="10px"
                 borderRadius="xs"
               >
-                {isLoading ? <Spinner size="2xs" /> : 'Validate Analytical Feed'}
+                {isLoading ? <Spinner size="2xs" /> : (lang === 'ko' ? '연동 테스트' : 'Validate Analytical Feed')}
               </Button>
             </VStack>
           </>
@@ -308,7 +318,7 @@ const ExchangeSettings: React.FC<ExchangeSettingsProps> = ({
             letterSpacing="wider"
             borderRadius="xs"
           >
-            {isLoading ? <Spinner size="2xs" /> : "DETACH DATA SOURCE"}
+            {isLoading ? <Spinner size="2xs" /> : (lang === 'ko' ? "데이터 피드 연결 해제" : "DETACH DATA SOURCE")}
           </Button>
         )}
       </VStack>

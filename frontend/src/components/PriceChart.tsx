@@ -1,17 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Box, Text, VStack, HStack, Select, Button, useToast, useColorMode, useColorModeValue, Center, Spinner, Badge, Divider, Skeleton } from '@chakra-ui/react';
+import { Box, Text, VStack, HStack, Select, Button, useColorMode, Center, Spinner, Badge, Divider } from '@chakra-ui/react';
 // @ts-ignore
 import { createChart, IChartApi, ISeriesApi, Time, ColorType, CrosshairMode } from 'lightweight-charts';
 import styled from '@emotion/styled';
 import { useWebSocket } from '../hooks/useWebSocket';
+import { useI18n } from '../i18n';
 import { demoFetch } from "../demo/demoFetch";
 import { isDemoModeActive } from '../demo/demoService';
-
-interface PriceData {
-  timestamp: number;
-  price: number;
-  volume: number;
-}
+import { API_BASE_URL } from '../config/api';
 
 const ChartWrapper = styled.div`
   width: 100%;
@@ -19,12 +15,14 @@ const ChartWrapper = styled.div`
   position: relative;
 `;
 
+
 interface PriceChartProps {
   symbol: string;
   onSymbolChange: (symbol: string) => void;
 }
 
 const PriceChart: React.FC<PriceChartProps> = ({ symbol, onSymbolChange }) => {
+  const { lang, t } = useI18n();
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const candleSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
@@ -131,7 +129,7 @@ const PriceChart: React.FC<PriceChartProps> = ({ symbol, onSymbolChange }) => {
   useEffect(() => {
     const updateMarkers = async () => {
       try {
-        const response = await demoFetch('http://localhost:8000/api/journal');
+        const response = await demoFetch(`${API_BASE_URL}/api/journal`);
         const journal = await response.json();
         
         if (candleSeriesRef.current && journal.length > 0) {
@@ -175,9 +173,9 @@ const PriceChart: React.FC<PriceChartProps> = ({ symbol, onSymbolChange }) => {
     const fetchInitialData = async () => {
       try {
         setIsLoading(true);
-        setError(null);
-        const response = await demoFetch(`http://localhost:8000/ohlcv?symbol=${symbol}&timeframe=${timeframe}&limit=150`);
+        const response = await demoFetch(`${API_BASE_URL}/ohlcv?symbol=${symbol}&timeframe=${timeframe}&limit=150`);
         const data = await response.json();
+
         
         if (candleSeriesRef.current && data && data.length > 0) {
           const candleData = (data || []).map((item: any) => ({
@@ -196,7 +194,6 @@ const PriceChart: React.FC<PriceChartProps> = ({ symbol, onSymbolChange }) => {
           
           candleSeriesRef.current.setData(candleData);
           volumeSeriesRef.current?.setData(volumeData);
-          setPriceData(data);
         } else {
           // Idle state data placeholder (faded ghost candles)
           const now = Math.floor(Date.now() / 1000);
@@ -216,10 +213,9 @@ const PriceChart: React.FC<PriceChartProps> = ({ symbol, onSymbolChange }) => {
             wickUpColor: 'rgba(143, 154, 91, 0.1)',
             wickDownColor: 'rgba(168, 74, 74, 0.1)',
           });
-          setError('Idle State');
         }
       } catch (error) {
-        setError('Connection Error');
+        // Silently fail or handle connectivity error
       } finally {
         setIsLoading(false);
       }
@@ -302,15 +298,21 @@ const PriceChart: React.FC<PriceChartProps> = ({ symbol, onSymbolChange }) => {
             <Center position="absolute" top={0} left={0} w="100%" h="100%" zIndex={5} bg="background.surface">
                 <VStack spacing={4}>
                     <Spinner size="sm" color="brand.500" thickness="2px" />
-                    <Text fontSize="10px" color="ui.muted" letterSpacing="widest">INITIALIZING REPLAY CONTEXT</Text>
+                    <Text fontSize="10px" color="ui.muted" letterSpacing="widest">
+                        {lang === 'ko' ? "데이터를 불러오는 중..." : "INITIALIZING REPLAY CONTEXT"}
+                    </Text>
                 </VStack>
             </Center>
         )}
         {!isConnected && !isLoading && (
             <Center position="absolute" top="10%" left="50%" transform="translateX(-50%)" zIndex={5} pointerEvents="none">
                 <VStack spacing={1} bg="blackAlpha.700" p={4} borderRadius="sm" border="1px solid" borderColor="ui.border" backdropFilter="blur(4px)">
-                    <Text fontSize="xs" fontWeight="800" color="brand.500" letterSpacing="widest">IDLE ANALYTICAL SURFACE</Text>
-                    <Text fontSize="9px" color="ui.muted">INITIALIZE RESEARCH FEED TO POPULATE EVIDENCE</Text>
+                    <Text fontSize="xs" fontWeight="800" color="brand.500" letterSpacing="widest">
+                        {lang === 'ko' ? "분석 대기 중" : "IDLE ANALYTICAL SURFACE"}
+                    </Text>
+                    <Text fontSize="9px" color="ui.muted">
+                        {lang === 'ko' ? "연구 피드를 시작하여 데이터를 수집하세요" : "INITIALIZE RESEARCH FEED TO POPULATE EVIDENCE"}
+                    </Text>
                 </VStack>
             </Center>
         )}

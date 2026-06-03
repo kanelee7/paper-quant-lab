@@ -44,6 +44,8 @@ import {
   InfoIcon,
 } from '@chakra-ui/icons';
 import { demoFetch } from "../demo/demoFetch";
+import { API_BASE_URL } from '../config/api';
+import { useI18n } from '../i18n';
 import ResearchCommentary from './ResearchCommentary';
 
 interface Signal {
@@ -79,6 +81,7 @@ interface SignalJournalProps {
 }
 
 const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH' }) => {
+  const { t } = useI18n();
   const [signals, setSignals] = useState<Signal[]>([]);
   const [filteredSignals, setFilteredSignals] = useState<Signal[]>([]);
   const [similarSignals, setSimilarSignals] = useState<any[]>([]);
@@ -100,7 +103,7 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
 
   const fetchJournal = useCallback(async () => {
     try {
-      const response = await demoFetch('http://localhost:8000/api/journal');
+      const response = await demoFetch(`${API_BASE_URL}/api/journal`);
       const data = await response.json();
       setSignals(data);
     } catch (error) {
@@ -110,7 +113,7 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
 
   const fetchFailureTaxonomy = useCallback(async () => {
     try {
-      const response = await demoFetch('http://localhost:8000/api/taxonomy/failures');
+      const response = await demoFetch(`${API_BASE_URL}/api/taxonomy/failures`);
       const data = await response.json();
       setFailureTaxonomy(data);
     } catch (error) {
@@ -120,7 +123,7 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
 
   const fetchSessions = useCallback(async () => {
     try {
-      const response = await demoFetch('http://localhost:8000/api/sessions');
+      const response = await demoFetch(`${API_BASE_URL}/api/sessions`);
       const data = await response.json();
       setSessions(data);
     } catch (error) {
@@ -130,7 +133,7 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
 
   const fetchSimilarSignals = useCallback(async (signalId: string) => {
     try {
-      const response = await demoFetch(`http://localhost:8000/api/journal/similar/${signalId}`);
+      const response = await demoFetch(`${API_BASE_URL}/api/journal/similar/${signalId}`);
       const data = await response.json();
       setSimilarSignals(data);
     } catch (error) {
@@ -201,7 +204,7 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
 
   const handleBookmark = async (signalId: string) => {
     try {
-      const response = await demoFetch(`http://localhost:8000/api/journal/bookmark/${signalId}`, { method: 'POST' });
+      const response = await demoFetch(`${API_BASE_URL}/api/journal/bookmark/${signalId}`, { method: 'POST' });
       const data = await response.json();
       if (data.status === 'success') {
         toast({ title: 'Signal Bookmarked', status: 'success', duration: 2000 });
@@ -224,7 +227,7 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
   const handleSaveNotes = async () => {
     if (!selectedSignal) return;
     try {
-      await demoFetch('http://localhost:8000/api/journal/annotate', {
+      await demoFetch(`${API_BASE_URL}/api/journal/annotate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -250,7 +253,7 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
   const handleClearJournal = async () => {
     if (window.confirm('Are you sure you want to clear the journal?')) {
       try {
-        await demoFetch('http://localhost:8000/api/journal/clear', { method: 'POST' });
+        await demoFetch(`${API_BASE_URL}/api/journal/clear`, { method: 'POST' });
         setSignals([]);
       } catch (error) {
         console.error('Failed to clear journal:', error);
@@ -288,15 +291,15 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
     <Box bg="background.surface" borderRadius="lg" p={4} borderWidth="1px" borderColor="ui.border" shadow="sm">
       <HStack justifyContent="space-between" mb={4}>
         <VStack align="start" spacing={0}>
-            <Text fontSize="10px" fontWeight="900" color="brand.500" letterSpacing="widest">SIGNALS</Text>
-            <Text fontSize="9px" color="ui.muted">TRACE REPOSITORY</Text>
+            <Text fontSize="10px" fontWeight="900" color="brand.500" letterSpacing="widest">{t('label.signals')}</Text>
+            <Text fontSize="9px" color="ui.muted">{t('label.trace_repository')}</Text>
         </VStack>
         <HStack spacing={2}>
             <Badge colorScheme={workspaceMode === 'RESEARCH' ? 'brand' : workspaceMode === 'REVIEW' ? 'pink' : 'green'} fontSize="9px" variant="outline" px={2} borderRadius="xs">
-                {workspaceMode} MODE
+                {workspaceMode === 'RESEARCH' ? t('nav.research') : workspaceMode === 'REVIEW' ? t('nav.review') : t('nav.training')}
             </Badge>
             <Button size="xs" colorScheme="red" variant="ghost" onClick={handleClearJournal} fontSize="9px" borderRadius="xs">
-            CLEAR
+            {t('btn.clear')}
             </Button>
         </HStack>
       </HStack>
@@ -339,7 +342,7 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
         <Table variant="simple" size="sm">
           <Thead>
             <Tr borderBottom="1px" borderColor="ui.border">
-              <Th fontSize="9px" color="ui.muted" py={3}>TIMESTAMP</Th>
+              <Th fontSize="9px" color="ui.muted" py={3}>TIME</Th>
               <Th fontSize="9px" color="ui.muted" py={3}>PERSONA</Th>
               <Th fontSize="9px" color="ui.muted" py={3}>ACTION</Th>
               <Th fontSize="9px" color="ui.muted" py={3}>REGIME</Th>
@@ -357,7 +360,7 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
                             <VStack spacing={1}>
                                 <Text fontSize="xs" color="gray.300" fontWeight="800" letterSpacing="widest">NO SIGNALS</Text>
                                 <Text fontSize="10px" color="ui.muted" maxW="280px" lineHeight="tall">
-                                    Awaiting market feed or archive import to begin tracking reasoning traces.
+                                    {t('empty.no_signals')}
                                 </Text>
                             </VStack>
                         </VStack>
@@ -477,7 +480,7 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
         <ModalOverlay backdropFilter="blur(4px)" />
         <ModalContent bg="background.surface" color="white" borderWidth="1px" borderColor="ui.border" borderRadius="xl">
           <ModalHeader fontSize="md" fontWeight="bold" letterSpacing="tight" borderBottomWidth="1px" borderColor="ui.border">
-            {workspaceMode === 'REVIEW' ? 'Analysis Report' : 'Research Report'}
+            {workspaceMode === 'REVIEW' ? t('label.analysis_report') : t('label.analysis_report')}
           </ModalHeader>
           <ModalCloseButton />
           <ModalBody py={6}>
@@ -511,7 +514,7 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
                 
                 <SimpleGrid columns={2} spacing={4}>
                     <Box bg="blackAlpha.300" p={3} borderRadius="md" borderWidth="1px" borderColor="ui.border">
-                    <Text fontWeight="bold" fontSize="10px" mb={2} color="ui.muted">QUALITY</Text>
+                    <Text fontWeight="bold" fontSize="10px" mb={2} color="ui.muted">{t('label.quality')}</Text>
                     {selectedSignal.evaluation ? (
                         <VStack align="start" spacing={2}>
                         <HStack justifyContent="space-between" w="100%">
@@ -532,7 +535,7 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
                     </Box>
 
                     <Box bg="blackAlpha.300" p={3} borderRadius="md" borderWidth="1px" borderColor="ui.border">
-                    <Text fontWeight="bold" fontSize="10px" mb={2} color="ui.muted">OUTCOMES</Text>
+                    <Text fontWeight="bold" fontSize="10px" mb={2} color="ui.muted">{t('label.outcomes')}</Text>
                     <HStack spacing={3} justifyContent="space-around">
                         {['5m', '15m', '1h'].map(interval => (
                         <VStack key={interval} spacing={0}>
@@ -547,14 +550,14 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
                 </SimpleGrid>
 
                 <Box>
-                  <Text fontSize="xs" fontWeight="bold" color="ui.muted" mb={2} textTransform="uppercase">Trace</Text>
+                  <Text fontSize="xs" fontWeight="bold" color="ui.muted" mb={2} textTransform="uppercase">{t('label.trace')}</Text>
                   <Text bg="blackAlpha.400" p={3} borderRadius="md" fontSize="xs" fontStyle="italic" color="blue.100" borderLeft="2px solid" borderColor="blue.500">
                     {selectedSignal.reasoning_trace || 'No detailed trace available.'}
                   </Text>
                 </Box>
 
                 <Box>
-                  <Text fontSize="xs" fontWeight="bold" color="ui.muted" mb={2} textTransform="uppercase">Logic</Text>
+                  <Text fontSize="xs" fontWeight="bold" color="ui.muted" mb={2} textTransform="uppercase">{t('label.logic')}</Text>
                   <Text bg="blackAlpha.200" p={3} borderRadius="md" fontSize="xs" color="gray.200">
                     {selectedSignal.reason}
                   </Text>
@@ -562,7 +565,7 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
 
                 {workspaceMode !== 'TRAINING' && (similarSignals || []).length > 0 && (
                   <Box>
-                    <Text fontSize="xs" fontWeight="bold" color="ui.muted" mb={2} textTransform="uppercase">Related Traces</Text>
+                    <Text fontSize="xs" fontWeight="bold" color="ui.muted" mb={2} textTransform="uppercase">{t('label.related_records')}</Text>
                     <VStack align="stretch" spacing={2}>
                       {(similarSignals || []).map((s: any) => (
                         <Box key={s.id} bg="blackAlpha.200" p={2} borderRadius="md" borderLeft="3px solid" borderColor="brand.500">
@@ -578,7 +581,7 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
                 )}
 
                 <Box>
-                  <Text fontSize="xs" fontWeight="bold" color="ui.muted" mb={2} textTransform="uppercase">Notes & Audit</Text>
+                  <Text fontSize="xs" fontWeight="bold" color="ui.muted" mb={2} textTransform="uppercase">{t('label.notes_audit')}</Text>
                   <HStack wrap="wrap" spacing={2} mb={3}>
                     {(failureTaxonomy || []).map(f => (
                       <Badge 
@@ -605,11 +608,11 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
                   />
                   <HStack mt={3} spacing={3}>
                     <Button size="xs" colorScheme="brand" onClick={handleSaveNotes} flex={1} fontSize="10px">
-                        Save Note
+                        {t('btn.save')}
                     </Button>
                     {!selectedSignal.verified && (
                         <Button size="xs" colorScheme="green" variant="outline" flex={1} fontSize="10px">
-                            Verify
+                            {t('btn.verify')}
                         </Button>
                     )}
                   </HStack>
@@ -619,7 +622,7 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
 
                 {/* Related Findings Section */}
                 <Box>
-                  <Text fontSize="xs" fontWeight="bold" color="ui.muted" mb={2} textTransform="uppercase">Related Findings</Text>
+                  <Text fontSize="xs" fontWeight="bold" color="ui.muted" mb={2} textTransform="uppercase">{t('label.related_records')}</Text>
                   <VStack align="stretch" spacing={2}>
                     {(() => {
                         try {
@@ -651,7 +654,7 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
                 </Box>
 
                 <Box p={3} bg="blue.900" borderRadius="md" borderLeft="4px solid" borderColor="blue.400">
-                    <Text fontSize="10px" fontWeight="800" color="blue.100" mb={1}>REFLECTIONS</Text>
+                    <Text fontSize="10px" fontWeight="800" color="blue.100" mb={1}>{t('label.reflections')}</Text>
                     <VStack align="stretch" spacing={1}>
                         <Text fontSize="xs" color="blue.50">• Is the reasoning trace consistent with the recorded {selectedSignal.market_regime} indicators?</Text>
                         <Text fontSize="xs" color="blue.50">• Did the {selectedSignal.persona_id} exhibit analytical drift compared to v1.1 sessions?</Text>
@@ -663,7 +666,7 @@ const SignalJournal: React.FC<SignalJournalProps> = ({ workspaceMode = 'RESEARCH
           </ModalBody>
           <ModalFooter borderTopWidth="1px" borderColor="ui.border">
             <Button size="sm" variant="ghost" onClick={onClose}>
-              Close Report
+              {t('btn.close')}
             </Button>
           </ModalFooter>
         </ModalContent>

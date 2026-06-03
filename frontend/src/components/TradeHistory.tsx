@@ -30,7 +30,7 @@ interface TradeHistoryProps {
 }
 
 const TradeHistory: React.FC<TradeHistoryProps> = ({ trades: initialTrades, symbol = 'BTC/USDT' }) => {
-  const { t } = useI18n();
+  const { lang, t } = useI18n();
   const [liveTrades, setLiveTrades] = useState<Trade[]>([]);
   const { lastMessage } = useWebSocket(symbol);
 
@@ -58,8 +58,12 @@ const TradeHistory: React.FC<TradeHistoryProps> = ({ trades: initialTrades, symb
       {(!displayTrades || displayTrades.length === 0) ? (
         <Center h="100%" flex={1} bg="blackAlpha.200" borderRadius="sm" border="1px dashed" borderColor="ui.border">
             <VStack spacing={1} opacity={0.6}>
-                <Text fontSize="9px" color="ui.muted" letterSpacing="widest" fontWeight="bold">ACTIVITY QUIET</Text>
-                <Text fontSize="8px" color="ui.muted">NO RECENT MARKET EVENTS DETECTED</Text>
+                <Text fontSize="9px" color="ui.muted" letterSpacing="widest" fontWeight="bold">
+                    {lang === 'ko' ? "활동 없음" : "ACTIVITY QUIET"}
+                </Text>
+                <Text fontSize="8px" color="ui.muted">
+                    {lang === 'ko' ? "최근 감지된 시장 이벤트가 없습니다." : "NO RECENT MARKET EVENTS DETECTED"}
+                </Text>
             </VStack>
         </Center>
       ) : (
@@ -67,9 +71,15 @@ const TradeHistory: React.FC<TradeHistoryProps> = ({ trades: initialTrades, symb
             <Table variant="unstyled" size="xs">
                 <Thead>
                     <Tr borderBottom="1px" borderColor="ui.border">
-                        <Th fontSize="8px" color="ui.muted" pb={1}>TIME</Th>
-                        <Th fontSize="8px" color="ui.muted" isNumeric pb={1}>PRICE</Th>
-                        <Th fontSize="8px" color="ui.muted" isNumeric pb={1}>VOL</Th>
+                        <Th fontSize="8px" color="ui.muted" pb={1}>
+                            {lang === 'ko' ? "시간" : "TIME"}
+                        </Th>
+                        <Th fontSize="8px" color="ui.muted" isNumeric pb={1}>
+                            {lang === 'ko' ? "가격" : "PRICE"}
+                        </Th>
+                        <Th fontSize="8px" color="ui.muted" isNumeric pb={1}>
+                            {lang === 'ko' ? "수량" : "VOL"}
+                        </Th>
                     </Tr>
                 </Thead>
                 <Tbody>
@@ -99,4 +109,3 @@ const TradeHistory: React.FC<TradeHistoryProps> = ({ trades: initialTrades, symb
 };
 
 export default TradeHistory;
-

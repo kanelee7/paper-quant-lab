@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { demoFetch } from "../demo/demoFetch";
+import { API_BASE_URL } from '../config/api';
 import {
   Box,
   VStack,
@@ -51,7 +52,7 @@ const GuidedWalkthrough: React.FC<{ workspaceMode: string }> = ({ workspaceMode 
 
   const fetchWalkthroughs = async () => {
     try {
-      const response = await demoFetch('http://localhost:8000/api/walkthroughs/presets');
+      const response = await demoFetch(`${API_BASE_URL}/api/walkthroughs/presets`);
       const data = await response.json();
       setWalkthroughs(data);
     } catch (error) {

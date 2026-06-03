@@ -70,6 +70,7 @@ import CommandPalette from './components/CommandPalette';
 import AmbientBackground from './components/AmbientBackground';
 import { isDemoModeActive, setDemoMode as setDemoModeInService } from './demo/demoService';
 import { demoFetch } from './demo/demoFetch';
+import { API_BASE_URL } from './config/api';
 
 const SidebarSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean }> = ({ title, children, defaultOpen = true }) => {
   const { isOpen, onToggle } = useDisclosure({ defaultIsOpen: defaultOpen });
@@ -203,7 +204,7 @@ const App: React.FC = () => {
 
   const handleStartTrading = async () => {
     try {
-      const response = await fetch('http://localhost:8000/auto-trading/start', {
+      const response = await fetch(`${API_BASE_URL}/auto-trading/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ symbol: selectedSymbol, strategy: 'price_change', interval: 60, test_mode: testMode }),
@@ -218,7 +219,7 @@ const App: React.FC = () => {
 
   const handleStopTrading = async () => {
     try {
-      const response = await fetch('http://localhost:8000/auto-trading/stop', { method: 'POST' });
+      const response = await fetch(`${API_BASE_URL}/auto-trading/stop`, { method: 'POST' });
       const data = await response.json();
       if (data.status === 'success') {
         setIsTrading(false);
@@ -229,7 +230,7 @@ const App: React.FC = () => {
 
   const handleConnect = async () => {
     try {
-      const response = await fetch('http://localhost:8000/select-exchange', {
+      const response = await fetch(`${API_BASE_URL}/select-exchange`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ exchange: selectedExchange, api_key: apiKey, secret: secretKey, test_mode: testMode }),
@@ -245,7 +246,7 @@ const App: React.FC = () => {
 
   const handleDisconnect = async () => {
     try {
-      const response = await fetch('http://localhost:8000/disconnect', { method: 'POST' });
+      const response = await fetch(`${API_BASE_URL}/disconnect`, { method: 'POST' });
       const data = await response.json();
       if (data.status === 'success') {
         setIsConnected(false);
@@ -334,7 +335,7 @@ const App: React.FC = () => {
                         borderRadius="xs"
                         letterSpacing="wider"
                         >
-                        RESEARCH
+                        {lang === 'ko' ? "연구" : "RESEARCH"}
                         </Button>
                     </Tooltip>
                     <Tooltip label="Post-mortem synthesis and evidence review" fontSize="2xs" bg="background.elevated" color="white" borderRadius="xs">
@@ -351,7 +352,7 @@ const App: React.FC = () => {
                         borderRadius="xs"
                         letterSpacing="wider"
                         >
-                        REVIEW
+                        {lang === 'ko' ? "리뷰" : "REVIEW"}
                         </Button>
                     </Tooltip>
                     <Tooltip label="Guided pattern interpretation" fontSize="2xs" bg="background.elevated" color="white" borderRadius="xs">
@@ -368,7 +369,7 @@ const App: React.FC = () => {
                         borderRadius="xs"
                         letterSpacing="wider"
                         >
-                        TRAINING
+                        {lang === 'ko' ? "학습" : "TRAINING"}
                         </Button>
                     </Tooltip>
                 </HStack>
@@ -385,7 +386,7 @@ const App: React.FC = () => {
                         px={3}
                         borderRadius="sm"
                     >
-                        {isDemoMode ? "REPOSITORY: DEMO_ARCHIVE" : "INIT DEMO REPOSITORY"}
+                        {isDemoMode ? (lang === 'ko' ? "데모 데이터 로드됨" : "REPOSITORY: DEMO_ARCHIVE") : (lang === 'ko' ? "데모 데이터 불러오기" : "INIT DEMO REPOSITORY")}
                     </Button>
                     <Divider orientation="vertical" h="16px" borderColor="ui.border" />
                     <Tooltip label="Research Focus Mode" fontSize="2xs" bg="background.elevated" color="white" borderRadius="xs">
@@ -531,7 +532,7 @@ const App: React.FC = () => {
                             </VStack>
                         </SidebarSection>
 
-                        <SidebarSection title="INVESTIGATION" defaultOpen={workspaceMode === 'RESEARCH'}>
+                        <SidebarSection title={lang === 'ko' ? "연구 및 실험" : "INVESTIGATION"} defaultOpen={workspaceMode === 'RESEARCH'}>
                             <VStack spacing={3} align="stretch">
                                 {workspaceMode === 'RESEARCH' && (
                                     <ExchangeSettings selectedExchange={selectedExchange} setSelectedExchange={setSelectedExchange} apiKey={apiKey} setApiKey={setApiKey} secretKey={secretKey} setSecretKey={setSecretKey} showApiInput={showApiInput} setShowApiInput={setShowApiInput} isConnected={isConnected} onConnect={handleConnect} onDisconnect={handleDisconnect} onTestConnection={async () => {}} onLoadEnvKeys={async () => {}} onSettingsUpdate={() => {}} isDeveloperMode={isDeveloperMode} testMode={testMode} setTestMode={setTestMode} />
@@ -542,7 +543,7 @@ const App: React.FC = () => {
                             </VStack>
                         </SidebarSection>
                         
-                        <SidebarSection title="KNOWLEDGE" defaultOpen={true}>
+                        <SidebarSection title={t('sidebar.knowledge')} defaultOpen={true}>
                             <VStack spacing={3} align="stretch">
                                 <ResearchNotebook />
                                 {workspaceMode === 'REVIEW' && <ResearchCommentary />}
@@ -551,7 +552,7 @@ const App: React.FC = () => {
                             </VStack>
                         </SidebarSection>
 
-                        <SidebarSection title="ARCHIVES & SAFETY" defaultOpen={workspaceMode === 'REVIEW'}>
+                        <SidebarSection title={lang === 'ko' ? "데이터 보관 및 안전" : "ARCHIVES & SAFETY"} defaultOpen={workspaceMode === 'REVIEW'}>
                             <VStack spacing={3} align="stretch">
                                 <ResearchArchiveManager />
                                 {workspaceMode === 'REVIEW' && <ReplaySnapshotManager symbol={selectedSymbol} />}

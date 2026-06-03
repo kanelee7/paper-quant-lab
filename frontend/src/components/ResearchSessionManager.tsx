@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { demoFetch } from "../demo/demoFetch";
+import { API_BASE_URL } from '../config/api';
+import { useI18n } from '../i18n';
 import {
   Box,
   VStack,
@@ -53,6 +55,7 @@ interface Session {
 }
 
 const ResearchSessionManager: React.FC = () => {
+  const { t } = useI18n();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [activeSession, setActiveSession] = useState<Session | null>(null);
   const [selectedSessionSummary, setSelectedSessionSummary] = useState<any>(null);
@@ -70,7 +73,7 @@ const ResearchSessionManager: React.FC = () => {
 
   const fetchSessions = React.useCallback(async () => {
     try {
-      const response = await demoFetch('http://localhost:8000/api/sessions');
+      const response = await demoFetch(`${API_BASE_URL}/api/sessions`);
       const data = await response.json();
       setSessions(data);
       
@@ -87,11 +90,11 @@ const ResearchSessionManager: React.FC = () => {
 
   const handleStartSession = async () => {
     if (!newSession.title) {
-      toast({ title: 'Title is required', status: 'warning' });
+      toast({ title: '제목을 입력해주세요.', status: 'warning' });
       return;
     }
     try {
-      const response = await demoFetch('http://localhost:8000/api/sessions/start', {
+      const response = await demoFetch(`${API_BASE_URL}/api/sessions/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newSession)
@@ -99,31 +102,31 @@ const ResearchSessionManager: React.FC = () => {
       const data = await response.json();
       setActiveSession(data);
       fetchSessions();
-      toast({ title: 'Research Session Started', status: 'success' });
+      toast({ title: '연구 세션이 시작되었습니다.', status: 'success' });
     } catch (error) {
-      toast({ title: 'Failed to start session', status: 'error' });
+      toast({ title: '세션 시작에 실패했습니다.', status: 'error' });
     }
   };
 
   const handleStopSession = async () => {
     try {
-      const response = await demoFetch('http://localhost:8000/api/sessions/stop', { method: 'POST' });
+      const response = await demoFetch(`${API_BASE_URL}/api/sessions/stop`, { method: 'POST' });
       const stopped = await response.json();
       setActiveSession(null);
       fetchSessions();
-      toast({ title: 'Research Session Completed', status: 'info' });
+      toast({ title: '연구 세션이 종료되었습니다.', status: 'info' });
       
       if (stopped && stopped.session_id) {
         handleViewSummary(stopped.session_id);
       }
     } catch (error) {
-      toast({ title: 'Failed to stop session', status: 'error' });
+      toast({ title: '세션 종료에 실패했습니다.', status: 'error' });
     }
   };
 
   const handleViewSummary = async (sessionId: string) => {
     try {
-      const response = await demoFetch(`http://localhost:8000/api/sessions/${sessionId}/summary`);
+      const response = await demoFetch(`${API_BASE_URL}/api/sessions/${sessionId}/summary`);
       const data = await response.json();
       setSelectedSessionSummary(data);
       onOpen();
@@ -155,8 +158,8 @@ const ResearchSessionManager: React.FC = () => {
   return (
     <Box bg="background.surface" borderRadius="lg" p={4} borderWidth="1px" borderColor="ui.border" shadow="sm">
       <VStack align="start" spacing={0} mb={4}>
-        <Text fontSize="10px" fontWeight="900" color="brand.500" letterSpacing="widest">SESSIONS</Text>
-        <Text fontSize="9px" color="ui.muted">ACTIVE INVESTIGATION</Text>
+        <Text fontSize="10px" fontWeight="900" color="brand.500" letterSpacing="widest">연구 세션</Text>
+        <Text fontSize="9px" color="ui.muted">활성 연구</Text>
       </VStack>
       
       {activeSession ? (
@@ -166,28 +169,28 @@ const ResearchSessionManager: React.FC = () => {
                 <HStack justifyContent="space-between">
                     <VStack align="start" spacing={0}>
                         <Text fontWeight="bold" fontSize="sm" color="white">{activeSession.title}</Text>
-                        <Text fontSize="10px" color="brand.200" fontWeight="700">ACTIVE</Text>
+                        <Text fontSize="10px" color="brand.200" fontWeight="700">진행 중</Text>
                     </VStack>
                     <Badge colorScheme="brand" variant="solid" fontSize="8px" px={2} borderRadius="xs">LIVE</Badge>
                 </HStack>
                 
                 <SimpleGrid columns={2} spacing={2}>
                     <Box>
-                        <Text fontSize="9px" color="ui.muted" fontWeight="800">STARTED</Text>
+                        <Text fontSize="9px" color="ui.muted" fontWeight="800">시작 시간</Text>
                         <Text fontSize="10px" color="gray.300">{new Date(activeSession.start_time || activeSession.created_at).toLocaleTimeString()}</Text>
                     </Box>
                     <Box>
-                        <Text fontSize="9px" color="ui.muted" fontWeight="800">RECORDS</Text>
-                        <Text fontSize="10px" color="gray.300">{activeSession.signal_count || 0} Traces</Text>
+                        <Text fontSize="9px" color="ui.muted" fontWeight="800">기록 수</Text>
+                        <Text fontSize="10px" color="gray.300">{activeSession.signal_count || 0}개</Text>
                     </Box>
                 </SimpleGrid>
 
                 <Box p={2} bg="blackAlpha.400" borderRadius="xs" border="1px solid" borderColor="whiteAlpha.100">
-                    <Text fontSize="9px" color="brand.500" fontWeight="900" mb={1}>NEXT STEP</Text>
+                    <Text fontSize="9px" color="brand.500" fontWeight="900" mb={1}>다음 단계</Text>
                     <Text fontSize="10px" color="gray.100">
                         {activeSession.signal_count && activeSession.signal_count > 0 
-                            ? "Inspect replay traces in the Replay panel." 
-                            : "Awaiting market data. Monitor chart for signals."}
+                            ? "리플레이 패널에서 분석 추적 기록을 확인하세요." 
+                            : "데이터를 대기 중입니다. 차트의 신호를 모니터링하세요."}
                     </Text>
                 </Box>
 
@@ -198,7 +201,7 @@ const ResearchSessionManager: React.FC = () => {
                 </HStack>
 
                 <Button size="xs" colorScheme="red" mt={1} w="100%" onClick={handleStopSession} fontSize="9px" borderRadius="sm" fontWeight="800">
-                FINALIZE & ARCHIVE
+                세션 종료 및 보관
                 </Button>
             </VStack>
           </Box>
@@ -206,7 +209,7 @@ const ResearchSessionManager: React.FC = () => {
       ) : (
         <VStack align="stretch" spacing={3}>
           <Input 
-            placeholder="Research Title" 
+            placeholder="연구 제목" 
             size="xs" 
             value={newSession.title}
             onChange={(e) => setNewSession({ ...newSession, title: e.target.value })}
@@ -223,11 +226,11 @@ const ResearchSessionManager: React.FC = () => {
               borderColor="ui.border"
               borderRadius="sm"
             >
-              <option value="CRYPTO">Crypto Feed</option>
-              <option value="STOCK">Equity Feed</option>
+              <option value="CRYPTO">가상자산 피드</option>
+              <option value="STOCK">주식 피드</option>
             </Select>
             <Input 
-              placeholder="Market Focus" 
+              placeholder="분석 대상" 
               size="xs" 
               value={newSession.market}
               onChange={(e) => setNewSession({ ...newSession, market: e.target.value })}
@@ -237,7 +240,7 @@ const ResearchSessionManager: React.FC = () => {
             />
           </HStack>
           <Textarea 
-            placeholder="Research objective or parameters..." 
+            placeholder="연구 목적 및 파라미터..." 
             size="xs" 
             value={newSession.notes}
             onChange={(e) => setNewSession({ ...newSession, notes: e.target.value })}
@@ -247,7 +250,7 @@ const ResearchSessionManager: React.FC = () => {
           />
           <HStack>
             <Input 
-              placeholder="Tag (e.g., #drift)" 
+              placeholder="태그 (예: #추세)" 
               size="xs" 
               value={newTag}
               onChange={(e) => setNewTag(e.target.value)}
@@ -256,7 +259,7 @@ const ResearchSessionManager: React.FC = () => {
               borderColor="ui.border"
               borderRadius="sm"
             />
-            <Button size="xs" onClick={addTag} colorScheme="brand" variant="outline" fontSize="9px" borderRadius="sm">Add</Button>
+            <Button size="xs" onClick={addTag} colorScheme="brand" variant="outline" fontSize="9px" borderRadius="sm">추가</Button>
           </HStack>
           <HStack wrap="wrap">
             {(newSession.tags || []).map(tag => (
@@ -267,7 +270,7 @@ const ResearchSessionManager: React.FC = () => {
             ))}
           </HStack>
           <Button size="xs" colorScheme="brand" onClick={handleStartSession} fontWeight="800" fontSize="10px" borderRadius="sm">
-            START RESEARCH RUN
+            연구 세션 시작
           </Button>
         </VStack>
       )}
@@ -275,8 +278,8 @@ const ResearchSessionManager: React.FC = () => {
       <Divider my={4} borderColor="ui.border" />
       
       <HStack justifyContent="space-between" mb={2}>
-        <Text fontSize="10px" fontWeight="800" color="ui.muted" letterSpacing="widest">ARCHIVE</Text>
-        <Badge fontSize="8px" variant="outline" colorScheme="gray">{Object.keys(archivedSessionsByMarket).length} MARKETS</Badge>
+        <Text fontSize="10px" fontWeight="800" color="ui.muted" letterSpacing="widest">보관된 세션</Text>
+        <Badge fontSize="8px" variant="outline" colorScheme="gray">{Object.keys(archivedSessionsByMarket).length}개 시장</Badge>
       </HStack>
 
       <Box maxH="300px" overflowY="auto" pr={1} sx={{ '&::-webkit-scrollbar': { width: '2px' }, '&::-webkit-scrollbar-thumb': { bg: 'whiteAlpha.100' } }}>
@@ -285,7 +288,7 @@ const ResearchSessionManager: React.FC = () => {
             <Box key={market}>
               <HStack spacing={2} mb={1} px={1}>
                 <Icon as={RepeatIcon} w={2} h={2} color="brand.500" />
-                <Text fontSize="9px" fontWeight="bold" color="brand.200">{market} STREAM</Text>
+                <Text fontSize="9px" fontWeight="bold" color="brand.200">{market} 피드</Text>
                 <Divider flex={1} borderColor="whiteAlpha.100" />
               </HStack>
               <List spacing={1.5}>
@@ -311,7 +314,7 @@ const ResearchSessionManager: React.FC = () => {
                             <HStack spacing={1}>
                                 <Text fontSize="xs" fontWeight="bold" noOfLines={1} color="gray.200">{s.title}</Text>
                                 {isRelated && (
-                                    <Tooltip label="Continuity Detected: Same Market/Tags" fontSize="9px">
+                                    <Tooltip label="연관성 발견: 동일 시장/태그" fontSize="9px">
                                         <Icon as={LinkIcon} w={2} h={2} color="brand.500" />
                                     </Tooltip>
                                 )}
@@ -319,7 +322,7 @@ const ResearchSessionManager: React.FC = () => {
                             <HStack spacing={2}>
                                 <Text fontSize="9px" color="ui.muted">{new Date(s.end_time || s.created_at).toLocaleDateString()}</Text>
                                 <Text fontSize="9px" color="ui.muted" borderLeft="1px solid" borderColor="whiteAlpha.100" pl={2}>
-                                    {s.signal_count || 0} TRACES
+                                    기록 {s.signal_count || 0}개
                                 </Text>
                             </HStack>
                           </VStack>
@@ -346,7 +349,7 @@ const ResearchSessionManager: React.FC = () => {
             </Box>
           ))}
           {Object.keys(archivedSessionsByMarket).length === 0 && (
-            <Text fontSize="10px" color="ui.muted" fontStyle="italic" textAlign="center" py={4}>No archived research repositories found.</Text>
+            <Text fontSize="10px" color="ui.muted" fontStyle="italic" textAlign="center" py={4}>보관된 연구 세션이 없습니다.</Text>
           )}
         </VStack>
       </Box>
@@ -354,19 +357,19 @@ const ResearchSessionManager: React.FC = () => {
       <Modal isOpen={isOpen} onClose={onClose} size="lg">
         <ModalOverlay backdropFilter="blur(4px)" />
         <ModalContent bg="background.surface" color="white" borderWidth="1px" borderColor="ui.border" borderRadius="md">
-          <ModalHeader fontSize="md" fontWeight="bold">Session Summary</ModalHeader>
+          <ModalHeader fontSize="md" fontWeight="bold">{t('label.session_summary')}</ModalHeader>
           <ModalCloseButton />
           <ModalBody pb={6}>
             {selectedSessionSummary ? (
               <VStack align="stretch" spacing={4}>
                 <Box p={3} bg="blackAlpha.400" borderRadius="md" borderLeft="2px solid" borderColor="brand.500">
-                  <Text fontWeight="800" fontSize="9px" mb={2} color="ui.muted" letterSpacing="widest">SUMMARY</Text>
+                  <Text fontWeight="800" fontSize="9px" mb={2} color="ui.muted" letterSpacing="widest">요약</Text>
                   <Text fontSize="sm" lineHeight="relaxed">{selectedSessionSummary.summary}</Text>
                 </Box>
 
                 <SimpleGrid columns={2} gap={4}>
                   <Box p={3} bg="blackAlpha.300" borderRadius="md" borderWidth="1px" borderColor="ui.border">
-                    <Text fontWeight="800" fontSize="9px" mb={2} color="ui.muted" letterSpacing="widest">TOP PATTERNS</Text>
+                    <Text fontWeight="800" fontSize="9px" mb={2} color="ui.muted" letterSpacing="widest">주요 패턴</Text>
                     <HStack wrap="wrap" spacing={1}>
                       {(selectedSessionSummary.top_patterns || []).map((p: string) => (
                         <Badge key={p} colorScheme="brand" variant="outline" fontSize="9px">{p}</Badge>
@@ -374,7 +377,7 @@ const ResearchSessionManager: React.FC = () => {
                     </HStack>
                   </Box>
                   <Box p={3} bg="blackAlpha.300" borderRadius="md" borderWidth="1px" borderColor="ui.border">
-                    <Text fontWeight="800" fontSize="9px" mb={2} color="ui.muted" letterSpacing="widest">FREQUENT FAILURES</Text>
+                    <Text fontWeight="800" fontSize="9px" mb={2} color="ui.muted" letterSpacing="widest">빈번한 오류</Text>
                     <HStack wrap="wrap" spacing={1}>
                       {(selectedSessionSummary.frequent_failures || []).map((f: string) => (
                         <Badge key={f} colorScheme="red" variant="solid" fontSize="9px">{f}</Badge>
@@ -384,13 +387,13 @@ const ResearchSessionManager: React.FC = () => {
                 </SimpleGrid>
 
                 <HStack justifyContent="space-between" p={3} bg="brand.900" borderRadius="md" color="brand.100">
-                  <Text fontSize="xs" fontWeight="bold">Strongest Regime:</Text>
-                  <Badge colorScheme="brand" variant="solid" fontSize="10px">{(selectedSessionSummary.strongest_regime || 'UNKNOWN').toUpperCase()}</Badge>
+                  <Text fontSize="xs" fontWeight="bold">가장 강한 추세:</Text>
+                  <Badge colorScheme="brand" variant="solid" fontSize="10px">{(selectedSessionSummary.strongest_regime || '알 수 없음').toUpperCase()}</Badge>
                 </HStack>
 
                 <Box p={3} bg="blackAlpha.200" borderRadius="md" borderWidth="1px" borderColor="ui.border">
                     <HStack justify="space-between" mb={2}>
-                        <Text fontWeight="800" fontSize="9px" color="ui.muted" letterSpacing="widest">PROVENANCE</Text>
+                        <Text fontWeight="800" fontSize="9px" color="ui.muted" letterSpacing="widest">데이터 출처</Text>
                         <Badge fontSize="8px" variant="outline">STABLE</Badge>
                     </HStack>
                     <SimpleGrid columns={2} spacing={2}>
@@ -399,7 +402,7 @@ const ResearchSessionManager: React.FC = () => {
                             <Text fontSize="10px" color="gray.400" fontFamily="mono">{selectedSessionSummary.session_id?.slice(0, 12)}</Text>
                         </VStack>
                         <VStack align="start" spacing={0}>
-                            <Text fontSize="8px" color="ui.muted">GENERATED_AT</Text>
+                            <Text fontSize="8px" color="ui.muted">생성 일시</Text>
                             <Text fontSize="10px" color="gray.400">{new Date(selectedSessionSummary.generated_at).toLocaleString()}</Text>
                         </VStack>
                     </SimpleGrid>
@@ -413,15 +416,15 @@ const ResearchSessionManager: React.FC = () => {
                     fontSize="10px"
                     fontWeight="800"
                 >
-                    REPLAY FULL SESSION TRACE
+                    전체 세션 추적 리플레이
                 </Button>
               </VStack>
             ) : (
-              <Text fontSize="xs" color="ui.muted">Loading summary...</Text>
+              <Text fontSize="xs" color="ui.muted">요약 데이터를 불러오는 중...</Text>
             )}
           </ModalBody>
           <ModalFooter>
-            <Button size="sm" variant="ghost" onClick={onClose}>Close</Button>
+            <Button size="sm" variant="ghost" onClick={onClose}>{t('btn.close')}</Button>
           </ModalFooter>
         </ModalContent>
       </Modal>

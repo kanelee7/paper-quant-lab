@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { demoFetch } from "../demo/demoFetch";
+import { API_BASE_URL } from '../config/api';
+import { useI18n } from '../i18n';
 import {
   Box,
   VStack,
@@ -46,6 +48,7 @@ interface ResearchWorkflowGuideProps {
 }
 
 const ResearchWorkflowGuide: React.FC<ResearchWorkflowGuideProps> = ({ onModeChange }) => {
+  const { lang } = useI18n();
   const [presets, setPresets] = useState<WorkflowPreset[]>([]);
   const [activePreset, setActivePreset] = useState<WorkflowPreset | null>(null);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
@@ -57,7 +60,7 @@ const ResearchWorkflowGuide: React.FC<ResearchWorkflowGuideProps> = ({ onModeCha
 
   const fetchPresets = async () => {
     try {
-      const response = await demoFetch('http://localhost:8000/api/workflows/presets');
+      const response = await demoFetch(`${API_BASE_URL}/api/workflows/presets`);
       const data = await response.json();
       setPresets(data);
     } catch (error) {
@@ -91,7 +94,9 @@ const ResearchWorkflowGuide: React.FC<ResearchWorkflowGuideProps> = ({ onModeCha
     <Box bg="background.surface" borderRadius="lg" p={4} borderWidth="1px" borderColor="ui.border" borderLeft="4px solid" borderLeftColor="brand.500">
       <HStack justifyContent="space-between" mb={2}>
         <HStack spacing={2}>
-            <Heading size="xs" color="brand.500" letterSpacing="widest" textTransform="uppercase">Research Protocols</Heading>
+            <Heading size="xs" color="brand.500" letterSpacing="widest" textTransform="uppercase">
+                {lang === 'ko' ? "분석 가이드" : "Research Protocols"}
+            </Heading>
             {activePreset && <Badge colorScheme="brand" variant="solid" fontSize="9px">ACTIVE</Badge>}
         </HStack>
         <IconButton 
@@ -106,7 +111,9 @@ const ResearchWorkflowGuide: React.FC<ResearchWorkflowGuideProps> = ({ onModeCha
       <Collapse in={isOpen}>
         {!activePreset ? (
           <VStack align="stretch" spacing={3} mt={2}>
-            <Text fontSize="11px" color="ui.muted">Initialize a structured analytical protocol.</Text>
+            <Text fontSize="11px" color="ui.muted">
+                {lang === 'ko' ? "구조화된 분석 가이드를 시작합니다." : "Initialize a structured analytical protocol."}
+            </Text>
             {(presets || []).map(preset => (
               <Box 
                 key={preset.preset_id} 
@@ -145,7 +152,9 @@ const ResearchWorkflowGuide: React.FC<ResearchWorkflowGuideProps> = ({ onModeCha
 
             <Box p={3} bg="blackAlpha.300" borderRadius="md" borderLeft="2px solid" borderColor="brand.500">
                 <HStack mb={1}>
-                    <Badge colorScheme="brand" variant="subtle" fontSize="9px">PHASE {currentStepIndex + 1}</Badge>
+                    <Badge colorScheme="brand" variant="subtle" fontSize="9px">
+                        {lang === 'ko' ? `단계 ${currentStepIndex + 1}` : `PHASE ${currentStepIndex + 1}`}
+                    </Badge>
                     <Text fontSize="xs" fontWeight="bold" color="gray.100">{activePreset.workflow_steps[currentStepIndex].label}</Text>
                 </HStack>
                 <Text fontSize="11px" color="gray.400" fontStyle="italic" lineHeight="short">
@@ -160,7 +169,9 @@ const ResearchWorkflowGuide: React.FC<ResearchWorkflowGuideProps> = ({ onModeCha
                 onClick={handleNextStep}
                 borderRadius="sm"
             >
-                {currentStepIndex === activePreset.workflow_steps.length - 1 ? 'Complete Protocol' : 'Next Phase'}
+                {currentStepIndex === activePreset.workflow_steps.length - 1 
+                    ? (lang === 'ko' ? '분석 종료' : 'Complete Protocol') 
+                    : (lang === 'ko' ? '다음 단계' : 'Next Phase')}
             </Button>
           </VStack>
         )}

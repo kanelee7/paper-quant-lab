@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { demoFetch } from "../demo/demoFetch";
+import { API_BASE_URL } from '../config/api';
+import { useI18n } from '../i18n';
 import {
   Box,
   VStack,
@@ -39,6 +41,7 @@ interface Archive {
 }
 
 const ResearchArchiveManager: React.FC = () => {
+  const { lang, t } = useI18n();
   const [archives, setArchives] = useState<Archive[]>([]);
   const [selectedArchive, setSelectedArchive] = useState<Archive | null>(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -49,7 +52,7 @@ const ResearchArchiveManager: React.FC = () => {
 
   const fetchArchives = async () => {
     try {
-      const response = await demoFetch('http://localhost:8000/api/archives');
+      const response = await demoFetch(`${API_BASE_URL}/api/archives`);
       const data = await response.json();
       setArchives(data);
     } catch (error) {
@@ -63,17 +66,17 @@ const ResearchArchiveManager: React.FC = () => {
 
   const handleCreateArchive = async () => {
     if (!newArchive.title) {
-      toast({ title: 'Title required', status: 'warning' });
+      toast({ title: lang === 'ko' ? '제목을 입력해주세요.' : 'Title required', status: 'warning' });
       return;
     }
     try {
-      const response = await demoFetch('http://localhost:8000/api/archives/create', {
+      const response = await demoFetch(`${API_BASE_URL}/api/archives/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newArchive)
       });
       if (response.ok) {
-        toast({ title: 'State Archived', status: 'success' });
+        toast({ title: lang === 'ko' ? '상태가 보관되었습니다.' : 'State Archived', status: 'success' });
         fetchArchives();
         onClose();
         setNewArchive({ title: '', description: '' });
@@ -86,11 +89,11 @@ const ResearchArchiveManager: React.FC = () => {
   const handleImport = async () => {
     if (!selectedArchive) return;
     try {
-      const response = await demoFetch(`http://localhost:8000/api/archives/${selectedArchive.archive_id}/import?mode=${importMode}`, {
+      const response = await demoFetch(`${API_BASE_URL}/api/archives/${selectedArchive.archive_id}/import?mode=${importMode}`, {
         method: 'POST'
       });
       if (response.ok) {
-        toast({ title: 'Research State Restored', description: `Successfully imported ${selectedArchive.title}`, status: 'success' });
+        toast({ title: lang === 'ko' ? '연구 상태가 복원되었습니다.' : 'Research State Restored', description: `Successfully imported ${selectedArchive.title}`, status: 'success' });
         onDetailClose();
         window.location.reload();
       }
@@ -103,18 +106,18 @@ const ResearchArchiveManager: React.FC = () => {
     <Box bg="background.surface" borderRadius="lg" p={4} borderWidth="1px" borderColor="ui.border" shadow="sm">
       <HStack justifyContent="space-between" mb={4}>
         <VStack align="start" spacing={0}>
-            <Text fontSize="10px" fontWeight="900" color="brand.500" letterSpacing="widest">RESEARCH ARCHIVES</Text>
-            <Text fontSize="9px" color="ui.muted">SAVED STATE HISTORY</Text>
+            <Text fontSize="10px" fontWeight="900" color="brand.500" letterSpacing="widest">{lang === 'ko' ? "연구 아카이브" : "RESEARCH ARCHIVES"}</Text>
+            <Text fontSize="9px" color="ui.muted">{lang === 'ko' ? "상태 저장 이력" : "SAVED STATE HISTORY"}</Text>
         </VStack>
         <Button size="xs" variant="ghost" colorScheme="brand" leftIcon={<DownloadIcon />} onClick={onOpen} fontSize="9px" borderRadius="xs">
-          FREEZE
+          {lang === 'ko' ? "보관" : "FREEZE"}
         </Button>
       </HStack>
 
       <List spacing={2}>
         {(archives || []).length === 0 ? (
           <Box py={4} textAlign="center" borderRadius="sm" border="1px dashed" borderColor="ui.border" bg="blackAlpha.100">
-            <Text fontSize="9px" color="ui.muted" fontWeight="800">NO SAVED ARCHIVES</Text>
+            <Text fontSize="9px" color="ui.muted" fontWeight="800">{lang === 'ko' ? "저장된 아카이브 없음" : "NO SAVED ARCHIVES"}</Text>
           </Box>
         ) : (
           (archives || []).map(archive => (
@@ -153,12 +156,12 @@ const ResearchArchiveManager: React.FC = () => {
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay backdropFilter="blur(4px)" />
         <ModalContent bg="background.surface" color="white" borderWidth="1px" borderColor="ui.border">
-          <ModalHeader fontSize="md" fontWeight="bold">Freeze Research State</ModalHeader>
+          <ModalHeader fontSize="md" fontWeight="bold">{lang === 'ko' ? "연구 상태 보관" : "Freeze Research State"}</ModalHeader>
           <ModalCloseButton />
           <ModalBody pb={6}>
             <VStack spacing={4}>
               <Input 
-                placeholder="Archive Title..." 
+                placeholder={lang === 'ko' ? "아카이브 제목..." : "Archive Title..."}
                 fontSize="xs"
                 bg="blackAlpha.300"
                 borderColor="ui.border"
@@ -166,7 +169,7 @@ const ResearchArchiveManager: React.FC = () => {
                 onChange={(e) => setNewArchive({ ...newArchive, title: e.target.value })}
               />
               <Textarea 
-                placeholder="Contextual notes for this snapshot..." 
+                placeholder={lang === 'ko' ? "현재 스냅샷에 대한 참고 사항..." : "Contextual notes for this snapshot..."}
                 fontSize="xs"
                 bg="blackAlpha.300"
                 borderColor="ui.border"
@@ -174,12 +177,12 @@ const ResearchArchiveManager: React.FC = () => {
                 onChange={(e) => setNewArchive({ ...newArchive, description: e.target.value })}
               />
               <Text fontSize="9px" color="ui.muted">
-                This creates an immutable, multi-layered package of all current sessions, signals, and evidence traces.
+                {lang === 'ko' ? "현재의 모든 세션, 신호, 추적 기록을 포함하는 불변의 통합 패키지를 생성합니다." : "This creates an immutable, multi-layered package of all current sessions, signals, and evidence traces."}
               </Text>
             </VStack>
           </ModalBody>
           <ModalFooter borderTopWidth="1px" borderColor="ui.border">
-            <Button size="sm" colorScheme="brand" onClick={handleCreateArchive}>Archive State</Button>
+            <Button size="sm" colorScheme="brand" onClick={handleCreateArchive}>{lang === 'ko' ? "상태 보관하기" : "Archive State"}</Button>
           </ModalFooter>
         </ModalContent>
       </Modal>
@@ -187,7 +190,7 @@ const ResearchArchiveManager: React.FC = () => {
       <Modal isOpen={isDetailOpen} onClose={onDetailClose} size="lg">
         <ModalOverlay backdropFilter="blur(4px)" />
         <ModalContent bg="background.surface" color="white" borderWidth="1px" borderColor="ui.border">
-          <ModalHeader fontSize="md" fontWeight="bold">Archive Explorer</ModalHeader>
+          <ModalHeader fontSize="md" fontWeight="bold">{lang === 'ko' ? "아카이브 탐색기" : "Archive Explorer"}</ModalHeader>
           <ModalCloseButton />
           <ModalBody pb={6}>
             {selectedArchive && (
@@ -197,7 +200,7 @@ const ResearchArchiveManager: React.FC = () => {
                   <Text fontSize="xs" color="brand.200" fontFamily="mono">{selectedArchive.archive_id}</Text>
                 </Box>
                 <Box>
-                  <Text fontSize="9px" color="ui.muted" fontWeight="bold" mb={2}>BUNDLED LAYERS</Text>
+                  <Text fontSize="9px" color="ui.muted" fontWeight="bold" mb={2}>{lang === 'ko' ? "포함된 레이어" : "BUNDLED LAYERS"}</Text>
                   <HStack spacing={2} wrap="wrap">
                     {['SESSIONS', 'SIGNALS', 'FINDINGS', 'COMMENTS', 'REPLAYS', 'GOVERNANCE'].map(c => (
                       <Badge key={c} colorScheme="green" variant="subtle" fontSize="8px">{c}</Badge>
@@ -205,14 +208,14 @@ const ResearchArchiveManager: React.FC = () => {
                   </HStack>
                 </Box>
                 <Box bg="blackAlpha.400" p={3} borderRadius="md" borderWidth="1px" borderColor="ui.border">
-                  <Text fontSize="9px" color="ui.muted" fontWeight="bold" mb={2}>REPRODUCIBILITY METADATA</Text>
+                  <Text fontSize="9px" color="ui.muted" fontWeight="bold" mb={2}>{lang === 'ko' ? "재현성 메타데이터" : "REPRODUCIBILITY METADATA"}</Text>
                   <HStack spacing={8}>
                     <VStack align="start" spacing={0}>
-                      <Text fontSize="9px" color="gray.600">SCHEMA</Text>
+                      <Text fontSize="9px" color="gray.600">{lang === 'ko' ? "스키마" : "SCHEMA"}</Text>
                       <Text fontSize="xs" fontWeight="bold">{selectedArchive.schema_version || '2.4.x'}</Text>
                     </VStack>
                     <VStack align="start" spacing={0}>
-                      <Text fontSize="9px" color="gray.600">REPLAY LOGIC</Text>
+                      <Text fontSize="9px" color="gray.600">{lang === 'ko' ? "리플레이 논리" : "REPLAY LOGIC"}</Text>
                       <Text fontSize="xs" fontWeight="bold">{selectedArchive.replay_version || 'v2-compat'}</Text>
                     </VStack>
                   </HStack>
@@ -220,8 +223,8 @@ const ResearchArchiveManager: React.FC = () => {
 
                 <Box>
                     <HStack justify="space-between" mb={2}>
-                        <Text fontSize="10px" color="brand.200" fontWeight="bold">KEY FINDINGS IN ARCHIVE</Text>
-                        <Badge fontSize="8px" variant="outline" colorScheme="brand">AUTO-SURFACED</Badge>
+                        <Text fontSize="10px" color="brand.200" fontWeight="bold">{lang === 'ko' ? "아카이브 내 주요 연구 결과" : "KEY FINDINGS IN ARCHIVE"}</Text>
+                        <Badge fontSize="8px" variant="outline" colorScheme="brand">{lang === 'ko' ? "자동 감지됨" : "AUTO-SURFACED"}</Badge>
                     </HStack>
                     <VStack align="stretch" spacing={2}>
                         {(() => {
@@ -232,7 +235,7 @@ const ResearchArchiveManager: React.FC = () => {
                                     <Box key={f.id} p={2} bg="whiteAlpha.50" borderRadius="sm" borderLeft="2px solid" borderColor={f.status === 'contradicted' ? 'orange.500' : 'brand.500'}>
                                         <HStack justify="space-between">
                                             <Text fontSize="xs" fontWeight="bold" color="gray.200">{f.title || 'Untitled Finding'}</Text>
-                                            <Badge fontSize="8px" colorScheme={f.status === 'contradicted' ? 'orange' : 'brand'}>{(f.status || 'ACTIVE').toUpperCase()}</Badge>
+                                            <Badge colorScheme={f.status === 'contradicted' ? 'orange' : 'brand'}>{(f.status || 'ACTIVE').toUpperCase()}</Badge>
                                         </HStack>
                                         <Text fontSize="9px" color="ui.muted" noOfLines={1}>{f.observation || 'No observation recorded.'}</Text>
                                     </Box>
@@ -241,24 +244,15 @@ const ResearchArchiveManager: React.FC = () => {
                                 return <Text fontSize="10px" color="ui.muted" fontStyle="italic">Unable to load findings.</Text>;
                             }
                         })()}
-                        {(() => {
-                            try {
-                                const findings = JSON.parse(localStorage.getItem('pql_research_findings') || '[]');
-                                if (!Array.isArray(findings) || findings.length === 0) {
-                                    return <Text fontSize="10px" color="ui.muted" fontStyle="italic">No findings discovered in this archive.</Text>;
-                                }
-                                return null;
-                            } catch (e) { return null; }
-                        })()}
                     </VStack>
                 </Box>
                 
                 <Box pt={2}>
-                    <Text fontSize="9px" color="ui.muted" fontWeight="bold" mb={2}>RESTORE WORKFLOW</Text>
+                    <Text fontSize="9px" color="ui.muted" fontWeight="bold" mb={2}>{lang === 'ko' ? "복원 작업" : "RESTORE WORKFLOW"}</Text>
                     <HStack mb={3}>
                         <Select size="xs" bg="blackAlpha.300" borderColor="ui.border" value={importMode} onChange={(e) => setMode(e.target.value)}>
-                            <option value="merge">Non-Destructive Layer Merge</option>
-                            <option value="overwrite">Full State Overwrite</option>
+                            <option value="merge">{lang === 'ko' ? "기존 데이터와 병합 (권장)" : "Non-Destructive Layer Merge"}</option>
+                            <option value="overwrite">{lang === 'ko' ? "전체 상태 덮어쓰기" : "Full State Overwrite"}</option>
                         </Select>
                     </HStack>
                     <Button 
@@ -270,14 +264,14 @@ const ResearchArchiveManager: React.FC = () => {
                         fontWeight="800"
                         letterSpacing="widest"
                     >
-                        RESTORE RESEARCH STATE
+                        {lang === 'ko' ? "연구 상태 복원" : "RESTORE RESEARCH STATE"}
                     </Button>
                 </Box>
               </VStack>
             )}
           </ModalBody>
           <ModalFooter borderTopWidth="1px" borderColor="ui.border">
-            <Button size="sm" variant="ghost" onClick={onDetailClose}>Close</Button>
+            <Button size="sm" variant="ghost" onClick={onDetailClose}>{t('btn.close')}</Button>
           </ModalFooter>
         </ModalContent>
       </Modal>

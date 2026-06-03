@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { demoFetch } from "../demo/demoFetch";
+import { API_BASE_URL } from '../config/api';
 import {
   Box,
   VStack,
@@ -48,7 +49,7 @@ const ResearchCommentary: React.FC<ResearchCommentaryProps> = ({ signal_id, repl
 
   const fetchComments = async () => {
     try {
-      let url = 'http://localhost:8000/api/comments';
+      let url = `${API_BASE_URL}/api/comments`;
       if (signal_id) url += `?signal_id=${signal_id}`;
       const response = await demoFetch(url);
       const data = await response.json();
@@ -68,7 +69,7 @@ const ResearchCommentary: React.FC<ResearchCommentaryProps> = ({ signal_id, repl
     if (!newComment.trim()) return;
     setIsPosting(true);
     try {
-      const response = await demoFetch('http://localhost:8000/api/comments', {
+      const response = await demoFetch(`${API_BASE_URL}/api/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -92,7 +93,7 @@ const ResearchCommentary: React.FC<ResearchCommentaryProps> = ({ signal_id, repl
 
   const handleDelete = async (id: string) => {
     try {
-      const response = await demoFetch(`http://localhost:8000/api/comments/${id}`, { method: 'DELETE' });
+      const response = await demoFetch(`${API_BASE_URL}/api/comments/${id}`, { method: 'DELETE' });
       if (response.ok) {
         fetchComments();
         toast({ title: 'Comment removed', status: 'info', duration: 2000 });

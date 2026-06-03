@@ -37,6 +37,8 @@ import {
   LinkIcon,
 } from '@chakra-ui/icons';
 import { demoFetch } from "../demo/demoFetch";
+import { API_BASE_URL } from '../config/api';
+import { useI18n } from '../i18n';
 import { Hypothesis } from './HypothesisManager';
 
 interface Signal {
@@ -59,6 +61,7 @@ interface ReplayTimelineProps {
 }
 
 const ReplayTimeline: React.FC<ReplayTimelineProps> = ({ symbol, onFocusSignal, investigatingSignalId, onClearFocus }) => {
+  const { lang, t } = useI18n();
   const [signals, setSignals] = useState<Signal[]>([]);
   const [currentIndex, setCurrentStepIndex] = useState(-1);
   const [sliderValue, setSliderValue] = useState(0);
@@ -68,7 +71,7 @@ const ReplayTimeline: React.FC<ReplayTimelineProps> = ({ symbol, onFocusSignal, 
 
   const fetchSignals = useCallback(async () => {
     try {
-      const response = await demoFetch(`http://localhost:8000/api/journal?limit=200`);
+      const response = await demoFetch(`${API_BASE_URL}/api/journal?limit=200`);
       const data = await response.json();
       const list = Array.isArray(data) ? data : [];
       const filtered = list.filter((s: any) => s.symbol === symbol).sort((a: any, b: any) => 
@@ -108,14 +111,14 @@ const ReplayTimeline: React.FC<ReplayTimelineProps> = ({ symbol, onFocusSignal, 
                     linked_replay_checkpoint: signalId,
                     evolution: [...h.evolution, {
                         timestamp: new Date().toISOString(),
-                        note: `Linked to replay checkpoint: ${signalId.slice(0, 8)}`
+                        note: lang === 'ko' ? `리플레이 체크포인트 연결됨: ${signalId.slice(0, 8)}` : `Linked to replay checkpoint: ${signalId.slice(0, 8)}`
                     }]
                 };
             }
             return h;
         });
         localStorage.setItem('pql_hypotheses', JSON.stringify(updated));
-        toast({ title: 'Checkpoint Linked', description: 'Hypothesis updated with evidence link.', status: 'success' });
+        toast({ title: lang === 'ko' ? '가설 연결됨' : 'Checkpoint Linked', status: 'success' });
     }
   };
 
@@ -124,7 +127,7 @@ const ReplayTimeline: React.FC<ReplayTimelineProps> = ({ symbol, onFocusSignal, 
         id: `finding-${Date.now()}`,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        title: `Observation: ${signal.strategy_name || 'Manual Extract'}`,
+        title: lang === 'ko' ? `관찰: ${signal.strategy_name || '수동 추출'}` : `Observation: ${signal.strategy_name || 'Manual Extract'}`,
         observation: signal.reasoning_trace || signal.reason || 'Evidence extracted from replay trace.',
         related_signal_ids: [signal.id],
         related_session_ids: [],
@@ -184,8 +187,8 @@ const ReplayTimeline: React.FC<ReplayTimelineProps> = ({ symbol, onFocusSignal, 
         <HStack justifyContent="space-between" px={2}>
             <HStack spacing={4}>
                 <VStack align="start" spacing={0}>
-                    <Text fontSize="10px" fontWeight="900" color="brand.500" letterSpacing="widest">EVIDENCE REPLAY</Text>
-                    <Text fontSize="9px" color="ui.muted">REPLAY TRACE</Text>
+                    <Text fontSize="10px" fontWeight="900" color="brand.500" letterSpacing="widest">{t('sidebar.reliability')}</Text>
+                    <Text fontSize="9px" color="ui.muted">{t('label.trace_repository')}</Text>
                 </VStack>
                 <HStack spacing={1} bg="blackAlpha.400" p={1} borderRadius="sm" border="1px solid" borderColor="ui.border">
                     <IconButton 
@@ -235,7 +238,7 @@ const ReplayTimeline: React.FC<ReplayTimelineProps> = ({ symbol, onFocusSignal, 
                     <Divider orientation="vertical" h="20px" borderColor="ui.border" />
                     <VStack align="start" spacing={0}>
                       <Text fontSize="9px" fontWeight="800" color="gray.300">{new Date(currentSignal.timestamp).toLocaleTimeString()}</Text>
-                      <Text fontSize="8px" color="ui.muted">TRACE CAPTURED</Text>
+                      <Text fontSize="8px" color="ui.muted">{lang === 'ko' ? "추적 완료" : "TRACE CAPTURED"}</Text>
                     </VStack>
                     <IconButton 
                       size="xs" 
@@ -316,7 +319,9 @@ const ReplayTimeline: React.FC<ReplayTimelineProps> = ({ symbol, onFocusSignal, 
                                               </HStack>
 
                                               <VStack align="start" spacing={1}>
-                                                  <Text fontSize="10px" color="gray.200" fontWeight="bold">REASONING SNAPSHOT</Text>
+                                                  <Text fontSize="10px" color="gray.200" fontWeight="bold">
+                                                      {lang === 'ko' ? "판단 요약" : "REASONING SNAPSHOT"}
+                                                  </Text>
                                                   <Text fontSize="10px" color="gray.400" fontStyle="italic" noOfLines={2}>
                                                       "{s.reasoning_trace || s.reason || 'Observation trace captured.'}"
                                                   </Text>
@@ -326,23 +331,29 @@ const ReplayTimeline: React.FC<ReplayTimelineProps> = ({ symbol, onFocusSignal, 
 
                                               <HStack justify="space-between">
                                                   <VStack align="start" spacing={0}>
-                                                      <Text fontSize="8px" color="ui.muted">STATE DELTA</Text>
+                                                      <Text fontSize="8px" color="ui.muted">
+                                                          {lang === 'ko' ? "상태 변화" : "STATE DELTA"}
+                                                      </Text>
                                                       {deltaInfo ? (
                                                           <Text fontSize="10px" color={deltaInfo.delta >= 0 ? "green.300" : "red.300"} fontWeight="bold">
                                                               {deltaInfo.delta >= 0 ? '+' : ''}{deltaInfo.pct.toFixed(2)}%
                                                           </Text>
                                                       ) : (
-                                                          <Text fontSize="10px" color="ui.muted">ORIGIN</Text>
+                                                          <Text fontSize="10px" color="ui.muted">
+                                                              {lang === 'ko' ? "기점" : "ORIGIN"}
+                                                          </Text>
                                                       )}
                                                   </VStack>
                                                   <VStack align="end" spacing={0}>
                                                       <Menu>
                                                           <MenuButton as={Button} size="2xs" variant="outline" colorScheme="brand" rightIcon={<LinkIcon w={2} h={2} />} fontSize="8px">
-                                                              LINK HYPOTHESIS
+                                                              {lang === 'ko' ? "가설 연결" : "LINK HYPOTHESIS"}
                                                           </MenuButton>
                                                           <MenuList bg="background.surface" borderColor="ui.border" p={1} boxShadow="panel" zIndex={2000}>
                                                               {(activeHypotheses || []).length === 0 ? (
-                                                                  <MenuItem isDisabled fontSize="9px" bg="transparent">No active hypotheses</MenuItem>
+                                                                  <MenuItem isDisabled fontSize="9px" bg="transparent">
+                                                                      {lang === 'ko' ? "활성 가설 없음" : "No active hypotheses"}
+                                                                  </MenuItem>
                                                               ) : (
                                                                   (activeHypotheses || []).map(h => (
                                                                       <MenuItem 
@@ -365,7 +376,7 @@ const ReplayTimeline: React.FC<ReplayTimelineProps> = ({ symbol, onFocusSignal, 
                                                                   _hover={{ bg: 'whiteAlpha.100' }}
                                                                   onClick={() => handleExtractFinding(s)}
                                                               >
-                                                                  EXTRACT FINDING
+                                                                  {lang === 'ko' ? "연구 결과로 추출" : "EXTRACT FINDING"}
                                                               </MenuItem>
                                                           </MenuList>
                                                           </Menu>
@@ -384,8 +395,8 @@ const ReplayTimeline: React.FC<ReplayTimelineProps> = ({ symbol, onFocusSignal, 
                     </SliderThumb>
                     </Slider>
                     <HStack justifyContent="space-between" mt={4}>
-                    <Text fontSize="8px" color="ui.muted" fontWeight="800">ORIGIN_TRACE</Text>
-                    <Text fontSize="8px" color="ui.muted" fontWeight="800">LATEST_STATE</Text>
+                    <Text fontSize="8px" color="ui.muted" fontWeight="800">{lang === 'ko' ? "추적 시작" : "ORIGIN_TRACE"}</Text>
+                    <Text fontSize="8px" color="ui.muted" fontWeight="800">{lang === 'ko' ? "최신 상태" : "LATEST_STATE"}</Text>
                     </HStack>
                     </Box>
 
@@ -393,14 +404,16 @@ const ReplayTimeline: React.FC<ReplayTimelineProps> = ({ symbol, onFocusSignal, 
                     <Box mt={2} p={4} bg="blackAlpha.300" borderRadius="md" borderWidth="1px" borderColor="brand.500" position="relative">
                     <HStack justify="space-between" mb={3}>
                     <HStack>
-                      <Badge colorScheme="brand" variant="solid" fontSize="10px">INSPECTION</Badge>
+                      <Badge colorScheme="brand" variant="solid" fontSize="10px">{lang === 'ko' ? "세밀 검사" : "INSPECTION"}</Badge>
                       <Text fontSize="10px" fontWeight="bold" color="gray.200">{currentSignal.strategy_name}</Text>
                     </HStack>
-                    <Button size="xs" variant="ghost" colorScheme="red" onClick={onClearFocus} fontSize="9px">CLOSE INSPECTION</Button>
+                    <Button size="xs" variant="ghost" colorScheme="red" onClick={onClearFocus} fontSize="9px">
+                        {lang === 'ko' ? "검사 종료" : "CLOSE INSPECTION"}
+                    </Button>
                     </HStack>
                     <VStack align="stretch" spacing={3}>
                     <Box>
-                      <Text fontSize="8px" color="ui.muted" fontWeight="bold" mb={1}>REASONING TRACE</Text>
+                      <Text fontSize="8px" color="ui.muted" fontWeight="bold" mb={1}>{t('label.trace')}</Text>
                       <Text fontSize="xs" fontStyle="italic" color="blue.100" borderLeft="2px solid" borderColor="blue.500" pl={2}>
                           {currentSignal.reasoning_trace || currentSignal.reason}
                       </Text>
@@ -408,7 +421,7 @@ const ReplayTimeline: React.FC<ReplayTimelineProps> = ({ symbol, onFocusSignal, 
 
                     {/* Related Findings Surface */}
                     <Box pt={2} borderTop="1px dashed" borderColor="whiteAlpha.100">
-                      <Text fontSize="8px" color="brand.200" fontWeight="bold" mb={2}>RELATED FINDINGS</Text>
+                      <Text fontSize="8px" color="brand.200" fontWeight="bold" mb={2}>{t('label.research_findings')}</Text>
                       <VStack align="stretch" spacing={2}>
                           {(() => {
                               try {
@@ -417,7 +430,7 @@ const ReplayTimeline: React.FC<ReplayTimelineProps> = ({ symbol, onFocusSignal, 
                                   const list = Array.isArray(findings) ? findings : [];
                                   const related = list.filter(f => Array.isArray(f.related_signal_ids) && f.related_signal_ids.includes(currentSignal.id));
                                   
-                                  if (related.length === 0) return <Text fontSize="9px" color="gray.600" fontStyle="italic">No directly linked findings.</Text>;
+                                  if (related.length === 0) return <Text fontSize="9px" color="gray.600" fontStyle="italic">연결된 연구 결과가 없습니다.</Text>;
 
                                   return related.map(f => (
                                       <HStack key={f.id} p={2} bg="blackAlpha.400" borderRadius="sm" borderWidth="1px" borderColor="ui.border" justify="space-between">
@@ -429,7 +442,7 @@ const ReplayTimeline: React.FC<ReplayTimelineProps> = ({ symbol, onFocusSignal, 
                                       </HStack>
                                   ));
                               } catch (e) {
-                                  return <Text fontSize="9px" color="gray.600" fontStyle="italic">Unable to load findings.</Text>;
+                                  return <Text fontSize="9px" color="gray.600" fontStyle="italic">데이터를 불러올 수 없습니다.</Text>;
                               }
                           })()}
                       </VStack>
@@ -437,13 +450,13 @@ const ReplayTimeline: React.FC<ReplayTimelineProps> = ({ symbol, onFocusSignal, 
 
                     <HStack justify="space-between" pt={2} borderTop="1px solid" borderColor="whiteAlpha.100">
                       <HStack>
-                          <Text fontSize="8px" color="ui.muted" fontWeight="bold">LINKED HYPOTHESES:</Text>
+                          <Text fontSize="8px" color="ui.muted" fontWeight="bold">{lang === 'ko' ? "연결된 가설:" : "LINKED HYPOTHESES:"}</Text>
                           {(activeHypotheses || []).filter(h => h.linked_replay_checkpoint === currentSignal.id).length > 0 ? (
                               (activeHypotheses || []).filter(h => h.linked_replay_checkpoint === currentSignal.id).map(h => (
                                   <Badge key={h.id} variant="outline" colorScheme="blue" fontSize="8px">{h.title}</Badge>
                               ))
                           ) : (
-                              <Text fontSize="9px" color="gray.500">None</Text>
+                              <Text fontSize="9px" color="gray.500">{lang === 'ko' ? "없음" : "None"}</Text>
                           )}
                       </HStack>
                     </HStack>

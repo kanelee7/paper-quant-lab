@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { demoFetch } from "../demo/demoFetch";
+import { API_BASE_URL } from '../config/api';
+import { useI18n } from '../i18n';
 import {
   Box,
   SimpleGrid,
@@ -29,17 +31,19 @@ interface Metrics {
 }
 
 const PerformanceMetrics: React.FC = () => {
+  const { lang } = useI18n();
   const [metrics, setMetrics] = useState<Metrics | null>(null);
 
   const fetchMetrics = async () => {
     try {
-      const response = await demoFetch('http://localhost:8000/api/performance');
+      const response = await demoFetch(`${API_BASE_URL}/api/performance`);
       const data = await response.json();
       setMetrics(data);
     } catch (error) {
       console.error('Failed to fetch metrics:', error);
     }
   };
+
 
   useEffect(() => {
     fetchMetrics();
@@ -55,20 +59,30 @@ const PerformanceMetrics: React.FC = () => {
   return (
     <Box bg="background.surface" borderRadius="lg" p={4} borderWidth="1px" borderColor="ui.border" shadow="sm">
       <VStack align="start" spacing={0} mb={4}>
-        <Text fontSize="10px" fontWeight="900" color="brand.500" letterSpacing="widest">ANALYTICAL PERFORMANCE</Text>
-        <Text fontSize="9px" color="ui.muted">QUANTITATIVE RESEARCH METRICS</Text>
+        <Text fontSize="10px" fontWeight="900" color="brand.500" letterSpacing="widest">
+            {lang === 'ko' ? "분석 성과" : "ANALYTICAL PERFORMANCE"}
+        </Text>
+        <Text fontSize="9px" color="ui.muted">
+            {lang === 'ko' ? "계량 연구 지표" : "QUANTITATIVE RESEARCH METRICS"}
+        </Text>
       </VStack>
       
       <SimpleGrid columns={2} gap={4}>
         <Stat>
-          <StatLabel fontSize="9px" color="ui.muted" fontWeight="800">REASONING NODES</StatLabel>
+          <StatLabel fontSize="9px" color="ui.muted" fontWeight="800">
+              {lang === 'ko' ? "판단 기록" : "REASONING NODES"}
+          </StatLabel>
           <StatNumber fontSize="md" fontWeight="800" color="gray.200">
             {Number(displayDecisions).toLocaleString()}
           </StatNumber>
-          <StatHelpText fontSize="8px" color="ui.muted" m={0}>CAPTURED TRACES</StatHelpText>
+          <StatHelpText fontSize="8px" color="ui.muted" m={0}>
+              {lang === 'ko' ? "수집된 추적 기록" : "CAPTURED TRACES"}
+          </StatHelpText>
         </Stat>
         <Stat>
-          <StatLabel fontSize="9px" color="ui.muted" fontWeight="800">SIMULATED YIELD</StatLabel>
+          <StatLabel fontSize="9px" color="ui.muted" fontWeight="800">
+              {lang === 'ko' ? "가상 수익" : "SIMULATED YIELD"}
+          </StatLabel>
           <StatNumber fontSize="md" fontWeight="800" color={displayPnL >= 0 ? "status.success" : "status.error"}>
             ${Number(displayPnL).toLocaleString(undefined, { minimumFractionDigits: 2 })}
           </StatNumber>
@@ -80,14 +94,18 @@ const PerformanceMetrics: React.FC = () => {
 
       <SimpleGrid columns={2} gap={4}>
         <Box>
-            <Text fontSize="9px" color="ui.muted" fontWeight="800" mb={1}>LOGICAL_DRIFT</Text>
+            <Text fontSize="9px" color="ui.muted" fontWeight="800" mb={1}>
+                {lang === 'ko' ? "분석 편향(Drift)" : "LOGICAL_DRIFT"}
+            </Text>
             <HStack spacing={2}>
                 <Progress value={(metrics.research_drift || 0) * 100} size="2xs" colorScheme="orange" flex={1} bg="whiteAlpha.100" borderRadius="full" />
                 <Text fontSize="10px" fontWeight="bold" color="orange.300">{Math.round((metrics.research_drift || 0) * 100)}%</Text>
             </HStack>
         </Box>
         <Box>
-            <Text fontSize="9px" color="ui.muted" fontWeight="800" mb={1}>LAST_AUDIT_OP</Text>
+            <Text fontSize="9px" color="ui.muted" fontWeight="800" mb={1}>
+                {lang === 'ko' ? "최근 감사 작업" : "LAST_AUDIT_OP"}
+            </Text>
             <Text fontSize="10px" fontWeight="bold" color="brand.200">
                 {metrics.last_audit ? `${Math.floor((Date.now() - new Date(metrics.last_audit).getTime()) / 3600000)}h ago` : 'SYSTEM_INIT'}
             </Text>
