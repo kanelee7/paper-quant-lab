@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { isDemoModeActive } from '../demo/demoService';
 
 interface WebSocketMessage {
-  type: 'price' | 'orderbook';
+  type: 'price' | 'orderbook' | 'kline' | 'trade';
   symbol: string;
   data: any;
 }

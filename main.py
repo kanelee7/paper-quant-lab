@@ -28,8 +28,59 @@ load_dotenv()
 
 app = FastAPI(title="PaperQuantLab: Research Workstation")
 
+from backend.binance_provider import BinanceMarketProvider
+
 # 전역 객체 초기화
 persona_manager = PersonaManager()
+# ... (rest of initializations)
+
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: Dict[WebSocket, str] = {} # socket -> symbol
+        self.binance_provider = BinanceMarketProvider()
+        self.binance_provider.subscribe("kline", self.on_kline)
+        self.binance_provider.subscribe("depth", self.on_depth)
+        self.binance_provider.subscribe("trade", self.on_trade)
+        self.initialized_symbols: Set[str] = set()
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections[websocket] = "BTC/USDT" # Default
+        print("WebSocket 연결 수락됨")
+
+    def disconnect(self, websocket: WebSocket):
+        if websocket in self.active_connections:
+            del self.active_connections[websocket]
+        print("WebSocket 연결 종료됨")
+
+    async def on_kline(self, symbol: str, data: Dict):
+        await self.broadcast_to_symbol(symbol, {"type": "kline", "symbol": symbol, "data": data})
+
+    async def on_depth(self, symbol: str, data: Dict):
+        await self.broadcast_to_symbol(symbol, {"type": "orderbook", "symbol": symbol, "data": data})
+
+    async def on_trade(self, symbol: str, data: Dict):
+        await self.broadcast_to_symbol(symbol, {"type": "trade", "symbol": symbol, "data": data})
+
+    async def broadcast_to_symbol(self, symbol: str, message: Dict):
+        norm_symbol = symbol.replace("/", "").upper()
+        for connection, conn_symbol in list(self.active_connections.items()):
+            norm_conn_symbol = conn_symbol.replace("/", "").upper()
+            if norm_conn_symbol == norm_symbol:
+                try:
+                    await connection.send_text(json.dumps(message))
+                except Exception:
+                    self.disconnect(connection)
+
+    async def subscribe_symbol(self, websocket: WebSocket, symbol: str):
+        self.active_connections[websocket] = symbol
+        norm_symbol = symbol.replace("/", "").upper()
+        if norm_symbol not in self.initialized_symbols:
+            await self.binance_provider.start_symbol_streams(symbol)
+            self.initialized_symbols.add(norm_symbol)
+
+ws_manager = ConnectionManager()
+
 persona_evaluator = PersonaEvaluator()
 session_manager = SessionManager()
 insight_manager = InsightManager()
@@ -1159,45 +1210,24 @@ async def get_all_trading_positions():
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    websocket_connections.add(websocket)
-    print(f"WebSocket 연결 수락됨")
-    
+    await ws_manager.connect(websocket)
     try:
-        if multi_trader:
-            multi_trader.add_websocket(websocket)
-        
         while True:
-            if auto_trader and auto_trader.is_running:
-                print(f"자동 매매 실행 중: {auto_trader.test_mode=}")
-                
-                if auto_trader.test_mode:
-                    ticker = await market_provider.fetch_ticker(auto_trader.symbol)
-                    data = {
-                        "timestamp": ticker['timestamp'],
-                        "price": ticker['last'],
-                        "volume": ticker.get('baseVolume', 0),
-                        "indicators": await auto_trader.get_technical_indicators()
-                    }
-                else:
-                    ticker = await market_provider.fetch_ticker(auto_trader.symbol)
-                    data = {
-                        "timestamp": ticker['timestamp'],
-                        "price": ticker['last'],
-                        "volume": ticker.get('baseVolume', 0),
-                        "indicators": await auto_trader.get_technical_indicators()
-                    }
-                
-                await websocket.send_json(data)
-            
-            await asyncio.sleep(auto_trader.interval if auto_trader else 1)
+            # 클라이언트로부터 메시지 수신 대기
+            data = await websocket.receive_text()
+            try:
+                message = json.loads(data)
+                if message.get("type") == "subscribe":
+                    symbol = message.get("symbol", "BTC/USDT")
+                    await ws_manager.subscribe_symbol(websocket, symbol)
+                elif message.get("type") == "ping":
+                    await websocket.send_text(json.dumps({"type": "pong"}))
+            except json.JSONDecodeError:
+                pass
     except Exception as e:
-        print(f"WebSocket error: {str(e)}")
+        print(f"WebSocket 오류: {e}")
     finally:
-        websocket_connections.remove(websocket)
-        if multi_trader:
-            multi_trader.remove_websocket(websocket)
-        print("WebSocket 연결 종료")
+        ws_manager.disconnect(websocket)
 
 @app.post("/stop-loss")
 async def create_stop_loss(request: StopLossRequest):

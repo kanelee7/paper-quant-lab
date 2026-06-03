@@ -37,7 +37,9 @@ export const translations = {
     // Status
     'status.idle': 'IDLE',
     'status.active': 'ACTIVE',
-    'status.live': 'CONNECTED',
+    'status.live': 'LIVE',
+    'status.simulated': 'SIMULATED',
+    'status.offline': 'OFFLINE',
     'status.simulation_only': 'SIMULATION ONLY',
   },
   ko: {
@@ -74,7 +76,9 @@ export const translations = {
     // Status
     'status.idle': '대기 중',
     'status.active': '활성',
-    'status.live': '연결됨',
+    'status.live': '라이브',
+    'status.simulated': '시뮬레이션',
+    'status.offline': '오프라인',
     'status.simulation_only': '시뮬레이션 전용',
   }
 };
@@ -87,7 +91,7 @@ export const useI18n = () => {
   });
 
   const t = (key: TranslationKey): string => {
-    return translations[lang][key] || key;
+    return (translations[lang] as any)[key] || key;
   };
 
   const changeLanguage = (newLang: Language) => {

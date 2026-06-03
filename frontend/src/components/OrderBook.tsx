@@ -19,6 +19,7 @@ import {
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useI18n } from '../i18n';
 import { RepeatIcon } from '@chakra-ui/icons';
+import { isDemoModeActive } from '../demo/demoService';
 
 interface OrderBookProps {
   symbol: string;
@@ -34,6 +35,16 @@ const OrderBook: React.FC<OrderBookProps> = ({ symbol }) => {
   const [orderBook, setOrderBook] = useState<OrderBookData>({ bids: [], asks: [] });
   const [isLoading, setIsLoading] = useState(true);
   const { isConnected, lastMessage } = useWebSocket(symbol);
+
+  const getConnectionStatus = () => {
+    if (!isConnected) return t('status.offline');
+    return isDemoModeActive() ? t('status.simulated') : t('status.live');
+  };
+
+  const getStatusColor = () => {
+    if (!isConnected) return 'gray';
+    return isDemoModeActive() ? 'brand' : 'green';
+  };
 
   useEffect(() => {
     const fetchOrderBook = async () => {
@@ -102,8 +113,8 @@ const OrderBook: React.FC<OrderBookProps> = ({ symbol }) => {
     <Box height="100%" display="flex" flexDirection="column">
       <HStack justify="space-between" mb={2} px={1}>
         <Text fontSize="10px" fontWeight="800" letterSpacing="widest" color="ui.muted" textTransform="uppercase">{t('label.market_depth')}</Text>
-        <Badge variant="subtle" fontSize="8px" colorScheme={isConnected ? 'brand' : 'gray'} borderRadius="xs">
-            {isConnected ? t('status.live') : t('status.idle')}
+        <Badge variant="subtle" fontSize="8px" colorScheme={getStatusColor()} borderRadius="xs">
+            {getConnectionStatus()}
         </Badge>
       </HStack>
       

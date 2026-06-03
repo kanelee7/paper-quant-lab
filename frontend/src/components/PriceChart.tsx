@@ -5,6 +5,7 @@ import { createChart, IChartApi, ISeriesApi, Time, ColorType, CrosshairMode } fr
 import styled from '@emotion/styled';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { demoFetch } from "../demo/demoFetch";
+import { isDemoModeActive } from '../demo/demoService';
 
 interface PriceData {
   timestamp: number;
@@ -30,10 +31,7 @@ const PriceChart: React.FC<PriceChartProps> = ({ symbol, onSymbolChange }) => {
   const volumeSeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null);
   const { isConnected, lastMessage } = useWebSocket(symbol);
   const [timeframe, setTimeframe] = useState('1m');
-  const [priceData, setPriceData] = useState<PriceData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const toast = useToast();
   const { colorMode } = useColorMode();
   const isDarkMode = colorMode === 'dark';
 
@@ -232,7 +230,21 @@ const PriceChart: React.FC<PriceChartProps> = ({ symbol, onSymbolChange }) => {
     }
   }, [symbol, timeframe]);
 
-  // 웹소켓 실시간 업데이트 생략 (필요시 기존 로직 유지)
+  // 웹소켓 실시간 업데이트
+  useEffect(() => {
+    if (lastMessage && lastMessage.type === 'kline') {
+      const kline = lastMessage.data;
+      if (candleSeriesRef.current) {
+        candleSeriesRef.current.update({
+          time: kline.timestamp / 1000 as Time,
+          open: kline.open,
+          high: kline.high,
+          low: kline.low,
+          close: kline.close,
+        });
+      }
+    }
+  }, [lastMessage]);
 
   return (
     <Box height="100%" display="flex" flexDirection="column">
@@ -280,7 +292,7 @@ const PriceChart: React.FC<PriceChartProps> = ({ symbol, onSymbolChange }) => {
         </HStack>
         <HStack>
             <Badge colorScheme={isConnected ? 'green' : 'red'} variant="subtle" fontSize="8px">
-                {isConnected ? 'ACTIVE REPOSITORY STREAM' : 'STREAM DISCONNECTED'}
+                {isConnected ? (isDemoModeActive() ? 'SIMULATED' : 'LIVE') : 'OFFLINE'}
             </Badge>
         </HStack>
       </HStack>
