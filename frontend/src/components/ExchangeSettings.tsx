@@ -64,47 +64,9 @@ const ExchangeSettings: React.FC<ExchangeSettingsProps> = ({
   const handleConnect = async () => {
     setIsLoading(true);
     try {
-      const response = await demoFetch(`${API_BASE_URL}/select-market`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          provider: selectedExchange,
-          asset_type: assetType,
-          api_key: apiKey,
-          secret: secretKey,
-        }),
-      });
-
-      const data = await response.json();
-      if (data.status === 'success') {
-        toast({
-          title: lang === 'ko' ? '연구 환경이 준비되었습니다.' : 'Research Environment Ready',
-          description: data.message,
-          status: 'success',
-          duration: 3000,
-          isClosable: true,
-        });
-        onSettingsUpdate();
-      } else {
-        toast({
-          title: lang === 'ko' ? '초기화 실패' : 'Initialization Failed',
-          description: data.message,
-          status: 'error',
-          duration: 3000,
-          isClosable: true,
-        });
-      }
+      await onConnect();
     } catch (error) {
       console.error('Connection error:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to communicate with research workstation.',
-        status: 'error',
-        duration: 3000,
-        isClosable: true,
-      });
     } finally {
       setIsLoading(false);
     }
@@ -113,28 +75,9 @@ const ExchangeSettings: React.FC<ExchangeSettingsProps> = ({
   const handleTestConnection = async () => {
     setIsLoading(true);
     try {
-      const response = await demoFetch(`${API_BASE_URL}/test-connection`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          exchange_name: selectedExchange,
-          api_key: apiKey,
-          secret: secretKey,
-        }),
-      });
-
-      const data = await response.json();
-      toast({
-        title: data.status === 'success' ? (lang === 'ko' ? '인증 성공' : 'Access Validated') : (lang === 'ko' ? '인증 실패' : 'Validation Failed'),
-        description: data.message,
-        status: data.status === 'success' ? 'success' : 'error',
-        duration: 3000,
-        isClosable: true,
-      });
+      await onTestConnection();
     } catch (error) {
-      console.error('Test error:', error);
+      console.error('Test connection error:', error);
     } finally {
       setIsLoading(false);
     }
@@ -143,25 +86,20 @@ const ExchangeSettings: React.FC<ExchangeSettingsProps> = ({
   const handleDisconnect = async () => {
     setIsLoading(true);
     try {
-      const response = await demoFetch(`${API_BASE_URL}/disconnect-exchange`, {
-        method: 'POST',
-      });
-
-      const data = await response.json();
-      if (data.status === 'success') {
-        setApiKey('');
-        setSecretKey('');
-        setShowApiInput(false);
-        toast({
-          title: lang === 'ko' ? '데이터 피드 연결이 해제되었습니다.' : 'Data Feed Detached',
-          status: 'info',
-          duration: 3000,
-          isClosable: true,
-        });
-        onSettingsUpdate();
-      }
+      await onDisconnect();
     } catch (error) {
       console.error('Disconnect error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLoadEnvKeys = async () => {
+    setIsLoading(true);
+    try {
+      await onLoadEnvKeys();
+    } catch (error) {
+      console.error('Load env keys error:', error);
     } finally {
       setIsLoading(false);
     }
@@ -228,9 +166,24 @@ const ExchangeSettings: React.FC<ExchangeSettingsProps> = ({
         {showApiInput && (
           <>
             <FormControl>
-              <FormLabel fontSize="10px" color="ui.muted" fontWeight="800" textTransform="uppercase" letterSpacing="widest">
-                  {lang === 'ko' ? "API 키 (읽기 전용)" : "READ-ONLY ACCESS KEY"}
-              </FormLabel>
+              <HStack justify="space-between" width="100%" mb={1}>
+                <FormLabel fontSize="10px" color="ui.muted" fontWeight="800" textTransform="uppercase" letterSpacing="widest" m={0}>
+                    {lang === 'ko' ? "API 키 (읽기 전용)" : "READ-ONLY ACCESS KEY"}
+                </FormLabel>
+                <Button
+                  variant="link"
+                  size="xs"
+                  fontSize="10px"
+                  colorScheme="brand"
+                  onClick={handleLoadEnvKeys}
+                  isDisabled={isConnected || isLoading}
+                  height="auto"
+                  minW="auto"
+                  _hover={{ textDecoration: 'none', color: 'brand.400' }}
+                >
+                  {lang === 'ko' ? ".env에서 로드" : "Load from .env"}
+                </Button>
+              </HStack>
               <Input
                 type="password"
                 value={apiKey}

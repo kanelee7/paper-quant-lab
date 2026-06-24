@@ -135,14 +135,15 @@ class MarketProvider:
 
         # 실제 데이터 소스 (현재는 Crypto용 CCXT만 지원, 추후 확장 가능)
         self.data_source = None
-        if asset_type == AssetType.CRYPTO and api_key != "test":
+        if asset_type == AssetType.CRYPTO:
             try:
                 exchange_class = getattr(ccxt, provider_id)
-                self.data_source = exchange_class({
-                    'apiKey': api_key,
-                    'secret': secret,
-                    'enableRateLimit': True
-                })
+                config = {'enableRateLimit': True}
+                if api_key and api_key != "test" and api_key.strip() != "":
+                    config['apiKey'] = api_key
+                if secret and secret != "test" and secret.strip() != "":
+                    config['secret'] = secret
+                self.data_source = exchange_class(config)
             except Exception as e:
                 print(f"Warning: Could not initialize CCXT data source: {e}")
 

@@ -230,29 +230,145 @@ const App: React.FC = () => {
 
   const handleConnect = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/select-exchange`, {
+      const response = await fetch(`${API_BASE_URL}/select-market`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ exchange: selectedExchange, api_key: apiKey, secret: secretKey, test_mode: testMode }),
+        body: JSON.stringify({
+          provider: selectedExchange,
+          asset_type: 'CRYPTO',
+          api_key: apiKey,
+          secret: secretKey,
+        }),
       });
       const data = await response.json();
       if (data.status === 'success') {
         setIsConnected(true);
         setShowApiInput(false);
-        toast({ title: 'Market Connected', status: 'success' });
+        toast({
+          title: lang === 'ko' ? '연구 환경이 연결되었습니다.' : 'Market Connected',
+          description: data.message,
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+        });
+      } else {
+        toast({
+          title: lang === 'ko' ? '초기화 실패' : 'Initialization Failed',
+          description: data.message,
+          status: 'error',
+          duration: 3000,
+          isClosable: true,
+        });
       }
-    } catch (e) {}
+    } catch (e) {
+      toast({
+        title: 'Error',
+        description: 'Failed to communicate with research workstation.',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+    }
   };
 
   const handleDisconnect = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/disconnect`, { method: 'POST' });
+      const response = await fetch(`${API_BASE_URL}/disconnect-exchange`, { method: 'POST' });
       const data = await response.json();
       if (data.status === 'success') {
         setIsConnected(false);
-        toast({ title: 'Market Disconnected', status: 'info' });
+        setApiKey('');
+        setSecretKey('');
+        setShowApiInput(false);
+        toast({
+          title: lang === 'ko' ? '데이터 피드 연결이 해제되었습니다.' : 'Market Disconnected',
+          status: 'info',
+          duration: 3000,
+          isClosable: true,
+        });
+      } else {
+        toast({
+          title: lang === 'ko' ? '연결 해제 실패' : 'Disconnection Failed',
+          description: data.message,
+          status: 'error',
+          duration: 3000,
+          isClosable: true,
+        });
       }
-    } catch (e) {}
+    } catch (e) {
+      toast({
+        title: 'Error',
+        description: 'Failed to disconnect from data source.',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  };
+
+  const handleTestConnection = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/test-connection`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          exchange_name: selectedExchange,
+          api_key: apiKey,
+          secret: secretKey,
+        }),
+      });
+      const data = await response.json();
+      toast({
+        title: data.status === 'success' ? (lang === 'ko' ? '인증 성공' : 'Access Validated') : (lang === 'ko' ? '인증 실패' : 'Validation Failed'),
+        description: data.message,
+        status: data.status === 'success' ? 'success' : 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (e) {
+      toast({
+        title: 'Error',
+        description: 'Failed to validate analytical feed.',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  };
+
+  const handleLoadEnvKeys = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/load-env-keys?exchange=${selectedExchange}`);
+      const data = await response.json();
+      if (data.status === 'success') {
+        setApiKey(data.api_key);
+        setSecretKey(data.secret_key);
+        setShowApiInput(true);
+        toast({
+          title: lang === 'ko' ? 'API 키 로드 완료' : 'Keys Loaded Successfully',
+          description: data.message,
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+        });
+      } else {
+        toast({
+          title: lang === 'ko' ? 'API 키 로드 실패' : 'Failed to Load Keys',
+          description: data.message,
+          status: 'warning',
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+    } catch (e) {
+      toast({
+        title: 'Error',
+        description: 'Failed to load environment keys.',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+    }
   };
 
   if (currentPage === 'LANDING') {
@@ -535,7 +651,7 @@ const App: React.FC = () => {
                         <SidebarSection title={lang === 'ko' ? "연구 및 실험" : "INVESTIGATION"} defaultOpen={workspaceMode === 'RESEARCH'}>
                             <VStack spacing={3} align="stretch">
                                 {workspaceMode === 'RESEARCH' && (
-                                    <ExchangeSettings selectedExchange={selectedExchange} setSelectedExchange={setSelectedExchange} apiKey={apiKey} setApiKey={setApiKey} secretKey={secretKey} setSecretKey={setSecretKey} showApiInput={showApiInput} setShowApiInput={setShowApiInput} isConnected={isConnected} onConnect={handleConnect} onDisconnect={handleDisconnect} onTestConnection={async () => {}} onLoadEnvKeys={async () => {}} onSettingsUpdate={() => {}} isDeveloperMode={isDeveloperMode} testMode={testMode} setTestMode={setTestMode} />
+                                    <ExchangeSettings selectedExchange={selectedExchange} setSelectedExchange={setSelectedExchange} apiKey={apiKey} setApiKey={setApiKey} secretKey={secretKey} setSecretKey={setSecretKey} showApiInput={showApiInput} setShowApiInput={setShowApiInput} isConnected={isConnected} onConnect={handleConnect} onDisconnect={handleDisconnect} onTestConnection={handleTestConnection} onLoadEnvKeys={handleLoadEnvKeys} onSettingsUpdate={() => {}} isDeveloperMode={isDeveloperMode} testMode={testMode} setTestMode={setTestMode} />
                                 )}
                                 <ResearchSessionManager />
                                 <HypothesisManager investigatingSignalId={investigatingSignalId} />

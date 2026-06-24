@@ -644,6 +644,30 @@ async def select_exchange(exchange_data: Dict):
     exchange_data["asset_type"] = "CRYPTO"
     return await select_market(exchange_data)
 
+@app.post("/test-connection")
+async def test_connection(req: ExchangeRequest):
+    if req.exchange_name.lower() not in ["binance", "digifinex", "weex", "yahoo"]:
+        raise HTTPException(status_code=400, detail="지원하지 않는 거래소입니다.")
+    try:
+        # 임시 MarketProvider 인스턴스 생성
+        temp_provider = MarketProvider(req.exchange_name, AssetType.CRYPTO, req.api_key, req.secret)
+        # 연결 테스트 (예: 잔고 조회)
+        await temp_provider.fetch_balance()
+        return {"status": "success", "message": "API 키가 유효하며 연결 테스트에 성공했습니다."}
+    except Exception as e:
+        return {"status": "error", "message": f"연결 테스트 실패: {str(e)}"}
+
+@app.post("/disconnect")
+@app.post("/disconnect-exchange")
+async def disconnect_exchange():
+    global market_provider, auto_trader
+    try:
+        market_provider = None
+        auto_trader = None
+        return {"status": "success", "message": "데이터 피드 연결이 해제되었습니다."}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
 @app.get("/api/journal")
 async def get_decision_journal(limit: int = 100):
     """최근 생성된 전략 시그널 및 결정 이력 조회 (결정론적 정렬 포함)"""

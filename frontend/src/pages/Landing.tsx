@@ -190,7 +190,7 @@ const Landing: React.FC<{
   onLaunch: () => void;
   onNavigate: (page: 'VISION' | 'PHILOSOPHY') => void;
 }> = ({ onLaunch, onNavigate }) => {
-  const { lang, t } = useI18n();
+  const { lang, t, changeLanguage } = useI18n();
   const brandColor = 'brand.500';
 
   return (
@@ -213,13 +213,26 @@ const Landing: React.FC<{
               <Box w={2} h={2} bg={brandColor} borderRadius="full" />
               <Heading size="sm" letterSpacing="tight" fontWeight="800">PaperQuantLab</Heading>
             </HStack>
-            <HStack spacing={8}>
+            <HStack spacing={6}>
               <Link fontSize="10px" fontWeight="700" color="ui.muted" textTransform="uppercase" letterSpacing="widest" _hover={{ color: brandColor }} onClick={() => onNavigate('VISION')}>
                   {lang === 'ko' ? "비전" : "Vision"}
               </Link>
               <Link fontSize="10px" fontWeight="700" color="ui.muted" textTransform="uppercase" letterSpacing="widest" _hover={{ color: brandColor }} onClick={() => onNavigate('PHILOSOPHY')}>
                   {lang === 'ko' ? "철학" : "Philosophy"}
               </Link>
+              <Button
+                variant="ghost"
+                size="xs"
+                fontSize="10px"
+                fontWeight="800"
+                color="ui.muted"
+                onClick={() => changeLanguage(lang === 'ko' ? 'en' : 'ko')}
+                _hover={{ color: 'white', bg: 'whiteAlpha.100' }}
+                borderRadius="xs"
+                height="24px"
+              >
+                {lang === 'ko' ? "ENGLISH" : "한국어"}
+              </Button>
               <Button size="xs" colorScheme="brand" variant="solid" onClick={onLaunch} px={4} borderRadius="sm">
                   {lang === 'ko' ? "워크스테이션 실행" : "Launch Workstation"}
               </Button>
