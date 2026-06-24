@@ -68,9 +68,9 @@ const WorkstationPreview: React.FC = () => {
 
     {/* UI Content Mockup */}
     <Box p={1} bg="background.deep">
-      <HStack align="stretch" spacing={1} h="600px">
+      <HStack align="stretch" spacing={1} h={{ base: "400px", md: "600px" }}>
         {/* Sidebar Mock */}
-        <VStack w="240px" bg="background.surface" borderRight="1px" borderColor="ui.border" p={3} align="stretch" spacing={4}>
+        <VStack w="240px" display={{ base: 'none', md: 'flex' }} bg="background.surface" borderRight="1px" borderColor="ui.border" p={3} align="stretch" spacing={4}>
           <Box h="20px" bg="whiteAlpha.50" borderRadius="xs" />
           <VStack align="stretch" spacing={2}>
             <Box h="40px" bg="brand.900" borderLeft="2px solid" borderColor="brand.500" borderRadius="xs" />
@@ -122,7 +122,7 @@ const WorkstationPreview: React.FC = () => {
         </VStack>
 
         {/* Right Sidebar Mock */}
-        <VStack w="300px" bg="background.surface" borderLeft="1px" borderColor="ui.border" p={3} align="stretch" spacing={4}>
+        <VStack w="300px" display={{ base: 'none', md: 'flex' }} bg="background.surface" borderLeft="1px" borderColor="ui.border" p={3} align="stretch" spacing={4}>
           <Text fontSize="10px" fontWeight="700" color="ui.muted">
               {lang === 'ko' ? "근거 추적" : "EVIDENCE TRACE"}
           </Text>
@@ -211,13 +211,14 @@ const Landing: React.FC<{
           <HStack justifyContent="space-between">
             <HStack spacing={2}>
               <Box w={2} h={2} bg={brandColor} borderRadius="full" />
-              <Heading size="sm" letterSpacing="tight" fontWeight="800">PaperQuantLab</Heading>
+              <Heading size="sm" letterSpacing="tight" fontWeight="800" display={{ base: 'none', sm: 'block' }}>PaperQuantLab</Heading>
+              <Heading size="sm" letterSpacing="tight" fontWeight="800" display={{ base: 'block', sm: 'none' }}>PQL</Heading>
             </HStack>
-            <HStack spacing={6}>
-              <Link fontSize="10px" fontWeight="700" color="ui.muted" textTransform="uppercase" letterSpacing="widest" _hover={{ color: brandColor }} onClick={() => onNavigate('VISION')}>
+            <HStack spacing={{ base: 2, md: 6 }}>
+              <Link display={{ base: 'none', md: 'inline-block' }} fontSize="10px" fontWeight="700" color="ui.muted" textTransform="uppercase" letterSpacing="widest" _hover={{ color: brandColor }} onClick={() => onNavigate('VISION')}>
                   {lang === 'ko' ? "비전" : "Vision"}
               </Link>
-              <Link fontSize="10px" fontWeight="700" color="ui.muted" textTransform="uppercase" letterSpacing="widest" _hover={{ color: brandColor }} onClick={() => onNavigate('PHILOSOPHY')}>
+              <Link display={{ base: 'none', md: 'inline-block' }} fontSize="10px" fontWeight="700" color="ui.muted" textTransform="uppercase" letterSpacing="widest" _hover={{ color: brandColor }} onClick={() => onNavigate('PHILOSOPHY')}>
                   {lang === 'ko' ? "철학" : "Philosophy"}
               </Link>
               <Button
@@ -230,11 +231,12 @@ const Landing: React.FC<{
                 _hover={{ color: 'white', bg: 'whiteAlpha.100' }}
                 borderRadius="xs"
                 height="24px"
+                px={{ base: 1, md: 3 }}
               >
                 {lang === 'ko' ? "ENGLISH" : "한국어"}
               </Button>
-              <Button size="xs" colorScheme="brand" variant="solid" onClick={onLaunch} px={4} borderRadius="sm">
-                  {lang === 'ko' ? "워크스테이션 실행" : "Launch Workstation"}
+              <Button size="xs" colorScheme="brand" variant="solid" onClick={onLaunch} px={{ base: 2, md: 4 }} borderRadius="sm" fontSize={{ base: '9px', md: '11px' }}>
+                  {lang === 'ko' ? "실행" : "LAUNCH"}
               </Button>
             </HStack>
           </HStack>
@@ -265,7 +267,7 @@ const Landing: React.FC<{
               PaperQuantLab
             </Text>
             <Heading
-              size="3xl"
+              size={{ base: "xl", sm: "3xl" }}
               maxW="800px"
               lineHeight="1.1"
               letterSpacing="tighter"
@@ -273,12 +275,13 @@ const Landing: React.FC<{
             >
               {lang === 'ko' ? "시장 판단력 연구 워크스테이션" : "Market Reasoning Workstation"}
             </Heading>
-            <Text fontSize="lg" color="gray.200" maxW="640px" lineHeight="tall" opacity={0.9}>
+            <Text fontSize={{ base: "md", md: "lg" }} color="gray.200" maxW="640px" lineHeight="tall" opacity={0.9} px={4}>
               {lang === 'ko' ? "근거 추적과 연구 기록을 통해 시장 판단 과정을 리플레이하세요." : "Replay market reasoning through evidence traces and research archives."}
             </Text>
-            <HStack spacing={4} pt={2}>
+            <Flex direction={{ base: 'column', sm: 'row' }} gap={4} pt={2} w={{ base: '100%', sm: 'auto' }} px={4} justify="center">
               <Button 
                 size="md" 
+                w={{ base: '100%', sm: 'auto' }}
                 px={10} 
                 height="52px" 
                 colorScheme="brand" 
@@ -307,10 +310,20 @@ const Landing: React.FC<{
               >
                 {lang === 'ko' ? "워크스테이션 열기" : "OPEN WORKSTATION"}
               </Button>
-              <Button size="md" px={10} height="52px" variant="outline" onClick={() => onNavigate('PHILOSOPHY')} borderRadius="sm" fontWeight="700" letterSpacing="wider">
+              <Button 
+                size="md" 
+                w={{ base: '100%', sm: 'auto' }}
+                px={10} 
+                height="52px" 
+                variant="outline" 
+                onClick={() => onNavigate('PHILOSOPHY')} 
+                borderRadius="sm" 
+                fontWeight="700" 
+                letterSpacing="wider"
+              >
                 {lang === 'ko' ? "연구 방법론" : "Research Method"}
               </Button>
-            </HStack>
+            </Flex>
           </VStack>
         </Container>
         

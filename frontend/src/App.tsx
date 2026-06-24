@@ -404,7 +404,7 @@ const App: React.FC = () => {
       <WorkspaceOnboarding />
       <CommandPalette onModeChange={setWorkspaceMode} onFocusModeToggle={toggleFocusMode} />
       
-      <Flex h="100vh" flexDir="column" bg={bgColor} overflow="hidden">
+      <Flex h={{ base: "auto", lg: "100vh" }} minH="100vh" flexDir="column" bg={bgColor} overflow={{ base: "auto", lg: "hidden" }}>
         {/* Fixed Header */}
         <Box 
           borderBottom="1px" 
@@ -416,13 +416,15 @@ const App: React.FC = () => {
         >
             <Container maxW="container.2xl" py={2}>
                 <Flex justifyContent="space-between" alignItems="center">
-                <HStack spacing={6} flex={1}>
+                <HStack spacing={{ base: 2, md: 6 }} flex={1}>
                     <HStack spacing={2} cursor="pointer" onClick={handleBackToLanding}>
                         <Box w={2} h={2} bg="brand.500" borderRadius="full" />
-                        <Heading size="sm" letterSpacing="tight" fontWeight="800">PaperQuantLab</Heading>
+                        <Heading size="sm" letterSpacing="tight" fontWeight="800" display={{ base: 'none', sm: 'block' }}>PaperQuantLab</Heading>
+                        <Heading size="sm" letterSpacing="tight" fontWeight="800" display={{ base: 'block', sm: 'none' }}>PQL</Heading>
                     </HStack>
-                    <Divider orientation="vertical" h="16px" borderColor="ui.border" />
+                    <Divider orientation="vertical" h="16px" borderColor="ui.border" display={{ base: 'none', md: 'block' }} />
                     <Button 
+                        display={{ base: 'none', md: 'flex' }}
                         size="xs" 
                         variant="ghost" 
                         leftIcon={<SearchIcon w={3} h={3} />}
@@ -447,7 +449,7 @@ const App: React.FC = () => {
                         onClick={() => setWorkspaceMode('RESEARCH')}
                         fontSize="10px"
                         fontWeight="800"
-                        px={3}
+                        px={{ base: 2, md: 3 }}
                         borderRadius="xs"
                         letterSpacing="wider"
                         >
@@ -464,7 +466,7 @@ const App: React.FC = () => {
                         onClick={() => setWorkspaceMode('REVIEW')}
                         fontSize="10px"
                         fontWeight="800"
-                        px={3}
+                        px={{ base: 2, md: 3 }}
                         borderRadius="xs"
                         letterSpacing="wider"
                         >
@@ -481,7 +483,7 @@ const App: React.FC = () => {
                         onClick={() => setWorkspaceMode('TRAINING')}
                         fontSize="10px"
                         fontWeight="800"
-                        px={3}
+                        px={{ base: 2, md: 3 }}
                         borderRadius="xs"
                         letterSpacing="wider"
                         >
@@ -490,8 +492,9 @@ const App: React.FC = () => {
                     </Tooltip>
                 </HStack>
 
-                <HStack spacing={4} flex={1} justifyContent="flex-end">
+                <HStack spacing={2} flex={1} justifyContent="flex-end">
                     <Button 
+                        display={{ base: 'none', md: 'inline-flex' }}
                         size="xs" 
                         variant="outline" 
                         colorScheme={isDemoMode ? "brand" : "gray"} 
@@ -504,7 +507,7 @@ const App: React.FC = () => {
                     >
                         {isDemoMode ? (lang === 'ko' ? "데모 데이터 로드됨" : "REPOSITORY: DEMO_ARCHIVE") : (lang === 'ko' ? "데모 데이터 불러오기" : "INIT DEMO REPOSITORY")}
                     </Button>
-                    <Divider orientation="vertical" h="16px" borderColor="ui.border" />
+                    <Divider orientation="vertical" h="16px" borderColor="ui.border" display={{ base: 'none', md: 'block' }} />
                     <Tooltip label="Research Focus Mode" fontSize="2xs" bg="background.elevated" color="white" borderRadius="xs">
                         <IconButton 
                             aria-label="Toggle Focus Mode" 
@@ -541,7 +544,7 @@ const App: React.FC = () => {
         </Box>
 
         {/* Main Workspace Area */}
-        <Box flex={1} overflow="hidden" position="relative" zIndex={1}>
+        <Box flex={1} overflow={{ base: "visible", lg: "hidden" }} position="relative" zIndex={1}>
           <Container maxW="container.2xl" h="100%" py={3}>
             {!isConnected && !isDemoMode ? (
                 <WorkspaceWelcome 
@@ -559,13 +562,13 @@ const App: React.FC = () => {
                 <Grid 
                 templateColumns={preferences.focusMode ? "1fr" : { base: "1fr", lg: "1fr 340px" }} 
                 gap={5} 
-                h="100%"
-                overflow="hidden"
+                h={{ base: "auto", lg: "100%" }}
+                overflow={{ base: "visible", lg: "hidden" }}
                 >
                 {/* Left Content: Scrollable */}
                 <Box 
-                    h="100%" 
-                    overflowY="auto" 
+                    h={{ base: "auto", lg: "100%" }} 
+                    overflowY={{ base: "visible", lg: "auto" }} 
                     pr={1}
                     sx={{
                     '&::-webkit-scrollbar': { width: '3px' },
@@ -574,12 +577,12 @@ const App: React.FC = () => {
                 >
                     <VStack spacing={5} align="stretch" pb={10}>
                     <Grid templateColumns={workspaceMode === 'REVIEW' ? { base: "1fr", xl: "1fr 1fr" } : { base: "1fr", xl: "1fr 320px" }} gap={4}>
-                        <Box borderRadius="md" bg={cardBg} borderWidth="1px" borderColor={borderColor} height="520px" overflow="hidden" boxShadow="panel">
+                        <Box borderRadius="md" bg={cardBg} borderWidth="1px" borderColor={borderColor} height={{ base: "320px", md: "520px" }} overflow="hidden" boxShadow="panel">
                         <PriceChart symbol={selectedSymbol} onSymbolChange={setSelectedSymbol} />
                         </Box>
                         
                         {workspaceMode === 'REVIEW' ? (
-                            <Box borderRadius="md" bg={cardBg} borderWidth="1px" borderColor={borderColor} height="520px" overflow="hidden" boxShadow="panel">
+                            <Box borderRadius="md" bg={cardBg} borderWidth="1px" borderColor={borderColor} height={{ base: "320px", md: "520px" }} overflow="hidden" boxShadow="panel">
                             <PriceChart symbol="ETH/USDT" onSymbolChange={() => {}} />
                             </Box>
                         ) : workspaceMode === 'RESEARCH' ? (
@@ -629,8 +632,8 @@ const App: React.FC = () => {
                 {/* Right Sidebar: Independently Scrollable */}
                 {!preferences.focusMode && (
                     <Box 
-                    h="100%" 
-                    overflowY="auto" 
+                    h={{ base: "auto", lg: "100%" }} 
+                    overflowY={{ base: "visible", lg: "auto" }} 
                     pr={1}
                     opacity={investigatingSignalId ? 0.5 : 1}
                     transition="opacity 0.2s"

@@ -16,6 +16,7 @@ from exchange import MarketProvider, AssetType
 from backend.personas import PersonaManager
 from persona_evaluator import PersonaEvaluator
 from session_manager import SessionManager
+from review_manager import ReviewManager
 from insight_manager import InsightManager
 from reliability_manager import ReliabilityManager
 from archive_manager import ArchiveManager
